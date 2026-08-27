@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<vehicle type="implement">
+    <annotation>Copyright (C) GIANTS Software GmbH, All Rights Reserved.</annotation>
+
+    <storeData>
+        <name>Weight 2500</name>
+        <functions>
+            <function>$l10n_function_weight</function>
+        </functions>
+        <rotation>0</rotation>
+        <image>store_Weight2500kg.dds</image>
+        <price>1500</price>
+        <lifetime>600</lifetime>
+        <brand>LIZARD</brand>
+        <category>weights</category>
+        <vertexBufferMemoryUsage>96768</vertexBufferMemoryUsage>
+        <indexBufferMemoryUsage>16188</indexBufferMemoryUsage>
+        <textureMemoryUsage>11884120</textureMemoryUsage>
+        <instanceVertexBufferMemoryUsage>0</instanceVertexBufferMemoryUsage>
+        <instanceIndexBufferMemoryUsage>0</instanceIndexBufferMemoryUsage>
+    </storeData>
+
+    <base>
+        <typeDesc>$l10n_typeDesc_weight</typeDesc>
+        <filename>Weight2500kg.i3d</filename>
+        <size width="1.5" length="1.5" />
+        <components>
+            <component centerOfMass="0 0 0.4" solverIterationCount="10" mass="2500" />
+        </components>
+        <schemaOverlay attacherJointPosition="0 0">
+            <default name="DEFAULT_IMPLEMENT"/>
+            <selected name="DEFAULT_IMPLEMENT_SELECTED"/>
+        </schemaOverlay>
+    </base>
+
+    <foliageBending>
+        <bendingNode minX="-0.3" maxX="0.3" minZ="-1.75" maxZ="0.9" yOffset="0" node="0>" />
+    </foliageBending>
+
+    <attacherJoints>
+        <attacherJoint node="0>0|2" jointType="trailer" lowerRotLimit="10 80 80" upperRotRotationOffset="0" allowsJointLimitMovement="false" >
+            <schema position="1 0" rotation="0" invertX="false" />
+        </attacherJoint>
+        <sounds>
+            <attach template="ATTACH_01" linkNode="0>" />
+        </sounds>
+    </attacherJoints>
+
+    <attachable>
+        <inputAttacherJoints>
+            <inputAttacherJoint node="0>0|0" jointType="implement" topReferenceNode="0>0|1" lowerRotLimitScale="0 0 0" upperRotationOffset="3" lowerRotationOffset="0" needsLowering="false">
+                <distanceToGround lower="0" upper="1.5" />
+            </inputAttacherJoint>
+        </inputAttacherJoints>
+    </attachable>
+
+    <wearable wearDuration="180" workMultiplier="5" fieldMultiplier="2"/>
+    <washable dirtDuration="45" washDuration="1" workMultiplier="2" fieldMultiplier="2"/>
+</vehicle>

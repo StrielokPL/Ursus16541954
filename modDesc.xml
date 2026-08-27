@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="108" xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
+    <author>M8E</author>
+    <version>1.0.0.25</version>
+    <iconFilename>icon_ursus1934.dds</iconFilename>
+    <multiplayer supported="true"/>
+    <extraSourceFiles>
+        <sourceFile filename="UrsusTransmissionFix.lua"/>
+    </extraSourceFiles>
+    <title>
+        <en>Ursus 1654-1954 Pack</en>
+    </title>
+    <description>
+        <en>
+This Ursus is a medium-sized Polish tractor!
+Price: 42000 €
+Power: 158-225 hp
+Category: Medium tractors
+Mod has:
+-Choose between Ursus 1654, 1674, 1674M, 1934, 1954, 1934 Chip
+-Engine power configurations
+-Wheel configurations and rim color
+-Choose between weights, and three-point linkage
+
+</en>
+        <de>
+Dieser Ursus ist ein mittelgroßer polnischer Traktor!
+Preis: 42000 €
+Leistung: 158-225 PS
+Kategorie: Mittlere Traktoren
+Wählen Sie zwischen Ursus 1654, 1674, 1674M, 1934, 1954, 1934 Chip
+Mod hat:
+-Motorleistungskonfigurationen
+-Radkonfigurationen und Felgenfarbe
+-Wählen Sie zwischen Gewichten und Dreipunktverbindung
+
+</de>
+        <fr>
+Cet Ursus est un tracteur polonais de taille moyenne!
+Prix: 42000 €
+Puissance: 158-225 ch
+Catégorie: Tracteurs moyens
+Le mod a:
+-Choisir entre Ursus 1654, 1674, 1674M, 1934, 1954, 1934 Chip
+- Configurations de puissance du moteur
+- Configurations de roue et couleur de jante
+-Choisissez entre les poids et la liaison en trois points
+
+
+
+</fr>
+        <pl>
+Ursus 1654, 1674, 1674M, 1934, 1954, 1934 Chip to średni polski ciągnik!
+Cena: 42000 €
+Moc: 158-225 KM
+Kategoria: Średnie ciągniki
+Mod ma:
+-Wybierz pomiędzy Ursus 1654, 1674, 1674M, 1934, 1954, 1934 Chip
+-Konfiguracje mocy silnika
+-Konfiguracje kół i kolor obręczy
+-Wybierz pomiędzy obciążnikami i trzypunktowym układem zawieszenia
+
+		</pl>
+    </description>
+    <l10n>
+        <text name="configuration_weights">
+            <en>Weights</en>
+            <de>Gewicht</de>
+            <pl>Obciążniki</pl>
+            <fr>Poids</fr>
+        </text>
+        <text name="configuration_wheelBroad">
+            <en>Wide tires </en>
+            <de>Breitreifen </de>
+            <pl>Szerokie opony </pl>
+            <fr> Pneus larges </fr>
+        </text>
+        <text name="configuration_wheelBroadWeights">
+            <en>Wide tires + weights </en>
+            <de>Breitreifen + Gewichte </de>
+            <pl>Szerokie opony z obciążnikami </pl>
+            <fr> Pneus larges + poids </fr>
+        </text>
+        <text name="configuration_valueWheel">
+            <en>Standard tires </en>
+            <de>Standard Reifen</de>
+            <pl>Standard </pl>
+            <fr> Pneus normaux </fr>
+        </text>
+        <text name="configuration_valueWheelDual">
+            <en>Dual Wheels</en>
+            <de>Doppelräder</de>
+            <pl>Bliźniaki</pl>
+            <fr> Roues doubles </fr>
+        </text>
+        <text name="configuration_valueWeights">
+            <en>Weights</en>
+            <de>Gewicht</de>
+            <pl>Obciążniki</pl>
+            <fr>Poids</fr>
+        </text>
+        <text name="2500kg">
+            <en>2500 kg</en>
+            <de>2500 kg</de>
+            <fr>2500 kg</fr>
+            <pl>2500 kg</pl>
+        </text>
+        <text name="1934">
+            <en>Ursus 1934</en>
+            <de>Ursus 1934</de>
+            <fr>Ursus 1934</fr>
+            <pl>Ursus 1934</pl>
+        </text>
+        <text name="1954">
+            <en>Ursus 1954</en>
+            <de>Ursus 1954</de>
+            <fr>Ursus 1954</fr>
+            <pl>Ursus 1954</pl>
+        </text>
+        <text name="Ursus 1934 Chip">
+            <en>Ursus 1934 Chip</en>
+            <de>Ursus 1934 Chip</de>
+            <fr>Ursus 1934 Chip</fr>
+            <pl>Ursus 1934 Chip</pl>
+        </text>
+        <text name="FrontHydraulic">
+            <en>Front Hydraulic</en>
+            <de>Front Hydraulik</de>
+            <fr>Avant Hydraulique</fr>
+            <pl>Przedni TUZ</pl>
+        </text>
+    </l10n>
+    <storeItems>
+        <storeItem rootNode="vehicle" xmlFilename="Ursus1934.xml"/>
+        <storeItem rootNode="vehicle" xmlFilename="Weight2500kg.xml"/>
+    </storeItems>
+    <brands>
+        <brand name="Ursus" title="Ursus" image="brand_ursus.dds"/>
+    </brands>
+</modDesc>

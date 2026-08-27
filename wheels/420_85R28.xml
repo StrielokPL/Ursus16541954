@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<wheel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../../shared/xml/schema/wheel.xsd">
+    <brand>TRELLEBORG</brand>
+    <name>TM600</name>
+    <default>
+        <physics radius="0.712" width="0.42" mass="0.145" tireType="mud" frictionScale="1.60" maxLongStiffness="8" maxLatStiffness="100" maxLatStiffnessLoad="2" />
+        <tire filename="$data/shared/wheels/tires/trelleborg/TM600/420_85R28.i3d" nodeLeft="0|0" nodeRight="0|0" maxDeformation="0.071" sideDeformOffset="0.947" isCareWheel="false" tireTrackAtlasIndex="0" />
+       <innerRim filename="wheels/rims.i3d" nodeLeft="0|0" nodeRight="0|1" maxDeformation="0.054" isCareWheel="false" tireTrackAtlasIndex="0" scale="0.966 1 1" />
+    </default>
+</wheel>

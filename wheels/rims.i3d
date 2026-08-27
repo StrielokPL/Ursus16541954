@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<i3D name="untitled" version="1.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://i3d.giants.ch/schema/i3d-1.6.xsd">
+  <Asset>
+    <Export program="GIANTS Editor 64bit" version="9.0.1"/>
+  </Asset>
+
+  <Files>
+    <File fileId="3" filename="../shaders/vehicleShader.xml"/>
+    <File fileId="8" filename="../textures/double_specular.dds"/>
+    <File fileId="2" filename="KOLA_specular.dds"/>
+  </Files>
+
+
+  <Materials>
+    <Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default" materialId="10" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="3" customShaderVariation="colorMask">
+      <Glossmap fileId="8"/>
+      <CustomParameter name="RDT" value="0.4 0.03 0 6"/>
+      <CustomParameter name="dirtColor" value="0.2 0.14 0.08 0"/>
+      <CustomParameter name="colorMat0" value="0.4 0.03 0 6"/>
+      <CustomParameter name="colorMat1" value="1 0.1 0.1 1"/>
+      <CustomParameter name="colorMat2" value="0.1 1 0.1 1"/>
+      <CustomParameter name="colorMat3" value="0.1 0.1 1 1"/>
+      <CustomParameter name="colorMat4" value="1 1 0.1 1"/>
+      <CustomParameter name="colorMat5" value="0.05 0.05 0.05 1"/>
+      <CustomParameter name="colorMat6" value="1 0.1 1 1"/>
+      <CustomParameter name="colorMat7" value="0.1 1 1 1"/>
+    </Material>
+    <Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="8" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="3" customShaderVariation="colorMask">
+      <Glossmap fileId="2"/>
+      <CustomParameter name="RDT" value="0 0 0 0"/>
+      <CustomParameter name="dirtColor" value="0.2 0.14 0.08 0"/>
+      <CustomParameter name="colorMat0" value="0.03 0.03 0.03 6"/>
+      <CustomParameter name="colorMat1" value="1 0.1 0.1 1"/>
+      <CustomParameter name="colorMat2" value="0.1 1 0.1 1"/>
+      <CustomParameter name="colorMat3" value="0.1 0.1 1 1"/>
+      <CustomParameter name="colorMat4" value="1 1 0.1 1"/>
+      <CustomParameter name="colorMat5" value="0.05 0.05 0.05 1"/>
+      <CustomParameter name="colorMat6" value="1 0.1 1 1"/>
+      <CustomParameter name="colorMat7" value="0.1 1 1 1"/>
+    </Material>
+    <Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="7" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="3" customShaderVariation="colorMask">
+      <Glossmap fileId="2"/>
+      <CustomParameter name="RDT" value="0 0 0 0"/>
+      <CustomParameter name="dirtColor" value="0.2 0.14 0.08 0"/>
+      <CustomParameter name="colorMat0" value="0.3 0.3 0.3 6"/>
+      <CustomParameter name="colorMat1" value="1 0.1 0.1 1"/>
+      <CustomParameter name="colorMat2" value="0.1 1 0.1 1"/>
+      <CustomParameter name="colorMat3" value="0.1 0.1 1 1"/>
+      <CustomParameter name="colorMat4" value="1 1 0.1 1"/>
+      <CustomParameter name="colorMat5" value="0.05 0.05 0.05 1"/>
+      <CustomParameter name="colorMat6" value="1 0.1 1 1"/>
+      <CustomParameter name="colorMat7" value="0.1 1 1 1"/>
+    </Material>
+    <Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="4" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="3" customShaderVariation="colorMask">
+      <Glossmap fileId="2"/>
+      <CustomParameter name="RDT" value="0 0 0.13 0"/>
+      <CustomParameter name="dirtColor" value="0.2 0.14 0.08 0"/>
+      <CustomParameter name="colorMat0" value="0.3 0.3 0.3 6"/>
+      <CustomParameter name="colorMat1" value="1 0.1 0.1 1"/>
+      <CustomParameter name="colorMat2" value="0.1 1 0.1 1"/>
+      <CustomParameter name="colorMat3" value="0.1 0.1 1 1"/>
+      <CustomParameter name="colorMat4" value="1 1 0.1 1"/>
+      <CustomParameter name="colorMat5" value="0.05 0.05 0.05 1"/>
+      <CustomParameter name="colorMat6" value="1 0.1 1 1"/>
+      <CustomParameter name="colorMat7" value="0.1 1 1 1"/>
+    </Material>
+    <Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="6" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="3" customShaderVariation="colorMask">
+      <Glossmap fileId="2"/>
+      <CustomParameter name="RDT" value="0 0 0.13 0"/>
+      <CustomParameter name="dirtColor" value="0.2 0.14 0.08 0"/>
+      <CustomParameter name="colorMat0" value="0.4 0.03 0 6"/>
+      <CustomParameter name="colorMat1" value="1 0.1 0.1 1"/>
+      <CustomParameter name="colorMat2" value="0.1 1 0.1 1"/>
+      <CustomParameter name="colorMat3" value="0.1 0.1 1 1"/>
+      <CustomParameter name="colorMat4" value="1 1 0.1 1"/>
+      <CustomParameter name="colorMat5" value="0.05 0.05 0.05 1"/>
+      <CustomParameter name="colorMat6" value="0 0 0 0"/>
+      <CustomParameter name="colorMat7" value="0.1 1 1 1"/>
+    </Material>
+    <Material name="sideMarker_06_mat" materialId="9" diffuseColor="0.494118 0.494118 0.494118 1" customShaderId="3" customShaderVariation="colorMask">
+      <CustomParameter name="RDT" value="1 1 0 0"/>
+      <CustomParameter name="dirtColor" value="0.2 0.14 0.08 0"/>
+      <CustomParameter name="colorMat0" value="1 1 1 2"/>
+      <CustomParameter name="colorMat1" value="1 0.25 0 2"/>
+      <CustomParameter name="colorMat2" value="0.5 0 0 2"/>
+      <CustomParameter name="colorMat3" value="0.1 0.1 1 1"/>
+      <CustomParameter name="colorMat4" value="1 1 0.1 1"/>
+      <CustomParameter name="colorMat5" value="0.05 0.05 0.05 1"/>
+      <CustomParameter name="colorMat6" value="1 0.1 1 1"/>
+      <CustomParameter name="colorMat7" value="0.1 1 1 1"/>
+    </Material>
+    <Material name="sideMarker_06_mat1" materialId="5" diffuseColor="0.494118 0.494118 0.494118 1" alphaBlending="true" customShaderId="3" customShaderVariation="staticLight">
+      <CustomParameter name="RDT" value="1 1 0 0"/>
+      <CustomParameter name="dirtColor" value="0.2 0.14 0.08 0"/>
+      <CustomParameter name="colorMat0" value="1 1 1 2"/>
+      <CustomParameter name="colorMat1" value="1 0.25 0 2"/>
+      <CustomParameter name="colorMat2" value="0.5 0 0 2"/>
+      <CustomParameter name="colorMat3" value="0.1 0.1 1 1"/>
+      <CustomParameter name="colorMat4" value="1 1 0.1 1"/>
+      <CustomParameter name="colorMat5" value="0.05 0.05 0.05 1"/>
+      <CustomParameter name="colorMat6" value="1 0.1 1 1"/>
+      <CustomParameter name="colorMat7" value="0.1 1 1 1"/>
+      <CustomParameter name="lightControl" value="0 0 0 0"/>
+      <CustomParameter name="blinkOffset" value="0 0 1 0"/>
+    </Material>
+  </Materials>
+
+
+  <Shapes externalShapesFile="rims.i3d.shapes">
+  </Shapes>
+
+
+  <Dynamics>
+  </Dynamics>
+
+  <Scene>
+      <TransformGroup name="Przod" nodeId="21">
+        <TransformGroup name="Lewa" nodeId="22">
+          <Shape shapeId="1" name="przod" translation="0.017 -1.88946e-06 0" rotation="-90 0 0" nodeId="23" materialIds="4" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="2" name="Tube023" translation="2.38419e-07 -2.18316e-07 0" rotation="-90 1.00179e-05 6.1342e-22" nodeId="24" materialIds="4" castsShadows="true" receiveShadows="true"/>
+        </TransformGroup>
+        <TransformGroup name="Prawa" nodeId="25">
+          <Shape shapeId="1" name="przod" translation="0.0172726 0 0" rotation="-90 7.41795e-06 180" nodeId="26" materialIds="4" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="2" name="Tube023" translation="2.38419e-07 -2.18316e-07 0" rotation="-90 1.68907e-05 180" nodeId="27" materialIds="4" castsShadows="true" receiveShadows="true"/>
+        </TransformGroup>
+      </TransformGroup>
+      <TransformGroup name="Tyl" nodeId="28">
+        <TransformGroup name="PrawaT" nodeId="29">
+          <Shape shapeId="3" name="Tube019" translation="0 0 2.78398e-07" rotation="-90 7.56213e-06 -180" nodeId="30" materialIds="4" castsShadows="true" receiveShadows="true" distanceBlending="false"/>
+        </TransformGroup>
+        <TransformGroup name="LewaT" nodeId="31">
+          <Shape shapeId="3" name="Tube019" translation="0 -2.02031e-08 0" rotation="-90 0 0" nodeId="32" materialIds="4" castsShadows="true" receiveShadows="true"/>
+        </TransformGroup>
+      </TransformGroup>
+      <TransformGroup name="Weight" nodeId="33">
+        <TransformGroup name="WeightLeft" translation="0.133 0 0" static="true" nodeId="34">
+          <Shape shapeId="4" name="Object112" translation="0 0.000391953 0" rotation="-90 -6.1342e-22 1.00179e-05" nodeId="35" materialIds="7" castsShadows="true" receiveShadows="true">
+            <Shape shapeId="5" name="Cylinder327" translation="-0.07 0 0" rotation="-90 0 0" nodeId="36" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.05 0 0" rotation="-90 0 0" nodeId="37" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.03 0 0" rotation="-90 0 0" nodeId="38" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.01 0 0" rotation="-90 0 0" nodeId="39" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.01 0 0" rotation="-90 0 0" nodeId="40" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.03 0 0" rotation="-90 0 0" nodeId="41" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.05 0 0" rotation="-90 0 0" nodeId="42" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.07 0 0" rotation="-90 0 0" nodeId="43" materialIds="7" castsShadows="true" receiveShadows="true"/>
+          </Shape>
+        </TransformGroup>
+        <TransformGroup name="WeightRight" translation="-0.133 0 0" rotation="0 -0 180" static="true" nodeId="44">
+          <Shape shapeId="4" name="Object112" translation="0 0.000391953 0" rotation="-90 -6.1342e-22 1.00179e-05" nodeId="45" materialIds="7" castsShadows="true" receiveShadows="true">
+            <Shape shapeId="5" name="Cylinder327" translation="-0.07 0 0" rotation="-90 0 0" nodeId="46" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.05 0 0" rotation="-90 0 0" nodeId="47" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.03 0 0" rotation="-90 0 0" nodeId="48" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.01 0 0" rotation="-90 0 0" nodeId="49" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.01 0 0" rotation="-90 0 0" nodeId="50" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.03 0 0" rotation="-90 0 0" nodeId="51" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.05 0 0" rotation="-90 0 0" nodeId="52" materialIds="7" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.07 0 0" rotation="-90 0 0" nodeId="53" materialIds="7" castsShadows="true" receiveShadows="true"/>
+          </Shape>
+        </TransformGroup>
+      </TransformGroup>
+      <TransformGroup name="PrzodR" nodeId="54">
+        <TransformGroup name="Lewa" nodeId="55">
+          <Shape shapeId="1" name="przod" translation="0.017 -1.88946e-06 0" rotation="-90 0 0" nodeId="56" materialIds="6" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="2" name="Tube023" translation="2.38419e-07 -2.18316e-07 0" rotation="-90 1.00179e-05 6.1342e-22" nodeId="57" materialIds="6" castsShadows="true" receiveShadows="true"/>
+        </TransformGroup>
+        <TransformGroup name="Prawa" nodeId="58">
+          <Shape shapeId="1" name="przod" translation="0.0172726 0 0" rotation="-90 7.41795e-06 180" nodeId="59" materialIds="6" castsShadows="true" receiveShadows="true"/>
+          <Shape shapeId="2" name="Tube023" translation="2.38419e-07 -2.18316e-07 0" rotation="-90 1.68907e-05 180" nodeId="60" materialIds="6" castsShadows="true" receiveShadows="true"/>
+        </TransformGroup>
+      </TransformGroup>
+      <TransformGroup name="TylR" nodeId="61">
+        <TransformGroup name="PrawaT" nodeId="62">
+          <Shape shapeId="3" name="Tube019" translation="0 0 1.02674e-07" rotation="-90 7.56213e-06 -180" nodeId="63" materialIds="6" castsShadows="true" receiveShadows="true" distanceBlending="false"/>
+        </TransformGroup>
+        <TransformGroup name="LewaT" nodeId="64">
+          <Shape shapeId="3" name="Tube019" translation="0 -2.02031e-08 0" rotation="-90 0 0" nodeId="65" materialIds="6" castsShadows="true" receiveShadows="true"/>
+        </TransformGroup>
+      </TransformGroup>
+      <TransformGroup name="WeightR" nodeId="66">
+        <TransformGroup name="WeightLeft" translation="0.133 0 0" static="true" nodeId="67">
+          <Shape shapeId="4" name="Object112" translation="0 0.000391953 0" rotation="-90 -6.1342e-22 1.00179e-05" nodeId="68" materialIds="8" castsShadows="true" receiveShadows="true">
+            <Shape shapeId="5" name="Cylinder327" translation="-0.07 0 0" rotation="-90 0 0" nodeId="69" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.05 0 0" rotation="-90 0 0" nodeId="70" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.03 0 0" rotation="-90 0 0" nodeId="71" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.01 0 0" rotation="-90 0 0" nodeId="72" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.01 0 0" rotation="-90 0 0" nodeId="73" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.03 0 0" rotation="-90 0 0" nodeId="74" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.05 0 0" rotation="-90 0 0" nodeId="75" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.07 0 0" rotation="-90 0 0" nodeId="76" materialIds="8" castsShadows="true" receiveShadows="true"/>
+          </Shape>
+          <Shape shapeId="6" name="sideMarker_06Orange" translation="0.093632 0 0" clipDistance="300" nodeId="77" materialIds="9" castsShadows="true" receiveShadows="true">
+            <Shape shapeId="7" name="workLightStatic" clipDistance="35" nodeId="78" materialIds="5" castsShadows="true" receiveShadows="true" decalLayer="1"/>
+          </Shape>
+        </TransformGroup>
+        <TransformGroup name="WeightRight" translation="-0.133 0 0" rotation="0 -0 180" static="true" nodeId="79">
+          <Shape shapeId="4" name="Object112" translation="0 0.000391953 0" rotation="-90 -6.1342e-22 1.00179e-05" nodeId="80" materialIds="8" castsShadows="true" receiveShadows="true">
+            <Shape shapeId="5" name="Cylinder327" translation="-0.07 0 0" rotation="-90 0 0" nodeId="81" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.05 0 0" rotation="-90 0 0" nodeId="82" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.03 0 0" rotation="-90 0 0" nodeId="83" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="-0.01 0 0" rotation="-90 0 0" nodeId="84" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.01 0 0" rotation="-90 0 0" nodeId="85" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.03 0 0" rotation="-90 0 0" nodeId="86" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.05 0 0" rotation="-90 0 0" nodeId="87" materialIds="8" castsShadows="true" receiveShadows="true"/>
+            <Shape shapeId="5" name="Cylinder327" translation="0.07 0 0" rotation="-90 0 0" nodeId="88" materialIds="8" castsShadows="true" receiveShadows="true"/>
+          </Shape>
+          <Shape shapeId="6" name="sideMarker_06Orange" translation="0.093632 0 0" clipDistance="300" nodeId="89" materialIds="9" castsShadows="true" receiveShadows="true">
+            <Shape shapeId="7" name="workLightStatic" clipDistance="35" nodeId="90" materialIds="5" castsShadows="true" receiveShadows="true" decalLayer="1"/>
+          </Shape>
+        </TransformGroup>
+      </TransformGroup>
+      <TransformGroup name="DualBack" nodeId="91">
+        <TransformGroup name="Left" nodeId="92">
+          <Shape shapeId="8" name="Tube034" nodeId="93" materialIds="10" castsShadows="true" receiveShadows="true"/>
+        </TransformGroup>
+        <TransformGroup name="Right" rotation="0 -0 180" nodeId="94">
+          <Shape shapeId="8" name="Tube034" nodeId="95" materialIds="10" castsShadows="true" receiveShadows="true"/>
+        </TransformGroup>
+      </TransformGroup>
+      <TransformGroup name="DualFront" nodeId="96">
+        <TransformGroup name="Lewa" nodeId="97">
+          <Shape shapeId="9" name="Tube034" nodeId="98" materialIds="10" castsShadows="true" receiveShadows="true"/>
+        </TransformGroup>
+        <TransformGroup name="Prawa" rotation="0 -0 -180" nodeId="99">
+          <Shape shapeId="9" name="Tube034" nodeId="100" materialIds="10" castsShadows="true" receiveShadows="true"/>
+        </TransformGroup>
+      </TransformGroup>
+  </Scene>
+
+  <UserAttributes>
+    <UserAttribute nodeId="23">
+      <Attribute name="MaxHandle" type="integer" value="10950"/>
+    </UserAttribute>
+    <UserAttribute nodeId="24">
+      <Attribute name="MaxHandle" type="integer" value="10944"/>
+    </UserAttribute>
+    <UserAttribute nodeId="26">
+      <Attribute name="MaxHandle" type="integer" value="10950"/>
+    </UserAttribute>
+    <UserAttribute nodeId="27">
+      <Attribute name="MaxHandle" type="integer" value="10944"/>
+    </UserAttribute>
+    <UserAttribute nodeId="30">
+      <Attribute name="MaxHandle" type="integer" value="10065"/>
+    </UserAttribute>
+    <UserAttribute nodeId="32">
+      <Attribute name="MaxHandle" type="integer" value="10065"/>
+    </UserAttribute>
+    <UserAttribute nodeId="35">
+      <Attribute name="MaxHandle" type="integer" value="10547"/>
+    </UserAttribute>
+    <UserAttribute nodeId="36">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="37">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="38">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="39">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="40">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="41">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="42">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="43">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="45">
+      <Attribute name="MaxHandle" type="integer" value="10547"/>
+    </UserAttribute>
+    <UserAttribute nodeId="46">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="47">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="48">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="49">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="50">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="51">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="52">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="53">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="56">
+      <Attribute name="MaxHandle" type="integer" value="10950"/>
+    </UserAttribute>
+    <UserAttribute nodeId="57">
+      <Attribute name="MaxHandle" type="integer" value="10944"/>
+    </UserAttribute>
+    <UserAttribute nodeId="59">
+      <Attribute name="MaxHandle" type="integer" value="10950"/>
+    </UserAttribute>
+    <UserAttribute nodeId="60">
+      <Attribute name="MaxHandle" type="integer" value="10944"/>
+    </UserAttribute>
+    <UserAttribute nodeId="63">
+      <Attribute name="MaxHandle" type="integer" value="10065"/>
+    </UserAttribute>
+    <UserAttribute nodeId="65">
+      <Attribute name="MaxHandle" type="integer" value="10065"/>
+    </UserAttribute>
+    <UserAttribute nodeId="68">
+      <Attribute name="MaxHandle" type="integer" value="10547"/>
+    </UserAttribute>
+    <UserAttribute nodeId="69">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="70">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="71">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="72">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="73">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="74">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="75">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="76">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="80">
+      <Attribute name="MaxHandle" type="integer" value="10547"/>
+    </UserAttribute>
+    <UserAttribute nodeId="81">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="82">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="83">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="84">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="85">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="86">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="87">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="88">
+      <Attribute name="MaxHandle" type="integer" value="10066"/>
+    </UserAttribute>
+    <UserAttribute nodeId="93">
+      <Attribute name="MaxHandle" type="integer" value="12778"/>
+    </UserAttribute>
+    <UserAttribute nodeId="95">
+      <Attribute name="MaxHandle" type="integer" value="12778"/>
+    </UserAttribute>
+    <UserAttribute nodeId="98">
+      <Attribute name="MaxHandle" type="integer" value="12778"/>
+    </UserAttribute>
+    <UserAttribute nodeId="100">
+      <Attribute name="MaxHandle" type="integer" value="12778"/>
+    </UserAttribute>
+  </UserAttributes>
+
+</i3D>

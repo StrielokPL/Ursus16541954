@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<sounds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../shared/xml/schema/vehicle_sounds.xsd">
+ 
+
+
+ <motorized>
+  <sounds>
+ 
+	<motorstart file="sounds/1934Start.ogg" innerRadius="15.0" outerRadius="110.0">
+		<volume indoor="0.65" outdoor="1.00"/>
+        <lowpassGain indoor="1.0" outdoor="1.0"/>
+	</motorstart>
+	<motorStop file="sounds/1934Stop.ogg" innerRadius="15.0" outerRadius="110.0">	
+		<volume indoor="0.65" outdoor="1.00"/>
+        <lowpassGain indoor="1.0" outdoor="1.0"/>
+	</motorStop>
+	<motor file="sounds/1934Run.ogg" innerRadius="15.0" outerRadius="110.0">
+        <volume indoor="0.65" outdoor="1.00">
+            <modifier type="MOTOR_RPM" value="0.00" modifiedValue="1.00"/>
+            <modifier type="MOTOR_RPM" value="0.80" modifiedValue="0.00"/>
+        </volume>
+        <pitch indoor="1.0" outdoor="1.0">
+            <modifier type="MOTOR_RPM" value="0.00" modifiedValue="1.00"/>
+            <modifier type="MOTOR_RPM" value="0.75" modifiedValue="1.50"/>
+        </pitch>
+		 <lowpassGain indoor="1.0" outdoor="1.0"/>
+    </motor>
+	<motor file="sounds/1934Idle.ogg" innerRadius="15.0" outerRadius="110.0">
+	    <volume indoor="0.65" outdoor="1.00">
+            <modifier type="MOTOR_RPM" value="0.00" modifiedValue="0.00"/>
+            <modifier type="MOTOR_RPM" value="0.80" modifiedValue="1.00"/>
+        </volume>
+        <pitch indoor="1.0" outdoor="1.0" >
+            <modifier type="MOTOR_RPM" value="0.25" modifiedValue="0.75"/>
+            <modifier type="MOTOR_RPM" value="1.00" modifiedValue="1.00"/>
+        </pitch>
+		 <lowpassGain indoor="1.0" outdoor="1.0"/>
+	</motor>
+	<motor file="sounds/1934Load.ogg" innerRadius="15.0" outerRadius="110.0">
+	<volume indoor="0.65" outdoor="1.00">
+            <modifier type="MOTOR_LOAD" value="0.00" modifiedValue="0.00"/>
+            <modifier type="MOTOR_LOAD" value="0.80" modifiedValue="1.20"/>
+        </volume>
+		<pitch indoor="1.0" outdoor="1.0">
+            <modifier type="MOTOR_RPM" value="0.25" modifiedValue="0.75"/>
+            <modifier type="MOTOR_RPM" value="1.00" modifiedValue="1.00"/>
+        </pitch>
+		 <lowpassGain indoor="1.0" outdoor="1.0"/>
+	</motor>
+
+  </sounds>
+ </motorized>
+
+	 <lights>
+        <sounds>
+            <toggleLights template="SWITCH_01"  />
+            <turnLight template="SWITCH_TURNLIGHT_JD"  />    
+        </sounds>
+    </lights>
+
+    <attacherJoints>
+        <sounds>
+            <attach template="ATTACH_01" />
+            <hydraulic template="defaultHydraulicSound" />
+        </sounds>
+    </attacherJoints>
+
+    <drivable>
+        <sounds>
+            <waterSplash template="WATER_SPLASH_01" />
+        </sounds>
+    </drivable>
+
+    <honk>
+        <sound template="hornDefault" />
+    </honk>
+</sounds>
