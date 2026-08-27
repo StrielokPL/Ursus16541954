@@ -35,7 +35,7 @@ jobs:
           base64 --decode /tmp/v25.b64 > /tmp/v25.tgz
           echo '0d4acc84de12d5e8c5e5e644e49ab6517d6132de96cd451b005ec3de32c7821b  /tmp/v25.tgz' | sha256sum --check --strict
           tar -xzf /tmp/v25.tgz -C .
-          grep -q 'V25 COLLISION SAFE' VERSION
+          grep -q 'V25_COLLISION_SAFE' VERSION
           grep -q 'collisionFilterGroup="0x10004"' Ursus1934.i3d
           grep -q 'collisionFilterMask="0xfe3ffb83"' Ursus1934.i3d
           grep -q 'collisionTrigger useSize="true"' Ursus1934.xml
