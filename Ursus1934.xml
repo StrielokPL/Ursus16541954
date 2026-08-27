@@ -33,7 +33,7 @@
             <joint component1="1" component2="2" node="1&gt;0" rotLimit="0 0 14" rotLimitSpring="0 0 4000" rotLimitDamping="0 0 0" maxRotDriveForce="0 0 0" rotDriveRotation="0 0 0" rotDriveSpring="0 0 0" rotDriveDamping="0 0 0" breakable="false"/>
         </components>
         <schemaOverlay name="VEHICLE" attacherJointPosition="0.5 0"/>
-        <sounds filename="configurations/Ursus1934_sounds.xml"/>
+
         <mapHotspot type="TRACTOR"/>
     </base>
     <designConfigurations title="$l10n_configuration_weights">
@@ -332,10 +332,6 @@
         <beaconLights>
             <beaconLight node="0&gt;10|2|0|0|22|2|0" filename="$data/shared/assets/beaconLights/lizard/beaconLight02.xml"/>
         </beaconLights>
-        <sounds>
-            <switchLight template="SWITCH_01"/>
-            <turnLight template="SWITCH_TURNLIGHT"/>
-        </sounds>
         <dashboards>
             <dashboard displayType="VISIBILITY" valueType="lightState" node="0&gt;2|4" lightTypes="0"/>
             <dashboard displayType="VISIBILITY" valueType="lightState" node="0&gt;2|5" lightTypes="0"/>
@@ -367,8 +363,8 @@
             <distanceToGround lower="0.25" upper="1.13"/>
             <rotationNode node="0&gt;5|0|0" upperRotation="28 0 0" lowerRotation="-15 0 0"/>
             <rotationNode2 node="0&gt;5|0|0|0"/>
-            <bottomArm rotationNode="0&gt;5|0|1" translationNode="0&gt;5|0|1|0" referenceNode="0&gt;5|0|1|0|0" zScale="-1" startRotation="-17 0 0"/>
-            <topArm baseNode="0&gt;5|0|2" filename="$data/shared/assets/upperLinks/walterscheid03.i3d" zScale="-1" color="SHARED_BLACK1"/>
+            <bottomArm rotationNode="0&gt;5|0|1" translationNode="0&gt;5|0|1|0" referenceNode="0&gt;5|0|1|0|0" zScale="-1" startRotation="-17 0 0" categoryRange="1 4"/>
+            <topArm baseNode="0&gt;5|0|2" filename="$data/shared/assets/upperLinks/walterscheidHO_90_600.xml" zScale="-1" materialTemplateName="SHARED_BLACK1"/>
             <schema position="1 0" rotation="0" invertX="false"/>
             <objectChange node="0&gt;5|0|2" visibilityActive="true" visibilityInactive="false"/>
             <objectChange node="0&gt;5|1|0" visibilityActive="false" visibilityInactive="true"/>
@@ -377,8 +373,8 @@
             <distanceToGround lower="0.30" upper="0.90"/>
             <rotationNode node="0&gt;10|7|1|0|0" lowerRotation="50 0 0" upperRotation="-5 0 0"/>
             <rotationNode2 node="0&gt;10|7|1|0|0|0"/>
-            <bottomArm rotationNode="0&gt;10|7|1|0|1" translationNode="0&gt;10|7|1|0|1|0" referenceNode="0&gt;10|7|1|0|1|0|0" zScale="1" startRotation="-14.904 0 0"/>
-            <topArm baseNode="0&gt;10|7|1|0|2" filename="$data/shared/assets/upperLinks/walterscheid03.i3d" zScale="1" color="FENDT_GREY1"/>
+            <bottomArm rotationNode="0&gt;10|7|1|0|1" translationNode="0&gt;10|7|1|0|1|0" referenceNode="0&gt;10|7|1|0|1|0|0" zScale="1" startRotation="-14.904 0 0" categoryRange="1 4"/>
+            <topArm baseNode="0&gt;10|7|1|0|2" filename="$data/shared/assets/upperLinks/walterscheidHO_90_600.xml" zScale="1" materialTemplateName="FENDT_GREY1"/>
             <schema position="1 0" rotation="0" invertX="true"/>
         </attacherJoint>
         <attacherJoint node="0&gt;5|1|0|0" jointType="trailer" lowerRotLimit="10 70 50" comboTime="1" allowsJointLimitMovement="false">
@@ -400,10 +396,6 @@
         <attacherJoint node="0&gt;10|7|8|2|11" jointType="trailer" lowerRotLimit="10 70 50" comboTime="1" allowsJointLimitMovement="false">
             <schema position="1 0" rotation="0" invertX="true"/>
         </attacherJoint>
-        <sounds>
-            <attach template="ATTACH_01"/>
-            <hydraulic template="defaultHydraulicSound"/>
-        </sounds>
     </attacherJoints>
     <powerTakeOffs>
         <output attacherJointIndices="1 3 4" outputNode="0&gt;5|2|0"/>
@@ -657,9 +649,6 @@
         </dashboards>
     </motorized>
     <drivable>
-        <sounds>
-            <waterSplash template="WATER_SPLASH_01"/>
-        </sounds>
         <steeringWheel node="0&gt;10|2|0|0|29|0" indoorRotation="540" outdoorRotation="40"/>
         <dashboards>
             <dashboard displayType="ROT" valueType="accelerationAxis" node="0&gt;10|2|0|0|0|12|0" minRot="-61.383 0 -30.887" maxRot="-27.023 0 -30.887" doInterpolation="true" groups="MOTOR_ACTIVE"/>
@@ -778,9 +767,6 @@
                 <translatingPart node="0&gt;10|2|0|0|0|20|0|0"/>
             </movingPart>
         </movingParts>
-        <sounds>
-            <hydraulic template="defaultHydraulicSound"/>
-        </sounds>
     </cylindered>
     <connectionHoses>
         <target attacherJointIndices="1 3 4" type="hydraulicIn" node="0&gt;10|6|3|0">
@@ -879,9 +865,6 @@
             </fillUnitConfiguration>
         </fillUnitConfigurations>
     </fillUnit>
-    <honk>
-        <sound template="HONK_FENDT511C"/>
-    </honk>
     <ai>
         <agent width="2.6" length="5" height="2.75" lengthOffset="1.3" frontOffset="2.83"/>
         <collisionTrigger useSize="true"/>

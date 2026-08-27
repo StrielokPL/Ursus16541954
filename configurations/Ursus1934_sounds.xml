@@ -53,7 +53,6 @@
 
 	 <lights>
         <sounds>
-            <toggleLights template="SWITCH_01"  />
             <turnLight template="SWITCH_TURNLIGHT_JD"  />    
         </sounds>
     </lights>
