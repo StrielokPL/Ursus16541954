@@ -1,0 +1,136 @@
+name: Prepare 1.0.1.1 cleanup test 15
+
+on:
+  push:
+    branches: [cleanup-1.0.1.1]
+    paths: [.github/workflows/cleanup-1.0.1.1-test15.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  tune-main-front-collision:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup-1.0.1.1
+          fetch-depth: 0
+
+      - name: Set pCube2 to midpoint between original and TEST 14
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          i3d_path = Path('Ursus1934.i3d')
+          text = i3d_path.read_text(encoding='utf-8')
+          matches = list(re.finditer(r'<Shape\b[^>]*nodeId="879"[^>]*/>', text))
+          if len(matches) != 1:
+              raise SystemExit(f'Expected one pCube2 node 879, found {len(matches)}')
+
+          old = matches[0].group(0)
+          if 'name="pCube2"' not in old:
+              raise SystemExit('Node 879 is not pCube2')
+          expected = 'translation="0 1.13534 0.5" scale="1 1 0.86"'
+          if expected not in old:
+              raise SystemExit('Unexpected TEST 14 pCube2 transform')
+
+          new = old.replace(
+              expected,
+              'translation="0 1.13534 0.661" scale="1 1 0.93"',
+              1,
+          )
+          text = text[:matches[0].start()] + new + text[matches[0].end():]
+          i3d_path.write_text(text, encoding='utf-8')
+
+          root = ET.parse(i3d_path).getroot()
+          p_cube = [
+              node
+              for node in root.iter()
+              if node.get('nodeId') == '879' and node.get('name') == 'pCube2'
+          ]
+          if len(p_cube) != 1:
+              raise SystemExit('Unable to resolve modified pCube2')
+          p_cube = p_cube[0]
+          if p_cube.get('translation') != '0 1.13534 0.661':
+              raise SystemExit('Incorrect TEST 15 pCube2 translation')
+          if p_cube.get('scale') != '1 1 0.93':
+              raise SystemExit('Incorrect TEST 15 pCube2 scale')
+          if p_cube.get('compoundChild') != 'true':
+              raise SystemExit('pCube2 compound state changed unexpectedly')
+          if p_cube.get('collisionFilterGroup') != '0x10004':
+              raise SystemExit('pCube2 collision group changed unexpectedly')
+          if p_cube.get('collisionFilterMask') != '0xfe3ffb83':
+              raise SystemExit('pCube2 collision mask changed unexpectedly')
+
+          component = next(
+              (node for node in root.iter() if node.get('nodeId') == '242'),
+              None,
+          )
+          if component is None or component.get('collisionFilterGroup') != '0x40010004':
+              raise SystemExit('TEST 8 FILLABLE component state was not preserved')
+
+          vehicle = ET.parse('Ursus1934.xml').getroot()
+          configs = vehicle.findall(
+              'attacherJoints/attacherJointConfigurations/attacherJointConfiguration'
+          )
+          if len(configs) != 8:
+              raise SystemExit(f'Expected eight front configurations, found {len(configs)}')
+          for index, config in enumerate(configs):
+              expected_state = 'false' if index in (0, 7) else 'true'
+              changes = [
+                  change
+                  for change in config.findall('objectChange')
+                  if change.get('node') == '0>11|1'
+                  and change.get('compoundChildActive') is not None
+              ]
+              if len(changes) != 1 or changes[0].get('compoundChildActive') != expected_state:
+                  raise SystemExit(
+                      f"TEST 13 WeightFrame switching changed in {config.get('name')}"
+                  )
+
+          print('pCube2 set to exact midpoint: Z 0.661, scaleZ 0.93')
+          PY
+
+      - name: Validate and build
+        run: |
+          python3 tools/validate_current.py
+          ./build.sh
+          test -f dist/FS25_Ursus_1654_1954_Pack.zip
+
+      - name: Commit cleanup test 15
+        run: |
+          rm .github/workflows/cleanup-1.0.1.1-test15.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Ursus1934.i3d .github/workflows/cleanup-1.0.1.1-test15.yml
+          git commit -m 'Tune main front collision envelope test 15'
+          git push origin HEAD:cleanup-1.0.1.1
+
+      - name: Publish cleanup pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          sha256sum dist/FS25_Ursus_1654_1954_Pack.zip > dist/FS25_Ursus_1654_1954_Pack.zip.sha256
+          cat > /tmp/notes.md <<'EOF'
+          ## 1.0.1.1 CLEANUP TEST 15
+
+          Dokładny punkt środkowy między oryginalną długością pCube2 a TEST 14.
+
+          Zmiany:
+          - pozycja Z pCube2: 0.661,
+          - skala Z pCube2: 0.93,
+          - szerokość, wysokość i wszystkie pozostałe ustawienia pozostają bez zmian,
+          - przełączanie WeightFrame, kolizje TUZ-a, tankowanie i zaczepy pozostają bez zmian.
+
+          Do sprawdzenia:
+          - przednia i tylna krawędź pCube2 w podglądzie F5,
+          - wariant bez wyposażenia, WeightFrame i FrontHydraulic,
+          - fizyczne kolizje, tankowanie oraz log.
+          EOF
+          gh release create v1.0.1.1-test15 --target "$SHA" --title '1.0.1.1 CLEANUP TEST 15' --prerelease --notes-file /tmp/notes.md dist/FS25_Ursus_1654_1954_Pack.zip dist/FS25_Ursus_1654_1954_Pack.zip.sha256
