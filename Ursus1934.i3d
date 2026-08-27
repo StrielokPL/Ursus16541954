@@ -10,8 +10,6 @@
     <File fileId="7" filename="shaders/vehicleShader.xml" />
     <File fileId="38" filename="$data/shared/assets/beaconLights/lizard/beaconLightAlpha02_diffuse.dds" />
     <File fileId="20" filename="$data/shared/clearPlastic_diffuse.dds" />
-    <File fileId="49" filename="$data/shared/connectionHoses/airConnector_normal.dds" />
-    <File fileId="50" filename="$data/shared/connectionHoses/airConnector_vmask.dds" />
     <File fileId="52" filename="$data/shared/connectionHoses/connectors_vmask.dds" />
     <File fileId="13" filename="$data/shared/default_normal.dds" />
     <File fileId="40" filename="$data/shared/default_specular.dds" />
@@ -49,8 +47,6 @@
   </Files>
   <Materials>
     <Material name="airConnector_mat" materialId="4" diffuseColor="0.494118 0.494118 0.494118 1" customShaderId="7" customShaderVariation="colorMask">
-      <Normalmap fileId="49" />
-      <Glossmap fileId="50" />
       <CustomParameter name="RDT" value="1 1 0 0" />
       <CustomParameter name="dirtColor" value="0.2 0.14 0.08 0" />
       <CustomParameter name="colorMat0" value="0.5356 0.0254 0.0254 1" />
@@ -948,7 +944,7 @@
                   <TransformGroup name="transform" translation="-0.007 0.492567 -0.0382916" rotation="-104.848 17.8617 -130.837" visibility="false" nodeId="447">
                     <Shape shapeId="58" name="Cylinder022" nodeId="448" materialIds="46" castsShadows="true" receiveShadows="true" />
                   </TransformGroup>
-                  <TransformGroup name="Fuel" translation="-0.0819214 0.478233 -0.0483885" rotation="-75.4775 18.124 -50.215" nodeId="449">
+                  <TransformGroup name="Fuel" translation="-0.0819214 0.478233 -0.0483885" rotation="-75.4775 18.124 -50.215" nodeId="449" collisionFilterGroup="0x40000000">
                     <TransformGroup name="transform" translation="0 -0.000333605 0" nodeId="450">
                       <Shape shapeId="59" name="Box001" scale="1 1 0.75" nodeId="451" materialIds="34" castsShadows="true" receiveShadows="true" />
                       <Shape shapeId="60" name="Cylinder023" nodeId="452" materialIds="46" castsShadows="true" receiveShadows="true" />
