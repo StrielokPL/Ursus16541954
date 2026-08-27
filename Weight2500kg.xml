@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <vehicle type="implement">
     <annotation>Copyright (C) GIANTS Software GmbH, All Rights Reserved.</annotation>
 
@@ -27,10 +27,7 @@
         <components>
             <component centerOfMass="0 0 0.4" solverIterationCount="10" mass="2500" />
         </components>
-        <schemaOverlay attacherJointPosition="0 0">
-            <default name="DEFAULT_IMPLEMENT"/>
-            <selected name="DEFAULT_IMPLEMENT_SELECTED"/>
-        </schemaOverlay>
+        <schemaOverlay name="DEFAULT_IMPLEMENT" attacherJointPosition="0 0"/>
     </base>
 
     <foliageBending>
@@ -41,9 +38,6 @@
         <attacherJoint node="0>0|2" jointType="trailer" lowerRotLimit="10 80 80" upperRotRotationOffset="0" allowsJointLimitMovement="false" >
             <schema position="1 0" rotation="0" invertX="false" />
         </attacherJoint>
-        <sounds>
-            <attach template="ATTACH_01" linkNode="0>" />
-        </sounds>
     </attacherJoints>
 
     <attachable>
