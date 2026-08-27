@@ -1,6 +1,7 @@
 name: Finalize V25 source tree
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'bootstrap2/TRIGGER'
