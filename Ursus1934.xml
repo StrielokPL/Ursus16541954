@@ -814,30 +814,6 @@
         <target attacherJointIndices="2 5" type="hydraulicOut" node="0&gt;10|7|1|12|3|0">
             <objectChange node="0&gt;10|7|1|12|3|1" rotationActive="0 100 0" rotationInactive="0 0 0"/>
         </target>
-        <localHose>
-            <hose type="CABLE_BOUNDLE" node="1&gt;3|0|2" length="0.3" diameter="0.010" straighteningFactor="0.8" isWorldSpaceHose="true"/>
-            <target attacherJointIndices="1 3 4" type="CABLE_BOUNDLE" node="1&gt;3|1" straighteningFactor="0.1"/>
-        </localHose>
-        <localHose>
-            <hose type="CABLE_BOUNDLE" node="1&gt;3|0|3" length="0.3" diameter="0.010" straighteningFactor="0.8" isWorldSpaceHose="true"/>
-            <target attacherJointIndices="1 3 4" type="CABLE_BOUNDLE" node="1&gt;3|2" straighteningFactor="0.1"/>
-        </localHose>
-        <localHose>
-            <hose type="CABLE_BOUNDLE" node="0&gt;10|7|1|7|0|2" length="0.2" diameter="0.010" straighteningFactor="0.1" isWorldSpaceHose="true"/>
-            <target attacherJointIndices="1 3 4" type="CABLE_BOUNDLE" node="0&gt;10|7|1|8" straighteningFactor="0.1"/>
-        </localHose>
-        <localHose>
-            <hose type="CABLE_BOUNDLE" node="0&gt;10|7|1|7|0|3" length="0.2" diameter="0.010" straighteningFactor="0" isWorldSpaceHose="true"/>
-            <target attacherJointIndices="1 3 4" type="CABLE_BOUNDLE" node="0&gt;10|7|1|10" straighteningFactor="0"/>
-        </localHose>
-        <localHose>
-            <hose type="CABLE_BOUNDLE" node="0&gt;10|7|1|7|1|2" length="0.2" diameter="0.010" straighteningFactor="0" isWorldSpaceHose="true"/>
-            <target attacherJointIndices="1 3 4" type="CABLE_BOUNDLE" node="0&gt;10|7|1|11" straighteningFactor="0"/>
-        </localHose>
-        <localHose>
-            <hose type="CABLE_BOUNDLE" node="0&gt;10|7|1|7|1|3" length="0.2" diameter="0.010" straighteningFactor="0" isWorldSpaceHose="true"/>
-            <target attacherJointIndices="1 3 4" type="CABLE_BOUNDLE" node="0&gt;10|7|1|9" straighteningFactor="0"/>
-        </localHose>
     </connectionHoses>
     <wipers>
         <wiper animName="wiperFrontAnimation">

@@ -51,24 +51,6 @@
   </sounds>
  </motorized>
 
-	 <lights>
-        <sounds>
-            <turnLight template="SWITCH_TURNLIGHT_JD"  />    
-        </sounds>
-    </lights>
-
-    <attacherJoints>
-        <sounds>
-            <attach template="ATTACH_01" />
-            <hydraulic template="defaultHydraulicSound" />
-        </sounds>
-    </attacherJoints>
-
-    <drivable>
-        <sounds>
-            <waterSplash template="WATER_SPLASH_01" />
-        </sounds>
-    </drivable>
 
     <honk>
         <sound template="hornDefault" />
