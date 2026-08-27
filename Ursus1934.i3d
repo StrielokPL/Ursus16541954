@@ -1499,7 +1499,7 @@
         </TransformGroup>
       </TransformGroup>
       <TransformGroup name="collisions" translation="0 0 0.108" nodeId="878">
-        <Shape shapeId="169" name="pCube2" translation="0 1.13534 0.5" scale="1 1 0.86" compoundChild="true" density="0.01" nodeId="879" materialIds="41" castsShadows="true" receiveShadows="true" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
+        <Shape shapeId="169" name="pCube2" translation="0 1.13534 0.661" scale="1 1 0.93" compoundChild="true" density="0.01" nodeId="879" materialIds="41" castsShadows="true" receiveShadows="true" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
         <Shape shapeId="170" name="colli05" translation="0 0.933008 1.30872" compoundChild="true" nodeId="880" materialIds="42" castsShadows="true" receiveShadows="true" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
       </TransformGroup>
     </Shape>
