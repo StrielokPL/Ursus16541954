@@ -1,0 +1,107 @@
+name: Prepare 1.0.1.1 cleanup test 12
+
+on:
+  push:
+    branches: [cleanup-1.0.1.1]
+    paths: [.github/workflows/cleanup-1.0.1.1-test12.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  native-configurable-front-collision:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup-1.0.1.1
+          fetch-depth: 0
+
+      - name: Convert TUZ collision shapes to native configurable compound children
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          i3d_path = Path('Ursus1934.i3d')
+          tree = ET.parse(i3d_path)
+          root = tree.getroot()
+          names = {'frontHydraulicCollision1', 'frontHydraulicCollision2'}
+          collisions = [node for node in root.iter() if node.get('name') in names]
+          if {node.get('name') for node in collisions} != names or len(collisions) != 2:
+              raise SystemExit('Expected exactly two TEST 11 TUZ collision shapes')
+
+          for collision in collisions:
+              if collision.get('compoundChild') != 'false':
+                  raise SystemExit(f"Unexpected TEST 11 compound state on {collision.get('name')}")
+              if collision.get('collisionFilterGroup') is not None or collision.get('collisionFilterMask') is not None:
+                  raise SystemExit(f"Unexpected TEST 11 collision filters on {collision.get('name')}")
+              collision.set('compoundChild', 'true')
+              collision.set('collisionFilterGroup', '0x10004')
+              collision.set('collisionFilterMask', '0xfe3ffb83')
+              collision.set('density', '0.001')
+
+          component = next((node for node in root.iter() if node.get('nodeId') == '242'), None)
+          if component is None or component.get('collisionFilterGroup') != '0x40010004':
+              raise SystemExit('TEST 8 FILLABLE component state was not preserved')
+
+          ET.indent(tree, space='  ')
+          tree.write(i3d_path, encoding='utf-8', xml_declaration=True)
+
+          vehicle = ET.parse('Ursus1934.xml').getroot()
+          configs = vehicle.findall('attacherJoints/attacherJointConfigurations/attacherJointConfiguration')
+          if len(configs) != 8:
+              raise SystemExit(f'Expected eight front configurations, found {len(configs)}')
+          for config in configs:
+              expected = 'true' if config.get('name') == 'FrontHydraulic' else 'false'
+              changes = [
+                  change for change in config.findall('objectChange')
+                  if change.get('node') in ('0>10|7|1|15', '0>10|7|1|16')
+              ]
+              if len(changes) != 2 or any(change.get('compoundChildActive') != expected for change in changes):
+                  raise SystemExit(f"Invalid collision switching in configuration {config.get('name')}")
+          print('TUZ collision matches native FS25 configurable compound-child pattern')
+          PY
+
+      - name: Validate and build
+        run: |
+          python3 tools/validate_current.py
+          ./build.sh
+          test -f dist/FS25_Ursus_1654_1954_Pack.zip
+
+      - name: Commit cleanup test 12
+        run: |
+          rm .github/workflows/cleanup-1.0.1.1-test12.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Ursus1934.i3d .github/workflows/cleanup-1.0.1.1-test12.yml
+          git commit -m 'Use native configurable compound collision for front TUZ test 12'
+          git push origin HEAD:cleanup-1.0.1.1
+
+      - name: Publish cleanup pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          sha256sum dist/FS25_Ursus_1654_1954_Pack.zip > dist/FS25_Ursus_1654_1954_Pack.zip.sha256
+          cat > /tmp/notes.md <<'EOF'
+          ## 1.0.1.1 CLEANUP TEST 12
+
+          Natywny wariant przełączanej kolizji przedniego TUZ-a.
+
+          Zmiany:
+          - obie bryły TUZ-a startują jako compoundChild=true, zgodnie z bazowymi pojazdami FS25,
+          - przywrócono grupę 0x10004, maskę 0xfe3ffb83 i gęstość 0.001,
+          - konfiguracja FrontHydraulic zachowuje obie kolizje w compoundzie ciągnika,
+          - siedem pozostałych konfiguracji usuwa je przed utworzeniem fizyki,
+          - tankowanie, jointy, WOM i przewody pozostają bez zmian względem TEST 11.
+
+          Do sprawdzenia:
+          - brak kolizji TUZ-a bez TUZ-a i we wszystkich konfiguracjach obciążników,
+          - obecność kolizji wyłącznie z FrontHydraulic,
+          - brak warningów Failed to call setIsCompoundChild,
+          - tankowanie oraz routing przedniego osprzętu.
+          EOF
+          gh release create v1.0.1.1-test12 --target "$SHA" --title '1.0.1.1 CLEANUP TEST 12' --prerelease --notes-file /tmp/notes.md dist/FS25_Ursus_1654_1954_Pack.zip dist/FS25_Ursus_1654_1954_Pack.zip.sha256
