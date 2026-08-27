@@ -1,6 +1,6 @@
-# Project state — 1.0.1.0
+# Project state — 1.0.2.0
 
-Current stable baseline is **1.0.1.0**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
+Current stable baseline is **1.0.2.0**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
 
 ## Closed / confirmed areas
 
@@ -30,9 +30,12 @@ Reverse signs to move away from camera.
 
 ## Collisions
 
-Native FS25 filter values used by the tractor and weight:
-- `collisionFilterGroup="0x10004"`
-- `collisionFilterMask="0xfe3ffb83"`
+Native FS25 collision state:
+- the tractor root uses `collisionFilterGroup="0x40010004"`; bit 30 `FILLABLE` is required by the fuel trigger,
+- the approved collision mask remains `collisionFilterMask="0xfe3ffb83"`,
+- the hood collision is aligned with the visual tractor outline,
+- front equipment collision is configuration-dependent: wide FrameWeight/1200/2000 kg family, narrow FrameWeight(2)/600/1500 kg family, separate TUZ, or no added collision,
+- all weight-family boxes are 5 cm lower than the preceding test; the wide family is spread to x = ±0.20 m.
 
 AI collision trigger: `<collisionTrigger useSize="true"/>`.
 
@@ -50,7 +53,7 @@ This is 6 cm lower than V25. Cameras, seat geometry and IK targets were not move
 
 ## Package identity
 
-Current version: **1.0.1.0**.
+Current version: **1.0.2.0**.
 
 Stable downloadable ZIP name from this version onward:
 
@@ -66,4 +69,6 @@ The historical exact V25 SHA manifest remains under `reference/v25/` as a regres
 
 ## Runtime note
 
-Repository/package validation cannot replace a Farming Simulator runtime log. A fresh FS25 log was not stored in this repository at the time of the 1.0.1.0 release; if a runtime warning is later found, treat it as a normal follow-up fix under the new version scheme.
+The 1.0.2.0 candidate was verified in Farming Simulator 25: refuelling works, general collisions remain correct, and the front equipment collision variants switch and align as intended.
+
+Accepted legacy warnings remain outside this release scope: missing `exactFillRootNode` fallback, dashboard emitters, one `staticLight`, the 2500 kg weight AI attachment definition and non-binary indexed triangle sets.

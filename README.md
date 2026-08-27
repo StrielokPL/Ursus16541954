@@ -4,13 +4,14 @@ Prywatne repo robocze konwersji moda Ursus 1654–1954 do Farming Simulator 25.
 
 ## Stan
 
-Aktualna stabilna wersja: **1.0.1.0**.
+Aktualna stabilna wersja: **1.0.2.0**.
 
 Historyczne punkty bezpieczeństwa:
 - **V23 GEAR SAFE** — stabilny punkt powrotu dla silnika/skrzyni,
 - **V24B HIGH/LOW SEQUENTIAL** — działająca skrzynia 8F/4R × L/H,
 - **V25 COLLISION SAFE** — prawidłowe filtry kolizji FS25,
 - **1.0.1.0** — pierwszy kompletny baseline po zamknięciu konwersji i przejściu na nową numerację.
+- **1.0.2.0** — zatwierdzony cleanup FS25, działające tankowanie oraz finalne kolizje wariantów przedniego wyposażenia.
 
 Lusterka są zamknięte od V21 i nie należy zmieniać ich geometrii/rotacji bez wyraźnej potrzeby.
 
@@ -28,11 +29,23 @@ Od tej wersji plik moda ma stałą nazwę:
 
 Numer wersji znajduje się w `modDesc.xml`, pliku `VERSION`, tagu Git i GitHub Release, ale nie w nazwie ZIP-a. Ma to utrzymać stałą tożsamość moda dla istniejących save'ów i zakupionych ciągników.
 
+## 1.0.2.0
+
+Względem 1.0.1.0:
+- usunięto martwe referencje materiałów i przestarzałe wpisy dźwięków generujące błędy logu,
+- dostosowano XML obciążnika 2500 kg do schematu FS25,
+- przywrócono prawidłowe wykrywanie ciągnika przez trigger tankowania,
+- przedni TUZ, WOM, przewody i punkty podpinania są aktywne tylko we właściwej konfiguracji,
+- skorygowano główną kolizję maski i dodano osobne, dopasowane kolizje dla rodzin przednich ram, obciążników i TUZ-a,
+- brak przedniego wyposażenia nie dodaje dodatkowego boxa kolizji.
+
+Tankowanie oraz kolizje wszystkich wariantów zostały potwierdzone w grze na buildzie CLEANUP TEST 24.
+
 ## Zawartość repo
 
 Repo zawiera kompletny stan moda, łącznie z `.xml`, `.i3d`, `.lua`, lokalnym shaderem kompatybilności oraz statycznymi binariami (`.dds`, `.ogg`, `.wav`, `.i3d.shapes`). Po zwykłym `git clone` nie trzeba uzupełniać assetów z oryginalnego ZIP-a.
 
-`CHANGELOG.md` dokumentuje historię V1–V25 i przejście do 1.0.1.0. `PROJECT_STATE.md` zawiera bieżące parametry techniczne i punkty bezpieczeństwa. `VERSIONING.md` opisuje zasady dalszego wersjonowania i zachowania tożsamości moda.
+`CHANGELOG.md` dokumentuje historię V1–V25 oraz stabilne wydania 1.0.1.0 i 1.0.2.0. `PROJECT_STATE.md` zawiera bieżące parametry techniczne i punkty bezpieczeństwa. `VERSIONING.md` opisuje zasady dalszego wersjonowania i zachowania tożsamości moda.
 
 ## Walidacja i budowanie
 

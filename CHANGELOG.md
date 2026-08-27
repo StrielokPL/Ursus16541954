@@ -45,5 +45,21 @@ Zmiany względem V25:
 - builder i walidacja uporządkowane pod dalszy rozwój,
 - usunięto aktywny jednorazowy workflow wydania V25; historyczny Release V25 pozostaje zachowany.
 
+## 1.0.2.0
+Stabilne wydanie zatwierdzonego cyklu CLEANUP TEST 1–24.
+
+Najważniejsze zmiany względem 1.0.1.0:
+- usunięto nieistniejące mapy materiałów złączy oraz legacy wpisy dźwięków powodujące błędy podczas ładowania,
+- poprawiono `schemaOverlay` i usunięto nieaktualny dźwięk `ATTACH_01` z `Weight2500kg.xml`,
+- główny component otrzymał bit `FILLABLE`, dzięki czemu trigger stacji prawidłowo wykrywa paliwo; tankowanie potwierdzono w grze,
+- konfiguracja przedniego TUZ-a tworzy przedni joint tylko dla TUZ-a, a WOM i przewody korzystają z właściwych punktów z przodu,
+- usunięto globalne legacy jointy pozwalające podpinać sprzęt mimo braku TUZ-a,
+- skorygowano obrys głównej kolizji maski,
+- rozdzielono kolizje przedniego wyposażenia na: szeroką rodzinę pierwszego FrameWeight/1200/2000 kg, wąską rodzinę drugiego FrameWeight/600/1500 kg, osobny TUZ oraz brak dodatkowej kolizji dla pustej konfiguracji,
+- finalne boxy rodzin obciążników obniżono o 5 cm; szeroką rodzinę rozsunięto dodatkowo po 10 cm na stronę,
+- zachowano działającą skrzynię, silniki, lusterka, koła, hydraulikę, animacje, światła i pozycję kierowcy z wcześniejszych zatwierdzonych baz.
+
+Testy runtime potwierdziły tankowanie, ogólne kolizje, poprawne przełączanie wariantów przedniego wyposażenia i finalne pozycje boxów.
+
 ## Dalszy rozwój
 Od **1.0.1.0** używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`. Numeracji V26/V27 nie stosujemy do nowych buildów.
