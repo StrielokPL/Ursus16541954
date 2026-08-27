@@ -1,0 +1,205 @@
+name: Prepare 1.0.1.1 cleanup test 22
+
+on:
+  push:
+    branches: [cleanup-1.0.1.1]
+    paths: [.github/workflows/cleanup-1.0.1.1-test22.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  correct-wide-box-spacing:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup-1.0.1.1
+          fetch-depth: 0
+
+      - name: Set touching weight boxes and restore TUZ spacing
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          i3d_path = Path('Ursus1934.i3d')
+          text = i3d_path.read_text(encoding='utf-8')
+
+          replacements = (
+              (
+                  'name="frontWeightWideLongCollisionBoxLeft" '
+                  'translation="-0.4 0.883008 2.03072"',
+                  'name="frontWeightWideLongCollisionBoxLeft" '
+                  'translation="-0.2 0.883008 2.03072"',
+              ),
+              (
+                  'name="frontWeightWideLongCollisionBoxRight" '
+                  'translation="0.4 0.883008 2.03072"',
+                  'name="frontWeightWideLongCollisionBoxRight" '
+                  'translation="0.2 0.883008 2.03072"',
+              ),
+              (
+                  'name="frontWeightWideShortCollisionBoxLeft" '
+                  'translation="-0.4 0.883008 1.78072"',
+                  'name="frontWeightWideShortCollisionBoxLeft" '
+                  'translation="-0.2 0.883008 1.78072"',
+              ),
+              (
+                  'name="frontWeightWideShortCollisionBoxRight" '
+                  'translation="0.4 0.883008 1.78072"',
+                  'name="frontWeightWideShortCollisionBoxRight" '
+                  'translation="0.2 0.883008 1.78072"',
+              ),
+              (
+                  'name="frontHydraulicCollisionBoxLeft" '
+                  'translation="-0.4 0.8 2.13872"',
+                  'name="frontHydraulicCollisionBoxLeft" '
+                  'translation="-0.1 0.8 2.13872"',
+              ),
+              (
+                  'name="frontHydraulicCollisionBoxRight" '
+                  'translation="0.4 0.8 2.13872"',
+                  'name="frontHydraulicCollisionBoxRight" '
+                  'translation="0.1 0.8 2.13872"',
+              ),
+          )
+          for old, new in replacements:
+              if text.count(old) != 1:
+                  raise SystemExit(f'Expected exactly one TEST 21 transform: {old}')
+              text = text.replace(old, new, 1)
+          i3d_path.write_text(text, encoding='utf-8')
+
+          root = ET.parse(i3d_path).getroot()
+          nodes = {
+              node.get('nodeId'): node
+              for node in root.iter()
+              if node.get('nodeId') is not None
+          }
+          expected = {
+              '880': ('colli05', '0 0.883008 1.78072'),
+              '7003': ('frontWeightWideLongCollisionBoxLeft', '-0.2 0.883008 2.03072'),
+              '7004': ('frontWeightWideLongCollisionBoxRight', '0.2 0.883008 2.03072'),
+              '7005': ('frontWeightWideShortCollisionBoxLeft', '-0.2 0.883008 1.78072'),
+              '7007': ('frontWeightWideShortCollisionBoxRight', '0.2 0.883008 1.78072'),
+              '7008': ('frontWeightNarrowLongCollisionBox', '0 0.883008 2.03072'),
+              '7002': ('frontHydraulicCollisionBoxLeft', '-0.1 0.8 2.13872'),
+              '7006': ('frontHydraulicCollisionBoxRight', '0.1 0.8 2.13872'),
+          }
+          for node_id, (name, translation) in expected.items():
+              node = nodes.get(node_id)
+              if (
+                  node is None
+                  or node.get('name') != name
+                  or node.get('shapeId') != '170'
+                  or node.get('translation') != translation
+                  or node.get('compoundChild') != 'true'
+                  or node.get('nonRenderable') != 'true'
+                  or node.get('collisionFilterGroup') != '0x10004'
+                  or node.get('collisionFilterMask') != '0xfe3ffb83'
+              ):
+                  raise SystemExit(f'Invalid TEST 22 collision node {node_id}')
+
+          p_cube = nodes.get('879')
+          if (
+              p_cube is None
+              or p_cube.get('translation') != '0 1.13534 0.661'
+              or p_cube.get('scale') != '1 1 0.93'
+          ):
+              raise SystemExit('Approved main collision changed unexpectedly')
+
+          vehicle = ET.parse('Ursus1934.xml').getroot()
+          configs = vehicle.findall(
+              'attacherJoints/attacherJointConfigurations/attacherJointConfiguration'
+          )
+          expected_names = [
+              '$l10n_configuration_valueNo',
+              'FrameWeight',
+              '1200kg',
+              '2000kg',
+              'FrameWeight',
+              '600kg',
+              '1500kg',
+              'FrontHydraulic',
+          ]
+          narrow_short = [False, False, False, False, True, True, False, False]
+          wide_long = [False, False, False, True, False, False, False, False]
+          wide_short = [False, True, True, False, False, False, False, False]
+          narrow_long = [False, False, False, False, False, False, True, False]
+          tuz = [False, False, False, False, False, False, False, True]
+          if len(configs) != 8:
+              raise SystemExit(f'Expected eight front configurations, found {len(configs)}')
+
+          for index, config in enumerate(configs):
+              if config.get('name') != expected_names[index]:
+                  raise SystemExit(f'Unexpected configuration at index {index + 1}')
+              changes = config.findall('objectChange')
+              expected_paths = (
+                  ('0>11|1', narrow_short[index]),
+                  ('0>11|2', wide_long[index]),
+                  ('0>11|3', wide_long[index]),
+                  ('0>11|4', wide_short[index]),
+                  ('0>11|5', wide_short[index]),
+                  ('0>11|6', narrow_long[index]),
+                  ('0>10|7|1|15', tuz[index]),
+                  ('0>10|7|1|16', tuz[index]),
+              )
+              for path, active in expected_paths:
+                  matching = [
+                      item for item in changes
+                      if item.get('node') == path
+                      and item.get('compoundChildActive') is not None
+                  ]
+                  expected_state = 'true' if active else 'false'
+                  if (
+                      len(matching) != 1
+                      or matching[0].get('compoundChildActive') != expected_state
+                  ):
+                      raise SystemExit(f'Wrong {path} state in configuration {index + 1}')
+
+          print('TEST 22 spacing and configuration mapping validated')
+          PY
+
+      - name: Validate and build
+        run: |
+          python3 tools/validate_current.py
+          ./build.sh
+          test -f dist/FS25_Ursus_1654_1954_Pack.zip
+
+      - name: Commit cleanup test 22
+        run: |
+          rm .github/workflows/cleanup-1.0.1.1-test22.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Ursus1934.i3d .github/workflows/cleanup-1.0.1.1-test22.yml
+          git commit -m 'Correct wide box spacing test 22'
+          git push origin HEAD:cleanup-1.0.1.1
+
+      - name: Publish cleanup pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          sha256sum dist/FS25_Ursus_1654_1954_Pack.zip > dist/FS25_Ursus_1654_1954_Pack.zip.sha256
+          cat > /tmp/notes.md <<'EOF'
+          ## 1.0.1.1 CLEANUP TEST 22
+
+          Korekta rozstawu podwójnych boxów.
+
+          Zmiany:
+          - szeroka grupa pierwszego FrameWeight, 1200 kg i 2000 kg: X -0,20/+0,20 m,
+          - środki boxów ciężkiej grupy są oddalone o 0,40 m i boxy powinny stykać się krawędziami,
+          - FrontHydraulic wrócił do rozstawu TEST 20: X -0,10/+0,10 m,
+          - długości i wysokości wszystkich boxów pozostają jak w TEST 21,
+          - przypisania konfiguracji pozostają jak w zatwierdzonym TEST 21,
+          - główna kolizja pCube2 pozostaje bez zmian.
+
+          Do sprawdzenia:
+          - F5: styk szerokich boxów dla pierwszego FrameWeight i 1200 kg,
+          - F5: styk szerokich boxów dla 2000 kg,
+          - F5: przywrócona szerokość TUZ-a,
+          - wariant bez wyposażenia, fizyczne kolizje i log.
+          EOF
+          gh release create v1.0.1.1-test22 --target "$SHA" --title '1.0.1.1 CLEANUP TEST 22' --prerelease --notes-file /tmp/notes.md dist/FS25_Ursus_1654_1954_Pack.zip dist/FS25_Ursus_1654_1954_Pack.zip.sha256
