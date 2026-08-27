@@ -18,6 +18,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
+      - name: Verify payload parts
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '68a09082902e011db6cbd52d884173244fe1b80b691599935f9e8f91eb3988a0  bootstrap2/part_000.txt' | sha256sum --check --strict
+          echo '7258fc628e15c88d1d17bb3202f3901ccdc810cb8b5b3f10240794857a6e3b39  bootstrap2/part_001.txt' | sha256sum --check --strict
+          echo '232235f1349ae7bd7b2a243ba2c2f3b3ceba6d28b446320903f133e2ab5fa6d0  bootstrap2/part_002.txt' | sha256sum --check --strict
+          echo '9b8ef8d054ce9d4083683add92798c772326f746878a29d38d332a8244d17aa6  bootstrap2/part_003.txt' | sha256sum --check --strict
+
       - name: Rebuild and verify archive
         shell: bash
         run: |
