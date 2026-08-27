@@ -1813,6 +1813,10 @@ float fitRange(float mIn,float mOldMin,float mOldMax ,float mNewMin ,float mNewM
     mLightControl = clamp(mLightControl,0.0,1.0);
 #endif
     mEmitColor *= mLightControl;
+    // FS25 conversion test: reduce flat overbright lens emission and warm halogen output.
+    // This affects emissive surfaces only; actual Light nodes / beam power are unchanged.
+    mEmitColor *= 0.40;
+    mEmitColor *= float3(1.0, 0.88, 0.72);
     lighting.xyz += mEmitColor;
 #endif
 ]]>
