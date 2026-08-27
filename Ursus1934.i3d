@@ -665,7 +665,7 @@
   <Dynamics>
   </Dynamics>
   <Scene>
-    <Shape shapeId="1" name="Ursus1934M8e" dynamic="true" compound="true" clipDistance="300" nodeId="242" materialIds="42" castsShadows="true" receiveShadows="true" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83">
+    <Shape shapeId="1" name="Ursus1934M8e" dynamic="true" compound="true" clipDistance="300" nodeId="242" materialIds="42" castsShadows="true" receiveShadows="true" nonRenderable="true" collisionFilterGroup="0x40010004" collisionFilterMask="0xfe3ffb83">
       <TransformGroup name="wheels" translation="0 0.843791 -1.44" nodeId="243">
         <TransformGroup name="wheelBackLeft" translation="0.765 0.095 0.02" nodeId="244">
           <TransformGroup name="wheelBackLeft" nodeId="245" />
@@ -944,7 +944,7 @@
                   <TransformGroup name="transform" translation="-0.007 0.492567 -0.0382916" rotation="-104.848 17.8617 -130.837" visibility="false" nodeId="447">
                     <Shape shapeId="58" name="Cylinder022" nodeId="448" materialIds="46" castsShadows="true" receiveShadows="true" />
                   </TransformGroup>
-                  <TransformGroup name="Fuel" translation="-0.0819214 0.478233 -0.0483885" rotation="-75.4775 18.124 -50.215" nodeId="449" collisionFilterGroup="0x40000000">
+                  <TransformGroup name="Fuel" translation="-0.0819214 0.478233 -0.0483885" rotation="-75.4775 18.124 -50.215" nodeId="449">
                     <TransformGroup name="transform" translation="0 -0.000333605 0" nodeId="450">
                       <Shape shapeId="59" name="Box001" scale="1 1 0.75" nodeId="451" materialIds="34" castsShadows="true" receiveShadows="true" />
                       <Shape shapeId="60" name="Cylinder023" nodeId="452" materialIds="46" castsShadows="true" receiveShadows="true" />
