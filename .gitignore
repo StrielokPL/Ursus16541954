@@ -1,8 +1,4 @@
 # Static binary assets hydrated from original FS22 ZIP
-*.dds
-*.ogg
-*.wav
-*.i3d.shapes
 
 # Local build/test artifacts
 *.zip
