@@ -46,13 +46,7 @@ jobs:
           if changed != expected_files:
               raise SystemExit(f"Nieoczekiwany zakres zmian: {changed}")
 
-          expected_blobs = {
-          "Ursus1934.xml": "2981c8535915d9623420d5d6d0957def17aecd07",
-          "modDesc.xml": "b77ef9fc6debbf6c181da2cf8b0f97053c20e7f0",
-          "VERSION": "a9c1d83e447a2247c39e79fa7a518d3c1a6d58ed",
-          "tools/validate_current.py": "f214f9df215ef05bd6170bd79b072f08187262e2",
-          "VERSIONING.md": "dcf930bb04e8ea52b654ac145c3475c3b5d13c4e"
-}
+          expected_blobs = {"Ursus1934.xml": "2981c8535915d9623420d5d6d0957def17aecd07", "modDesc.xml": "b77ef9fc6debbf6c181da2cf8b0f97053c20e7f0", "VERSION": "a9c1d83e447a2247c39e79fa7a518d3c1a6d58ed", "tools/validate_current.py": "f214f9df215ef05bd6170bd79b072f08187262e2", "VERSIONING.md": "dcf930bb04e8ea52b654ac145c3475c3b5d13c4e"}
           for name, expected in expected_blobs.items():
               got = subprocess.check_output(
                   ["git", "hash-object", name], text=True
