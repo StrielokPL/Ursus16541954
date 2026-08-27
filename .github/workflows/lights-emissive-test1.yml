@@ -1,0 +1,98 @@
+name: Prepare V25 lights emissive test 1
+
+on:
+  push:
+    branches:
+      - lights-emissive-test1
+    paths:
+      - '.github/workflows/lights-emissive-test1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout test branch
+        uses: actions/checkout@v4
+        with:
+          ref: lights-emissive-test1
+          fetch-depth: 0
+
+      - name: Patch static-light emissive only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          path = Path('shaders/vehicleShader.xml')
+          text = path.read_text(encoding='utf-8')
+          old = '''    mEmitColor *= mLightControl;
+              lighting.xyz += mEmitColor;'''
+          # Keep indentation tolerant because both shader programs use the same code.
+          if old not in text:
+              old = '''    mEmitColor *= mLightControl;
+    lighting.xyz += mEmitColor;'''
+          count = text.count(old)
+          if count != 2:
+              raise SystemExit(f'Expected 2 static-light emission blocks, found {count}')
+          new = '''    mEmitColor *= mLightControl;
+    // FS25 conversion test: reduce flat overbright lens emission and warm halogen output.
+    // This affects emissive surfaces only; actual Light nodes / beam power are unchanged.
+    mEmitColor *= 0.40;
+    mEmitColor *= float3(1.0, 0.88, 0.72);
+    lighting.xyz += mEmitColor;'''
+          text = text.replace(old, new)
+          path.write_text(text, encoding='utf-8')
+          ET.parse(path)
+          print('Patched both STATIC_LIGHT emission blocks; shader XML is well formed.')
+          PY
+
+      - name: Remove one-shot workflow and commit test
+        shell: bash
+        run: |
+          rm .github/workflows/lights-emissive-test1.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add shaders/vehicleShader.xml .github/workflows/lights-emissive-test1.yml
+          git commit -m 'Test warmer lower-intensity static light emissive'
+          git push origin HEAD:lights-emissive-test1
+
+      - name: Build test ZIP
+        shell: bash
+        run: |
+          ./build.sh dist/FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip
+          sha256sum dist/FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip > dist/FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip.sha256
+
+      - name: Publish pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          if gh release view v25-lights-test1 >/dev/null 2>&1; then
+            gh release delete v25-lights-test1 --yes --cleanup-tag
+          fi
+          cat > /tmp/notes.md <<'EOF'
+          ## V25 LIGHTS TEST 1
+
+          Test wyłącznie wyglądu powierzchni świecących (`staticLight`).
+
+          Zmiany względem V25 COLLISION SAFE:
+          - emissive powierzchni lamp zmniejszony do 40% dotychczasowego poziomu,
+          - biały emissive lekko ocieplony mnożnikiem `1.0 0.88 0.72`,
+          - bez zmian mocy, zasięgu i kierunku właściwych źródeł światła,
+          - bez zmian skrzyni, silników, luster, kolizji i geometrii.
+
+          Do sprawdzenia w grze: światła mijania/robocze, tylne, kierunkowskazy oraz kogut, w dzień i w nocy.
+          EOF
+          gh release create v25-lights-test1 \
+            --target "$SHA" \
+            --title 'V25 LIGHTS TEST 1' \
+            --prerelease \
+            --notes-file /tmp/notes.md \
+            dist/FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip \
+            dist/FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip.sha256
