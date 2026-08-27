@@ -405,16 +405,10 @@
       <objectChange node="0&gt;5|1|0" visibilityActive="false" visibilityInactive="true" />
       <objectChange node="0&gt;5|0|2" visibilityActive="false" visibilityInactive="true" />
     </attacherJoint>
-    <attacherJoint node="0&gt;10|7|0|2|17" jointType="trailer" lowerRotLimit="10 70 50" comboTime="1" allowsJointLimitMovement="false">
-      <schema position="1 0" rotation="0" invertX="true" />
-    </attacherJoint>
-    <attacherJoint node="0&gt;10|7|8|2|11" jointType="trailer" lowerRotLimit="10 70 50" comboTime="1" allowsJointLimitMovement="false">
-      <schema position="1 0" rotation="0" invertX="true" />
-    </attacherJoint>
   </attacherJoints>
   <powerTakeOffs>
-    <output attacherJointIndices="1 3 4" outputNode="0&gt;5|2|0" />
-    <output attacherJointIndices="2 5" outputNode="0&gt;5|2|1" />
+    <output attacherJointIndices="1 2 3" outputNode="0&gt;5|2|0" />
+    <output attacherJointIndices="4" outputNode="0&gt;5|2|1" />
   </powerTakeOffs>
   <enterable>
     <exitPoint node="0&gt;3" />
@@ -784,49 +778,49 @@
     </movingParts>
   </cylindered>
   <connectionHoses>
-    <target attacherJointIndices="1 3 4" type="hydraulicIn" node="0&gt;10|6|3|0">
+    <target attacherJointIndices="1 2 3" type="hydraulicIn" node="0&gt;10|6|3|0">
       <objectChange node="0&gt;10|6|3|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="1 3 4" type="hydraulicOut" node="0&gt;10|6|4|0">
+    <target attacherJointIndices="1 2 3" type="hydraulicOut" node="0&gt;10|6|4|0">
       <objectChange node="0&gt;10|6|4|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="1 3 4" type="hydraulicIn" node="0&gt;10|6|5|0">
+    <target attacherJointIndices="1 2 3" type="hydraulicIn" node="0&gt;10|6|5|0">
       <objectChange node="0&gt;10|6|5|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="1 3 4" type="hydraulicOut" node="0&gt;10|6|6|0">
+    <target attacherJointIndices="1 2 3" type="hydraulicOut" node="0&gt;10|6|6|0">
       <objectChange node="0&gt;10|6|6|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="1 3 4" type="hydraulicIn" node="0&gt;10|6|7|0">
+    <target attacherJointIndices="1 2 3" type="hydraulicIn" node="0&gt;10|6|7|0">
       <objectChange node="0&gt;10|6|7|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="1 3 4" type="hydraulicOut" node="0&gt;10|6|8|0">
+    <target attacherJointIndices="1 2 3" type="hydraulicOut" node="0&gt;10|6|8|0">
       <objectChange node="0&gt;10|6|8|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="1 3 4" type="hydraulicIn" node="0&gt;10|6|9|0">
+    <target attacherJointIndices="1 2 3" type="hydraulicIn" node="0&gt;10|6|9|0">
       <objectChange node="0&gt;10|6|9|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="1 3 4" type="hydraulicOut" node="0&gt;10|6|10|0">
+    <target attacherJointIndices="1 2 3" type="hydraulicOut" node="0&gt;10|6|10|0">
       <objectChange node="0&gt;10|6|10|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="1 3 4" type="airDoubleRed" node="0&gt;10|6|2|0">
+    <target attacherJointIndices="1 2 3" type="airDoubleRed" node="0&gt;10|6|2|0">
       <objectChange node="0&gt;10|6|2|1" rotationActive="0 0 0" rotationInactive="-95 0 0" />
     </target>
-    <target attacherJointIndices="1 3 4" type="airDoubleYellow" node="0&gt;10|6|1|0">
+    <target attacherJointIndices="1 2 3" type="airDoubleYellow" node="0&gt;10|6|1|0">
       <objectChange node="0&gt;10|6|1|1" rotationActive="0 0 0" rotationInactive="-95 0 0" />
     </target>
-    <target attacherJointIndices="1 3 4" type="electric" node="0&gt;10|6|0|0">
+    <target attacherJointIndices="1 2 3" type="electric" node="0&gt;10|6|0|0">
       <objectChange node="0&gt;10|6|0|1" rotationActive="0 0 0" rotationInactive="-90 0 0" />
     </target>
-    <target attacherJointIndices="2 5" type="hydraulicIn" node="0&gt;10|7|1|12|0|0">
+    <target attacherJointIndices="4" type="hydraulicIn" node="0&gt;10|7|1|12|0|0">
       <objectChange node="0&gt;10|7|1|12|0|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="2 5" type="hydraulicOut" node="0&gt;10|7|1|12|1|0">
+    <target attacherJointIndices="4" type="hydraulicOut" node="0&gt;10|7|1|12|1|0">
       <objectChange node="0&gt;10|7|1|12|1|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="2 5" type="hydraulicIn" node="0&gt;10|7|1|12|2|0">
+    <target attacherJointIndices="4" type="hydraulicIn" node="0&gt;10|7|1|12|2|0">
       <objectChange node="0&gt;10|7|1|12|2|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
-    <target attacherJointIndices="2 5" type="hydraulicOut" node="0&gt;10|7|1|12|3|0">
+    <target attacherJointIndices="4" type="hydraulicOut" node="0&gt;10|7|1|12|3|0">
       <objectChange node="0&gt;10|7|1|12|3|1" rotationActive="0 100 0" rotationInactive="0 0 0" />
     </target>
   </connectionHoses>
