@@ -1,0 +1,28 @@
+name: Validate and build mod
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate current mod tree
+        run: python3 tools/validate_current.py
+
+      - name: Build stable ZIP
+        run: ./build.sh
+
+      - name: Verify output package name
+        run: test -f dist/FS25_Ursus_1654_1954_Pack.zip
