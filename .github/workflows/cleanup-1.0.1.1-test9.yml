@@ -75,12 +75,12 @@ jobs:
           source2 = next((n for n in i3d_root.iter() if n.get('nodeId') == '721' and n.get('shapeId') == '157'), None)
           if tuz is None or source1 is None or source2 is None:
               raise SystemExit('Front hydraulic collision source geometry not found')
-          if any(n.get('nodeId') in ('881', '882') for n in i3d_root.iter()):
+          if any(n.get('nodeId') in ('7002', '7003') for n in i3d_root.iter()):
               raise SystemExit('TEST 9 collision nodeIds already exist')
 
           for source, node_id, name in (
-              (source1, '881', 'frontHydraulicCollision1'),
-              (source2, '882', 'frontHydraulicCollision2')
+              (source1, '7002', 'frontHydraulicCollision1'),
+              (source2, '7003', 'frontHydraulicCollision2')
           ):
               collision = copy.deepcopy(source)
               collision.set('nodeId', node_id)
