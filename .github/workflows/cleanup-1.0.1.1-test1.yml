@@ -91,7 +91,7 @@ jobs:
           moddesc = moddesc_path.read_text(encoding='utf-8')
           moddesc = exact_replace(moddesc, '<version>1.0.1.0</version>', '<version>1.0.1.1</version>', label='modDesc version')
           moddesc_path.write_text(moddesc, encoding='utf-8')
-          Path('VERSION').write_text('1.0.1.1-test1\n', encoding='utf-8')
+          Path('VERSION').write_text('1.0.1.1\n', encoding='utf-8')
 
           for path in [vehicle_path, sounds_path, moddesc_path]:
               ET.parse(path)
