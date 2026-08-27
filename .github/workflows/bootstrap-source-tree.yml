@@ -1,0 +1,33 @@
+name: Bootstrap V25 source tree
+
+on:
+  push:
+    paths:
+      - 'bootstrap/TRIGGER'
+
+permissions:
+  contents: write
+
+jobs:
+  expand:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Expand source payload
+        run: python bootstrap/extract_payload.py
+
+      - name: Commit V25 source tree
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Import editable Ursus source tree at V25 COLLISION SAFE"
+          git push
