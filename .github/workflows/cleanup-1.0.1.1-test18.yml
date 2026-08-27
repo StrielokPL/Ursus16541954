@@ -1,0 +1,323 @@
+name: Prepare 1.0.1.1 cleanup test 18
+
+on:
+  push:
+    branches: [cleanup-1.0.1.1]
+    paths: [.github/workflows/cleanup-1.0.1.1-test18.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  split-light-heavy-front-collision-boxes:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup-1.0.1.1
+          fetch-depth: 0
+
+      - name: Split light and heavy box positions
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          i3d_path = Path('Ursus1934.i3d')
+          text = i3d_path.read_text(encoding='utf-8')
+
+          if 'nodeId="7003"' in text:
+              raise SystemExit('Node ID 7003 is already occupied')
+          if 'name="frontWeightHeavyCollisionBox"' in text:
+              raise SystemExit('Heavy front-weight collision box already exists')
+
+          obsolete_names = [
+              'frontWeightFrameCollisionA',
+              'frontWeightLayer1CollisionA',
+              'frontWeightLayer2CollisionA',
+              'frontWeightFrameCollisionB',
+              'frontWeightLayer1CollisionB',
+              'frontWeightLayer2CollisionB',
+          ]
+          for name in obsolete_names:
+              pattern = re.compile(
+                  rf'^\s*<Shape\b[^>]*name="{re.escape(name)}"[^>]*/>\n',
+                  re.M,
+              )
+              text, count = pattern.subn('', text)
+              if count != 1:
+                  raise SystemExit(f'Expected one obsolete shape {name}, found {count}')
+
+          old_tuz = (
+              'name="frontHydraulicCollisionBox" '
+              'translation="0 0.8 1.73872"'
+          )
+          new_tuz = (
+              'name="frontHydraulicCollisionBox" '
+              'translation="0 0.8 2.03872"'
+          )
+          if text.count(old_tuz) != 1:
+              raise SystemExit('Current TEST 17 TUZ box position was not found')
+          text = text.replace(old_tuz, new_tuz, 1)
+
+          old_colli_line = (
+              '        <Shape shapeId="170" name="colli05" '
+              'translation="0 0.933008 1.63072" compoundChild="true" '
+              'nodeId="880" materialIds="42" castsShadows="true" '
+              'receiveShadows="true" nonRenderable="true" '
+              'collisionFilterGroup="0x10004" '
+              'collisionFilterMask="0xfe3ffb83" />'
+          )
+          new_colli_block = (
+              '        <Shape shapeId="170" name="colli05" '
+              'translation="0 0.933008 1.73072" compoundChild="true" '
+              'nodeId="880" materialIds="42" castsShadows="true" '
+              'receiveShadows="true" nonRenderable="true" '
+              'collisionFilterGroup="0x10004" '
+              'collisionFilterMask="0xfe3ffb83" />\n'
+              '        <Shape shapeId="170" name="frontWeightHeavyCollisionBox" '
+              'translation="0 0.933008 1.93072" compoundChild="true" '
+              'nodeId="7003" materialIds="42" castsShadows="false" '
+              'receiveShadows="false" nonRenderable="true" '
+              'collisionFilterGroup="0x10004" '
+              'collisionFilterMask="0xfe3ffb83" />'
+          )
+          if text.count(old_colli_line) != 1:
+              raise SystemExit('Current TEST 17 colli05 line was not found')
+          text = text.replace(old_colli_line, new_colli_block, 1)
+          i3d_path.write_text(text, encoding='utf-8')
+
+          xml_path = Path('Ursus1934.xml')
+          vehicle_text = xml_path.read_text(encoding='utf-8')
+
+          obsolete_paths = [
+              '0&gt;10|7|0|3',
+              '0&gt;10|7|0|4',
+              '0&gt;10|7|0|5',
+              '0&gt;10|7|8|3',
+              '0&gt;10|7|8|4',
+              '0&gt;10|7|8|5',
+          ]
+          for path in obsolete_paths:
+              pattern = re.compile(
+                  rf'^\s*<objectChange node="{re.escape(path)}" '
+                  rf'compoundChildActive="(?:true|false)" />\n',
+                  re.M,
+              )
+              vehicle_text, count = pattern.subn('', vehicle_text)
+              if count != 8:
+                  raise SystemExit(
+                      f'Expected eight obsolete configuration entries for {path}, found {count}'
+                  )
+
+          container_pattern = re.compile(
+              r'(<attacherJointConfigurations\b[^>]*>)(.*?)(</attacherJointConfigurations>)',
+              re.S,
+          )
+          container_match = container_pattern.search(vehicle_text)
+          if container_match is None:
+              raise SystemExit('Front attacherJointConfigurations block not found')
+
+          config_pattern = re.compile(
+              r'(<attacherJointConfiguration\b([^>]*)>)(.*?)(</attacherJointConfiguration>)',
+              re.S,
+          )
+          inner = container_match.group(2)
+          matches = list(config_pattern.finditer(inner))
+          expected_names = [
+              '$l10n_configuration_valueNo',
+              'FrameWeight',
+              '1200kg',
+              '2000kg',
+              'FrameWeight',
+              '600kg',
+              '1500kg',
+              'FrontHydraulic',
+          ]
+          old_light_states = [False, True, True, True, True, True, True, False]
+          new_light_states = [False, True, True, False, True, True, False, False]
+          heavy_states = [False, False, False, True, False, False, True, False]
+          if len(matches) != 8:
+              raise SystemExit(f'Expected eight front configurations, found {len(matches)}')
+          if 'node="0&gt;11|2"' in inner:
+              raise SystemExit('Heavy box configuration path already exists')
+
+          output = []
+          cursor = 0
+          for index, match in enumerate(matches):
+              attrs = match.group(2)
+              name_match = re.search(r'\bname="([^"]+)"', attrs)
+              name = name_match.group(1) if name_match else None
+              if name != expected_names[index]:
+                  raise SystemExit(f'Unexpected configuration {index + 1}: {name!r}')
+
+              old_state = 'true' if old_light_states[index] else 'false'
+              new_state = 'true' if new_light_states[index] else 'false'
+              heavy_state = 'true' if heavy_states[index] else 'false'
+              old_marker = (
+                  '<objectChange node="0&gt;11|1" '
+                  f'compoundChildActive="{old_state}" />'
+              )
+              new_markers = (
+                  '<objectChange node="0&gt;11|1" '
+                  f'compoundChildActive="{new_state}" />\n'
+                  '        <objectChange node="0&gt;11|2" '
+                  f'compoundChildActive="{heavy_state}" />'
+              )
+              body = match.group(3)
+              if body.count(old_marker) != 1:
+                  raise SystemExit(f'Expected one current colli05 marker in {name}')
+              new_body = body.replace(old_marker, new_markers, 1)
+
+              output.append(inner[cursor:match.start()])
+              output.append(match.group(1) + new_body + match.group(4))
+              cursor = match.end()
+          output.append(inner[cursor:])
+
+          vehicle_text = (
+              vehicle_text[:container_match.start()]
+              + container_match.group(1)
+              + ''.join(output)
+              + container_match.group(3)
+              + vehicle_text[container_match.end():]
+          )
+          xml_path.write_text(vehicle_text, encoding='utf-8')
+
+          i3d_root = ET.parse(i3d_path).getroot()
+          nodes = {
+              node.get('nodeId'): node
+              for node in i3d_root.iter()
+              if node.get('nodeId') is not None
+          }
+
+          for node_id in ('7004', '7005', '7006', '7007', '7008', '7009'):
+              if node_id in nodes:
+                  raise SystemExit(f'Obsolete non-CPU collision node {node_id} remains')
+          for name in obsolete_names:
+              if any(node.get('name') == name for node in i3d_root.iter()):
+                  raise SystemExit(f'Obsolete non-CPU collision {name} remains')
+
+          light_box = nodes.get('880')
+          if (
+              light_box is None
+              or light_box.get('name') != 'colli05'
+              or light_box.get('shapeId') != '170'
+              or light_box.get('translation') != '0 0.933008 1.73072'
+          ):
+              raise SystemExit('Light front-weight box is invalid')
+
+          heavy_box = nodes.get('7003')
+          if (
+              heavy_box is None
+              or heavy_box.get('name') != 'frontWeightHeavyCollisionBox'
+              or heavy_box.get('shapeId') != '170'
+              or heavy_box.get('translation') != '0 0.933008 1.93072'
+              or heavy_box.get('compoundChild') != 'true'
+              or heavy_box.get('nonRenderable') != 'true'
+              or heavy_box.get('collisionFilterGroup') != '0x10004'
+              or heavy_box.get('collisionFilterMask') != '0xfe3ffb83'
+          ):
+              raise SystemExit('Heavy front-weight box is invalid')
+
+          tuz_box = nodes.get('7002')
+          if (
+              tuz_box is None
+              or tuz_box.get('name') != 'frontHydraulicCollisionBox'
+              or tuz_box.get('shapeId') != '170'
+              or tuz_box.get('translation') != '0 0.8 2.03872'
+          ):
+              raise SystemExit('FrontHydraulic box is invalid')
+
+          p_cube = nodes.get('879')
+          if (
+              p_cube is None
+              or p_cube.get('translation') != '0 1.13534 0.661'
+              or p_cube.get('scale') != '1 1 0.93'
+          ):
+              raise SystemExit('Approved TEST 15 pCube2 state was not preserved')
+
+          root_component = nodes.get('242')
+          if (
+              root_component is None
+              or root_component.get('collisionFilterGroup') != '0x40010004'
+          ):
+              raise SystemExit('Approved TEST 8 FILLABLE root state was not preserved')
+
+          vehicle = ET.parse(xml_path).getroot()
+          configs = vehicle.findall(
+              'attacherJoints/attacherJointConfigurations/attacherJointConfiguration'
+          )
+          if len(configs) != 8:
+              raise SystemExit(f'Expected eight parsed front configurations, found {len(configs)}')
+
+          for index, config in enumerate(configs):
+              if config.get('name') != expected_names[index]:
+                  raise SystemExit(f'Unexpected parsed configuration at index {index + 1}')
+              changes = config.findall('objectChange')
+
+              for path, expected_active in (
+                  ('0>11|1', new_light_states[index]),
+                  ('0>11|2', heavy_states[index]),
+                  ('0>10|7|1|15', index == 7),
+              ):
+                  matching = [
+                      change for change in changes
+                      if change.get('node') == path
+                      and change.get('compoundChildActive') is not None
+                  ]
+                  expected = 'true' if expected_active else 'false'
+                  if len(matching) != 1 or matching[0].get('compoundChildActive') != expected:
+                      raise SystemExit(f'Wrong {path} state in {config.get("name")}')
+
+              for obsolete_path in [path.replace('&gt;', '>') for path in obsolete_paths]:
+                  if any(change.get('node') == obsolete_path for change in changes):
+                      raise SystemExit(f'Obsolete path {obsolete_path} remains')
+
+          print('Light, heavy and FrontHydraulic collision boxes split at requested positions')
+          PY
+
+      - name: Validate and build
+        run: |
+          python3 tools/validate_current.py
+          ./build.sh
+          test -f dist/FS25_Ursus_1654_1954_Pack.zip
+
+      - name: Commit cleanup test 18
+        run: |
+          rm .github/workflows/cleanup-1.0.1.1-test18.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Ursus1934.i3d Ursus1934.xml .github/workflows/cleanup-1.0.1.1-test18.yml
+          git commit -m 'Split front collision box positions test 18'
+          git push origin HEAD:cleanup-1.0.1.1
+
+      - name: Publish cleanup pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          sha256sum dist/FS25_Ursus_1654_1954_Pack.zip > dist/FS25_Ursus_1654_1954_Pack.zip.sha256
+          cat > /tmp/notes.md <<'EOF'
+          ## 1.0.1.1 CLEANUP TEST 18
+
+          Rozdzielenie pozycji prostych boxów kolizji przedniego wyposażenia.
+
+          Zmiany:
+          - FrameWeight, 600 kg i 1200 kg: łączny offset +0,422 m,
+          - 1500 kg i 2000 kg: osobny box z łącznym offsetem +0,622 m,
+          - FrontHydraulic: łączny offset boxa +0,622 m,
+          - wariant bez przedniego wyposażenia nie aktywuje żadnego dodatkowego boxa,
+          - usunięto sześć nieskutecznych siatek TEST 16 powodujących warningi Non-cpu collision mesh,
+          - zatwierdzona główna kolizja pCube2 pozostaje bez zmian,
+          - tankowanie, jointy, WOM, przewody i geometria wizualna pozostają bez zmian.
+
+          Do sprawdzenia:
+          - F5: FrameWeight, 600 kg i 1200 kg,
+          - F5: 1500 kg, 2000 kg i FrontHydraulic,
+          - brak boxa w opcji bez wyposażenia,
+          - tankowanie oraz log.
+          EOF
+          gh release create v1.0.1.1-test18 --target "$SHA" --title '1.0.1.1 CLEANUP TEST 18' --prerelease --notes-file /tmp/notes.md dist/FS25_Ursus_1654_1954_Pack.zip dist/FS25_Ursus_1654_1954_Pack.zip.sha256
