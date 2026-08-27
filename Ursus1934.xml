@@ -296,7 +296,6 @@
         <objectChange node="0&gt;10|7|8|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|8|2" visibilityActive="false" />
         <objectChange node="0&gt;10|7|1|15" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|16" compoundChildActive="false" />
         <objectChange node="0&gt;11|1" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|0|3" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|0|4" compoundChildActive="false" />
@@ -304,7 +303,6 @@
         <objectChange node="0&gt;10|7|8|3" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|4" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|5" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|17" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="FrameWeight" price="100" powerTakeOffConfigId="1" connectionHoseConfigId="1">
         <objectChange node="0&gt;10|7|1" visibilityActive="false" />
@@ -315,7 +313,6 @@
         <objectChange node="0&gt;10|7|8|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|8|2" visibilityActive="false" />
         <objectChange node="0&gt;10|7|1|15" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|16" compoundChildActive="false" />
         <objectChange node="0&gt;11|1" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|0|3" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|0|4" compoundChildActive="false" />
@@ -323,7 +320,6 @@
         <objectChange node="0&gt;10|7|8|3" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|4" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|5" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|17" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="1200kg" price="1000" powerTakeOffConfigId="1" connectionHoseConfigId="1">
         <objectChange node="0&gt;11|1" massActive="1200" />
@@ -336,7 +332,6 @@
         <objectChange node="0&gt;10|7|8|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|8|2" visibilityActive="false" />
         <objectChange node="0&gt;10|7|1|15" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|16" compoundChildActive="false" />
         <objectChange node="0&gt;11|1" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|0|3" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|0|4" compoundChildActive="true" />
@@ -344,7 +339,6 @@
         <objectChange node="0&gt;10|7|8|3" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|4" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|5" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|17" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="2000kg" price="1500" powerTakeOffConfigId="1" connectionHoseConfigId="1">
         <objectChange node="0&gt;11|1" massActive="1985" />
@@ -357,7 +351,6 @@
         <objectChange node="0&gt;10|7|8|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|8|2" visibilityActive="false" />
         <objectChange node="0&gt;10|7|1|15" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|16" compoundChildActive="false" />
         <objectChange node="0&gt;11|1" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|0|3" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|0|4" compoundChildActive="true" />
@@ -365,7 +358,6 @@
         <objectChange node="0&gt;10|7|8|3" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|4" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|5" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|17" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="FrameWeight" price="100" powerTakeOffConfigId="1" connectionHoseConfigId="1">
         <objectChange node="0&gt;10|7|1" visibilityActive="false" />
@@ -376,7 +368,6 @@
         <objectChange node="0&gt;10|7|8|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|8|2" visibilityActive="false" />
         <objectChange node="0&gt;10|7|1|15" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|16" compoundChildActive="false" />
         <objectChange node="0&gt;11|1" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|0|3" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|0|4" compoundChildActive="false" />
@@ -384,7 +375,6 @@
         <objectChange node="0&gt;10|7|8|3" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|8|4" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|5" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|17" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="600kg" price="500" powerTakeOffConfigId="1" connectionHoseConfigId="1">
         <objectChange node="0&gt;11|1" massActive="600" />
@@ -397,7 +387,6 @@
         <objectChange node="0&gt;10|7|8|1" visibilityActive="true" />
         <objectChange node="0&gt;10|7|8|2" visibilityActive="false" />
         <objectChange node="0&gt;10|7|1|15" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|16" compoundChildActive="false" />
         <objectChange node="0&gt;11|1" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|0|3" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|0|4" compoundChildActive="false" />
@@ -405,7 +394,6 @@
         <objectChange node="0&gt;10|7|8|3" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|8|4" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|8|5" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|17" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="1500kg" price="1250" powerTakeOffConfigId="1" connectionHoseConfigId="1">
         <objectChange node="0&gt;11|1" massActive="1500" />
@@ -418,7 +406,6 @@
         <objectChange node="0&gt;10|7|8|1" visibilityActive="true" />
         <objectChange node="0&gt;10|7|8|2" visibilityActive="true" />
         <objectChange node="0&gt;10|7|1|15" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|16" compoundChildActive="false" />
         <objectChange node="0&gt;11|1" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|0|3" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|0|4" compoundChildActive="false" />
@@ -426,7 +413,6 @@
         <objectChange node="0&gt;10|7|8|3" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|8|4" compoundChildActive="true" />
         <objectChange node="0&gt;10|7|8|5" compoundChildActive="true" />
-        <objectChange node="0&gt;10|7|1|17" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="FrontHydraulic" price="1500" powerTakeOffConfigId="2" connectionHoseConfigId="2">
         <attacherJoint node="0&gt;10|7|1|0|0|0|0" upperRotationOffset="-0.16" moveTime="2.5" comboTime="0">
@@ -445,7 +431,6 @@
         <objectChange node="0&gt;10|7|8|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|8|2" visibilityActive="false" />
         <objectChange node="0&gt;10|7|1|15" compoundChildActive="true" />
-        <objectChange node="0&gt;10|7|1|16" compoundChildActive="true" />
         <objectChange node="0&gt;11|1" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|0|3" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|0|4" compoundChildActive="false" />
@@ -453,7 +438,6 @@
         <objectChange node="0&gt;10|7|8|3" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|4" compoundChildActive="false" />
         <objectChange node="0&gt;10|7|8|5" compoundChildActive="false" />
-        <objectChange node="0&gt;10|7|1|17" compoundChildActive="true" />
       </attacherJointConfiguration>
     </attacherJointConfigurations>
     <attacherJoint node="0&gt;5|1|0|0" jointType="trailer" lowerRotLimit="10 70 50" comboTime="1" allowsJointLimitMovement="false">
