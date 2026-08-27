@@ -37,7 +37,6 @@ jobs:
           vehicle_path = Path('Ursus1934.xml')
           text = vehicle_path.read_bytes().decode('utf-8')
 
-          # Keep one external sound configuration reference in <base>; V25 carried it twice.
           sound_ref = '        <sounds filename="configurations/Ursus1934_sounds.xml"/>'
           if text.count(sound_ref) != 2:
               raise SystemExit(f'Expected 2 base sound references, found {text.count(sound_ref)}')
@@ -45,7 +44,6 @@ jobs:
           second = text.find(sound_ref, first + len(sound_ref))
           text = text[:second] + text[second + len(sound_ref):]
 
-          # FS25 top-link migration explicitly requested by the runtime log.
           text = exact_replace(
               text,
               '            <topArm baseNode="0&gt;5|0|2" filename="$data/shared/assets/upperLinks/walterscheid03.i3d" zScale="-1" color="SHARED_BLACK1"/>',
@@ -57,7 +55,6 @@ jobs:
               '            <topArm baseNode="0&gt;10|7|1|0|2" filename="$data/shared/assets/upperLinks/walterscheidHO_90_600.xml" zScale="1" materialTemplateName="FENDT_GREY1"/>',
               label='front topArm migration')
 
-          # FS25 warns when neither categoryRange nor widthRange is explicit.
           text = exact_replace(
               text,
               '            <bottomArm rotationNode="0&gt;5|0|1" translationNode="0&gt;5|0|1|0" referenceNode="0&gt;5|0|1|0|0" zScale="-1" startRotation="-17 0 0"/>',
@@ -69,8 +66,6 @@ jobs:
               '            <bottomArm rotationNode="0&gt;10|7|1|0|1" translationNode="0&gt;10|7|1|0|1|0" referenceNode="0&gt;10|7|1|0|1|0|0" zScale="1" startRotation="-14.904 0 0" categoryRange="1 4"/>',
               label='front bottomArm categoryRange')
 
-          # Remove obsolete duplicate sound definitions from the vehicle XML.
-          # The dedicated configurations/Ursus1934_sounds.xml remains the single sound source.
           blocks = [
               ('cylindered hydraulic sound', r'\n        <sounds>\r?\n            <hydraulic template="defaultHydraulicSound"/>\r?\n        </sounds>(?=\r?\n    </cylindered>)'),
               ('drivable water splash sound', r'\n        <sounds>\r?\n            <waterSplash template="WATER_SPLASH_01"/>\r?\n        </sounds>(?=\r?\n        <steeringWheel)'),
@@ -85,8 +80,6 @@ jobs:
 
           vehicle_path.write_bytes(text.encode('utf-8'))
 
-          # In the dedicated sound XML only SWITCH_01 is confirmed invalid by the FS25 log.
-          # Keep the valid turnLight, honk, hydraulic, attach and splash definitions untouched.
           sounds_path = Path('configurations/Ursus1934_sounds.xml')
           sounds = sounds_path.read_bytes().decode('utf-8')
           sounds, n = re.subn(r'^[ \t]*<toggleLights\s+template="SWITCH_01"\s*/>\s*\r?\n', '', sounds, count=1, flags=re.MULTILINE)
@@ -100,7 +93,6 @@ jobs:
           moddesc_path.write_text(moddesc, encoding='utf-8')
           Path('VERSION').write_text('1.0.1.1-test1\n', encoding='utf-8')
 
-          # Structural parse check immediately after edits.
           for path in [vehicle_path, sounds_path, moddesc_path]:
               ET.parse(path)
 
@@ -109,7 +101,7 @@ jobs:
 
       - name: Validate cleanup tree
         run: |
-          python3 tools/validate_mod.py
+          python3 tools/validate_current.py
           ./build.sh
           test -f dist/FS25_Ursus_1654_1954_Pack.zip
 
