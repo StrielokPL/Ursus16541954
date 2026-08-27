@@ -70,7 +70,7 @@ jobs:
           i3d_path = Path('Ursus1934.i3d')
           i3d_tree = ET.parse(i3d_path)
           i3d_root = i3d_tree.getroot()
-          tuz = next((n for n in i3d_root.iter() if n.get('nodeId') == '712' and n.get('name') == 'Tuz'), None)
+          tuz = next((n for n in i3d_root.iter() if n.get('nodeId') == '708' and n.get('name') == 'Tuz'), None)
           source1 = next((n for n in i3d_root.iter() if n.get('nodeId') == '720' and n.get('shapeId') == '156'), None)
           source2 = next((n for n in i3d_root.iter() if n.get('nodeId') == '721' and n.get('shapeId') == '157'), None)
           if tuz is None or source1 is None or source2 is None:
