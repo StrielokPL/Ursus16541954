@@ -1,0 +1,67 @@
+Ursus1934.i3d
+Ursus1934.i3d.shapes
+Ursus1934.xml
+UrsusTransmissionFix.lua
+Weight2500kg.i3d
+Weight2500kg.i3d.shapes
+Weight2500kg.xml
+brand_ursus.dds
+configurations/Ursus1934_sounds.xml
+icon_ursus1934.dds
+konwert/exhaust.i3d
+konwert/exhaust.i3d.shapes
+konwert/swiatla/Male z przodu/hellaWorkingLightSquare_02_normal.dds
+konwert/swiatla/Male z przodu/hellaWorkingLightSquare_02_specular.dds
+konwert/swiatla/Tyl male/hellaWorkingLightSquare_01_normal.dds
+konwert/swiatla/Tyl male/hellaWorkingLightSquare_01_specular.dds
+konwert/swiatla/gora przud/rear5ChamberLight_02_normal.dds
+konwert/swiatla/gora przud/rear5ChamberLight_02_specular.dds
+konwert/swiatla/kogut/beaconLightAlpha_normal.dds
+konwert/swiatla/kogut/beaconLight_normal.dds
+konwert/swiatla/kogut/beaconLight_specular.dds
+konwert/swiatla/przud/rearLightCircleRed_02_normal.dds
+konwert/swiatla/przud/rearLightCircleRed_02_specular.dds
+konwert/swiatla/przud migacz/frontLightRectangle_02_normal.dds
+konwert/swiatla/przud migacz/frontLightRectangle_02_specular.dds
+konwert/swiatla/srodek/sideMarker_08Orange_normal.dds
+konwert/swiatla/srodek/sideMarker_08Orange_specular.dds
+konwert/swiatla/tyl duze z migaczami/rear2ChamberLight_04_normal.dds
+konwert/swiatla/tyl duze z migaczami/rear2ChamberLight_04_specular.dds
+modDesc.xml
+shaders/vehicleShader.xml
+sounds/1934Idle.ogg
+sounds/1934Load.ogg
+sounds/1934Run.ogg
+sounds/1934Start.ogg
+sounds/1934Stop.ogg
+sounds/hornBig.wav
+store_Weight2500kg.dds
+store_ursus1934.dds
+textures/Metalfloor_normal.dds
+textures/Ursus1934Stickers.dds
+textures/atrapy_specular.dds
+textures/config_specular.dds
+textures/decals.dds
+textures/decals2.dds
+textures/decals_emissive.dds
+textures/decals_specular.dds
+textures/double_normal.dds
+textures/double_specular.dds
+textures/euro4.dds
+textures/grid.dds
+textures/grid_normal.dds
+textures/interior_specular.dds
+textures/numbers_diffuse.dds
+textures/szyby_specular.dds
+textures/ursus1_specular.dds
+textures/ursus2_specular.dds
+textures/window_diffuse.dds
+wheels/420_85R28.xml
+wheels/480_70R28.xml
+wheels/520_85R38.xml
+wheels/580_70R38.xml
+wheels/KOLA_specular.dds
+wheels/R28Robert.xml
+wheels/R38Robert.xml
+wheels/rims.i3d
+wheels/rims.i3d.shapes

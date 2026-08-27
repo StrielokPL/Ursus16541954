@@ -18,6 +18,26 @@ Repo zawiera kompletny stan moda na **V25**, łącznie z plikami `.xml`, `.i3d`,
 
 `CHANGELOG.md` dokumentuje rozwój V1–V25, `PROJECT_STATE.md` zawiera bieżące parametry techniczne i punkty bezpieczeństwa, a `BINARY_ASSETS.md` pozostaje manifestem kontrolnym pochodzenia, rozmiarów i SHA-256 binariów.
 
+## Budowanie moda
+
+Builder używa dokładnej allowlisty plików gry z testowanego V25, dzięki czemu do ZIP-a nie trafiają `.git`, dokumentacja, narzędzia ani inne pliki repozytorium.
+
+Weryfikacja bazowego V25:
+
+```bash
+python3 tools/verify_v25.py
+```
+
+Budowanie ZIP-a:
+
+```bash
+./build.sh
+```
+
+Wynik trafia do `dist/`. Dla obecnej bazy domyślna nazwa to `FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip`.
+
+Referencja testowanego V25 znajduje się w `reference/v25/`: `files.txt` zawiera 67 plików gry, a `SHA256SUMS.txt` ich kontrolne SHA-256.
+
 ## Google Drive
 
 Folder projektu: `FS25mods/Ursus 1654 1954`

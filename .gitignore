@@ -1,5 +1,4 @@
-# Static binary assets hydrated from original FS22 ZIP
-
 # Local build/test artifacts
 *.zip
+dist/
 __pycache__/
