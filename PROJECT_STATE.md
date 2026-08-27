@@ -24,7 +24,20 @@ Native FS25 filter values used by the tractor and weight:
 
 AI collision trigger: `<collisionTrigger useSize="true"/>`.
 
-## Pending
+## Pending before semantic-version baseline
 - emitted lamp surfaces are too white when switched on,
-- external camera is slightly too high,
-- final log/cleanup.
+- driver character model is positioned several centimetres too high: it floats above the seat and the head intersects the roof; this is a driver-position issue, not a camera-height issue,
+- final log review and cleanup.
+
+## Planned version transition
+After all three pending items above are completed and tested, the project leaves the historical conversion numbering (`V1`–`V25`) and adopts the new GIANTS-like four-part version scheme.
+
+The first release in the new scheme will be **`1.0.1.0`**.
+
+From that point onward:
+- only the new four-part version scheme is used for releases and `modDesc.xml`,
+- legacy `Vxx` labels remain only as historical references,
+- release ZIP filename remains constant across upgrades so an existing save sees the new package as the same mod,
+- vehicle/store XML filenames and mod identity paths must remain stable unless an explicit migration is designed.
+
+See `VERSIONING.md` for the complete policy.
