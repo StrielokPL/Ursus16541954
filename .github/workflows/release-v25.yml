@@ -1,0 +1,65 @@
+name: Release V25
+
+on:
+  push:
+    paths:
+      - '.github/release-v25-trigger.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify exact V25 contents
+        run: python3 tools/verify_v25.py
+
+      - name: Build clean V25 ZIP
+        run: ./build.sh dist/FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip
+
+      - name: Create checksum
+        run: sha256sum dist/FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip > dist/FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip.sha256
+
+      - name: Create V25 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v25 >/dev/null 2>&1; then
+            echo 'Release v25 already exists; nothing to do.'
+            exit 0
+          fi
+
+          cat > /tmp/release-notes.md <<'EOF'
+          ## Ursus 1654–1954 — V25 COLLISION SAFE
+
+          Pierwszy normalnie grywalny release konwersji moda z Farming Simulator 22 do Farming Simulator 25.
+
+          ### Stan
+          - model, materiały i konfiguracje kół działają w FS25,
+          - przedni i tylny TUZ oraz animacje działają,
+          - drzwi, dach i tylna szyba są interaktywne,
+          - lusterka są ustawione i traktowane jako zamknięty element od V21,
+          - silniki mają poprawione krzywe mocy,
+          - skrzynia 8F/4R × Low/High działa sekwencyjnie w automacie,
+          - kolizje z maszynami i ruchem drogowym zostały poprawione i potwierdzone w grze.
+
+          ### Znane drobiazgi do poprawy
+          - powierzchnie włączonych lamp są zbyt białe / płaskie,
+          - zewnętrzna kamera jest odrobinę za wysoko,
+          - przed wersją finalną pozostaje jeszcze końcowy przegląd logu i cleanup.
+
+          ZIP jest budowany z dokładnej 67-plikowej allowlisty V25 i przed publikacją przechodzi weryfikację SHA-256 wszystkich plików względem testowanego V25.
+          EOF
+
+          gh release create v25 \
+            --target 338a6554782470071d3af75463b95619e1286834 \
+            --title 'V25 COLLISION SAFE' \
+            --notes-file /tmp/release-notes.md \
+            dist/FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip \
+            dist/FS25_Ursus_1654_1954_Pack_V25_COLLISION_SAFE.zip.sha256
