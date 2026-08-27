@@ -1,0 +1,127 @@
+name: Prepare 1.0.1.1 cleanup test 4
+
+on:
+  push:
+    branches:
+      - cleanup-1.0.1.1
+    paths:
+      - .github/workflows/cleanup-1.0.1.1-test4.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-build-release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup-1.0.1.1
+          fetch-depth: 0
+
+      - name: Apply cleanup test 4
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          i3d_path = Path('Ursus1934.i3d')
+          tree = ET.parse(i3d_path)
+          root = tree.getroot()
+          files_el = root.find('./Files')
+          mats_el = root.find('./Materials')
+          files = {e.get('fileId'): e for e in files_el.findall('File')}
+
+          material = next((m for m in mats_el.findall('Material') if m.get('materialId') == '4'), None)
+          if material is None or material.get('name') != 'airConnector_mat':
+              raise SystemExit('airConnector materialId=4 not found')
+
+          removed = set()
+          for child in list(material):
+              fid = child.get('fileId')
+              if fid in files:
+                  filename = files[fid].get('filename', '')
+                  if filename.endswith('/airConnector_normal.dds') or filename.endswith('/airConnector_vmask.dds'):
+                      removed.add(fid)
+                      material.remove(child)
+          if removed != {'49', '50'}:
+              raise SystemExit(f'Unexpected removed air connector file IDs: {removed}')
+
+          for fid in sorted(removed):
+              for mat in mats_el.findall('Material'):
+                  for child in mat:
+                      if child.get('fileId') == fid:
+                          raise SystemExit(f'File ID {fid} is still referenced by material {mat.get("materialId")}')
+              files_el.remove(files[fid])
+
+          fuel_nodes = [node for node in root.iter() if node.get('name') == 'Fuel']
+          if len(fuel_nodes) != 1 or fuel_nodes[0].get('nodeId') != '449':
+              raise SystemExit(f'Expected unique Fuel nodeId=449, got {[(n.get("nodeId"), n.tag) for n in fuel_nodes]}')
+          fuel = fuel_nodes[0]
+          old_group = int(fuel.get('collisionFilterGroup', '0'), 0)
+          fuel.set('collisionFilterGroup', hex(old_group | (1 << 30)))
+          if fuel.get('collisionFilterGroup') != '0x40000000':
+              raise SystemExit(f'Unexpected Fuel collision group: {fuel.get("collisionFilterGroup")}')
+
+          ET.indent(tree, space='  ')
+          tree.write(i3d_path, encoding='utf-8', xml_declaration=True)
+
+          check = i3d_path.read_text(encoding='utf-8')
+          for name in ('airConnector_normal.dds', 'airConnector_vmask.dds'):
+              if name in check:
+                  raise SystemExit(f'Obsolete texture reference remains: {name}')
+          if 'name="Fuel"' not in check or 'collisionFilterGroup="0x40000000"' not in check:
+              raise SystemExit('Fuel FILLABLE group was not written')
+          print('Cleanup test 4 applied successfully')
+          PY
+
+      - name: Validate and build
+        run: |
+          python3 tools/validate_current.py
+          ./build.sh
+          test -f dist/FS25_Ursus_1654_1954_Pack.zip
+
+      - name: Commit cleanup test 4
+        shell: bash
+        run: |
+          rm .github/workflows/cleanup-1.0.1.1-test4.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Ursus1934.i3d .github/workflows/cleanup-1.0.1.1-test4.yml
+          git commit -m 'Remove air connector texture errors and mark Fuel fillable test 4'
+          git push origin HEAD:cleanup-1.0.1.1
+
+      - name: Publish cleanup pre-release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          sha256sum dist/FS25_Ursus_1654_1954_Pack.zip > dist/FS25_Ursus_1654_1954_Pack.zip.sha256
+          if gh release view v1.0.1.1-test4 >/dev/null 2>&1; then
+            gh release delete v1.0.1.1-test4 --yes --cleanup-tag
+          fi
+          cat > /tmp/notes.md <<'EOF'
+          ## 1.0.1.1 CLEANUP TEST 4
+
+          Czwarty etap czyszczenia logu FS25 na bazie CLEANUP TEST 3.
+
+          Zmiany:
+          - usunięto nieistniejące mapy airConnector_normal.dds i airConnector_vmask.dds wyłącznie z materiału gniazd pneumatycznych,
+          - geometria gniazd, kolory materiału i connection targets pozostają bez zmian,
+          - node Fuel używany jako exactFillRootNode dostał wymagany bit kolizji 30 FILLABLE.
+
+          Do sprawdzenia:
+          - brak błędów airConnector,
+          - brak warningu Missing collision group bit 30 (FILLABLE),
+          - tankowanie paliwa,
+          - wygląd przednich i tylnych gniazd.
+
+          Nadal celowo pozostawione:
+          - 5 dashboard emitter warnings i 1 static light warning,
+          - Missing ai agent attachment definition dla Weight2500kg,
+          - non-binary indexed triangle sets w głównym I3D.
+          EOF
+          gh release create v1.0.1.1-test4             --target "$SHA"             --title '1.0.1.1 CLEANUP TEST 4'             --prerelease             --notes-file /tmp/notes.md             dist/FS25_Ursus_1654_1954_Pack.zip             dist/FS25_Ursus_1654_1954_Pack.zip.sha256
