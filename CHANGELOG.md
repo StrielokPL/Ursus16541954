@@ -3,9 +3,10 @@
 ## Punkty bezpieczeństwa
 - **V23 GEAR SAFE** — stabilna skrzynia 16F/8R + lokalny limiter automatu.
 - **V24B HIGH/LOW SEQUENTIAL** — działająca skrzynia 8F/4R × L/H.
-- **V25 COLLISION SAFE** — aktualna baza robocza; V24B + prawidłowe kolizje FS25.
+- **V25 COLLISION SAFE** — prawidłowe kolizje FS25; historyczny ostatni baseline numeracji Vxx.
+- **1.0.1.0** — pierwszy stabilny baseline nowej czteroczłonowej numeracji.
 
-## Wersje
+## Wersje historyczne V1–V25
 - **V1** — pierwsza uruchamialna konwersja FS25; sklep, geometria, silniki, hydraulika i animacje działały; shader i opony wymagały naprawy.
 - **V2** — próba `$data/fs22support/shaders/vehicleShader.xml`; nieudana, większość ciągnika niewidoczna.
 - **V3** — lokalny shader kompatybilności; materiały naprawione; drzwi/dach/tylna szyba działają.
@@ -33,7 +34,16 @@
 - **V24B** — lokalna sekwencja splittera `1L → 1H → 2L → 2H...`, identyczna dla przodu/tyłu; potwierdzona jako dobra.
 - **V25** — konwersja starych masek kolizji FS22 na FS25: `collisionFilterGroup=0x10004`, `collisionFilterMask=0xfe3ffb83`; natywny `<collisionTrigger useSize="true"/>`; użytkownik potwierdził poprawne kolizje ze sprzętem i ruchem drogowym. **COLLISION SAFE**.
 
-## Następne zadania
-1. powierzchnie włączonych świateł / emissive,
-2. zewnętrzna kamera TPP trochę niżej (nie ruszać indoorCamera1),
-3. finalny cleanup i log FS25.
+## 1.0.1.0
+Pierwsze stabilne wydanie po zamknięciu numeracji konwersyjnej Vxx.
+
+Zmiany względem V25:
+- zaakceptowana poprawka powierzchni świecących lamp: emissive `staticLight` zmniejszony do 40% i lekko ocieplony mnożnikiem `1.0 0.88 0.72`; bez zmiany mocy/zasięgu faktycznych źródeł światła,
+- poprawiona pozycja modelu kierowcy w TPP: `playerRoot` obniżony łącznie o 6 cm; kamery, fotel i targety IK pozostawione bez zmian,
+- `modDesc.xml` przestawiony na wersję `1.0.1.0`,
+- od tej wersji stabilna nazwa paczki to `FS25_Ursus_1654_1954_Pack.zip`,
+- builder i walidacja uporządkowane pod dalszy rozwój,
+- usunięto aktywny jednorazowy workflow wydania V25; historyczny Release V25 pozostaje zachowany.
+
+## Dalszy rozwój
+Od **1.0.1.0** używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`. Numeracji V26/V27 nie stosujemy do nowych buildów.
