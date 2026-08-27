@@ -48,6 +48,10 @@
         </inputAttacherJoints>
     </attachable>
 
+    <ai>
+        <agentAttachment useSize="true"/>
+    </ai>
+
     <wearable wearDuration="180" workMultiplier="5" fieldMultiplier="2"/>
     <washable dirtDuration="45" washDuration="1" workMultiplier="2" fieldMultiplier="2"/>
 </vehicle>

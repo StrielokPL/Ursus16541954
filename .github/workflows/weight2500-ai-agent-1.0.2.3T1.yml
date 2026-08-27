@@ -1,0 +1,147 @@
+name: Publish AI outline for 2500 kg weight
+
+on:
+  push:
+    branches:
+      - weight2500-ai-agent-1.0.2.3T1
+
+permissions:
+  contents: write
+
+env:
+  BASE_SHA: 11705c56cac4433cf4adeef06b9a3a4cc4230e8c
+  TAG: v1.0.2.3T1
+  ZIP_NAME: FS25_Ursus_1654_1954_Pack.zip
+  WORKFLOW_FILE: .github/workflows/weight2500-ai-agent-1.0.2.3T1.yml
+
+jobs:
+  validate-build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact test source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard base and approved scope
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$BASE_SHA"
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$BASE_SHA"
+          python3 - <<'PY'
+          import subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          base = "11705c56cac4433cf4adeef06b9a3a4cc4230e8c"
+          expected_files = sorted([
+              ".github/workflows/weight2500-ai-agent-1.0.2.3T1.yml",
+              "VERSION",
+              "Weight2500kg.xml",
+              "modDesc.xml",
+          ])
+          changed = sorted(subprocess.check_output(
+              ["git", "diff", "--name-only", f"{base}..HEAD"], text=True
+          ).splitlines())
+          if changed != expected_files:
+              raise SystemExit(f"Nieoczekiwany zakres zmian: {changed}")
+
+          expected_blobs = {"Weight2500kg.xml":"77911b7fec357f43e6af1e7a01b192fd7e4d65ff","modDesc.xml":"197b4299180bab8f0738815ee44d1228d8973262","VERSION":"71101bd9967be078941ae1318977244c424d0623"}
+          for name, expected in expected_blobs.items():
+              got = subprocess.check_output(["git", "hash-object", name], text=True).strip()
+              if got != expected:
+                  raise SystemExit(f"Nieoczekiwana treść {name}: {got}")
+
+          base_weight = subprocess.check_output(
+              ["git", "show", f"{base}:Weight2500kg.xml"], text=True
+          )
+          old = '''    </attachable>
+
+              <wearable'''
+          new = '''    </attachable>
+
+              <ai>
+                  <agentAttachment useSize="true"/>
+              </ai>
+
+              <wearable'''
+          expected_weight = base_weight.replace(old, new)
+          if expected_weight == base_weight:
+              raise SystemExit("Nie znaleziono zatwierdzonego miejsca wstawienia")
+          if Path("Weight2500kg.xml").read_text(encoding="utf-8") != expected_weight:
+              raise SystemExit("Weight2500kg.xml zmieniono poza zatwierdzonym zakresem")
+
+          root = ET.parse("Weight2500kg.xml").getroot()
+          component = root.find("./base/components/component")
+          if component is None or component.get("mass") != "2500" or component.get("centerOfMass") != "0 0 0.4":
+              raise SystemExit("Zmieniono masę lub środek ciężkości")
+          output = root.find("./attacherJoints/attacherJoint")
+          if output is None or output.get("node") != "0>0|2" or output.get("jointType") != "trailer":
+              raise SystemExit("Zmieniono wyjściowy zaczep trailer")
+          input_joint = root.find("./attachable/inputAttacherJoints/inputAttacherJoint")
+          if input_joint is None or input_joint.get("node") != "0>0|0" or input_joint.get("jointType") != "implement":
+              raise SystemExit("Zmieniono wejściowy zaczep implement")
+          agents = root.findall("./ai/agentAttachment")
+          if len(agents) != 1 or agents[0].attrib != {"useSize": "true"}:
+              raise SystemExit("Nieprawidłowa definicja agentAttachment")
+          PY
+
+      - name: Validate and build 67-file package
+        run: |
+          set -euo pipefail
+          python3 tools/validate_current.py
+          ./build.sh
+
+      - name: Verify test ZIP
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          import zipfile
+          from pathlib import Path
+
+          path = Path("dist/FS25_Ursus_1654_1954_Pack.zip")
+          with zipfile.ZipFile(path) as zf:
+              names = zf.namelist()
+              if len(names) != 67 or len(names) != len(set(names)):
+                  raise SystemExit(f"Nieprawidłowa zawartość ZIP: {len(names)}")
+              mod = ET.fromstring(zf.read("modDesc.xml"))
+              if mod.findtext("version") != "1.0.2.3T1":
+                  raise SystemExit("Nieprawidłowa wersja w ZIP")
+              weight = ET.fromstring(zf.read("Weight2500kg.xml"))
+              agents = weight.findall("./ai/agentAttachment")
+              if len(agents) != 1 or agents[0].attrib != {"useSize": "true"}:
+                  raise SystemExit("ZIP nie zawiera zatwierdzonego obrysu AI")
+          PY
+          (cd dist && sha256sum "$ZIP_NAME" > "$ZIP_NAME.sha256")
+
+      - name: Publish descriptive pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Tag lub release $TAG już istnieje"
+            exit 1
+          fi
+          cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
+          ## Obrys AI obciążnika 2500 kg
+
+          - dodano agentAttachment korzystający z istniejącego rozmiaru urządzenia,
+          - nie zmieniono masy 2500 kg ani środka ciężkości,
+          - wejściowy zaczep implement i wyjściowy zaczep trailer pozostały bez zmian,
+          - geometria, kolizja, ciągnik i pozostałe konfiguracje moda pozostały bez zmian.
+
+          W teście należy sprawdzić brak ostrzeżenia Missing ai agent attachment definition oraz zachowanie pomocnika z obciążnikiem zamontowanym bezpośrednio i z maszyną podpiętą za jego tylnym zaczepem.
+          EOF
+          gh release create "$TAG" "dist/$ZIP_NAME" "dist/$ZIP_NAME.sha256" --target "$GITHUB_SHA" --title "Obrys AI obciążnika 2500 kg" --notes-file "$RUNNER_TEMP/release-notes.md" --prerelease
+
+      - name: Remove one-time workflow
+        if: success()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm "$WORKFLOW_FILE"
+          git commit -m "Usuń jednorazowy workflow obrysu AI obciążnika"
+          git push origin "HEAD:weight2500-ai-agent-1.0.2.3T1"
