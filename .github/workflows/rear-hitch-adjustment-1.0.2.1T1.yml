@@ -1,0 +1,134 @@
+name: Publish rear hitch adjustment
+
+on:
+  push:
+    branches:
+      - rear-hitch-adjustment-1.0.2.1T1
+
+permissions:
+  contents: write
+
+env:
+  BASE_SHA: 318848fc716f9972753cc5539294cf0528c6b4b2
+  TAG: v1.0.2.1T1
+  ZIP_NAME: FS25_Ursus_1654_1954_Pack.zip
+  WORKFLOW_FILE: .github/workflows/rear-hitch-adjustment-1.0.2.1T1.yml
+
+jobs:
+  validate-build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact test branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard base and approved scope
+        run: |
+          set -euo pipefail
+          test "$(git merge-base HEAD "$BASE_SHA")" = "$BASE_SHA"
+          python3 - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          base = "318848fc716f9972753cc5539294cf0528c6b4b2"
+          expected_files = sorted([
+              ".github/workflows/rear-hitch-adjustment-1.0.2.1T1.yml",
+              "Ursus1934.xml",
+              "VERSION",
+              "VERSIONING.md",
+              "modDesc.xml",
+              "tools/validate_current.py",
+          ])
+          changed = sorted(subprocess.check_output(
+              ["git", "diff", "--name-only", f"{base}..HEAD"], text=True
+          ).splitlines())
+          if changed != expected_files:
+              raise SystemExit(f"Nieoczekiwany zakres zmian: {changed}")
+
+          expected_blobs = {
+          "Ursus1934.xml": "2981c8535915d9623420d5d6d0957def17aecd07",
+          "modDesc.xml": "b77ef9fc6debbf6c181da2cf8b0f97053c20e7f0",
+          "VERSION": "a9c1d83e447a2247c39e79fa7a518d3c1a6d58ed",
+          "tools/validate_current.py": "f214f9df215ef05bd6170bd79b072f08187262e2",
+          "VERSIONING.md": "dcf930bb04e8ea52b654ac145c3475c3b5d13c4e"
+}
+          for name, expected in expected_blobs.items():
+              got = subprocess.check_output(
+                  ["git", "hash-object", name], text=True
+              ).strip()
+              if got != expected:
+                  raise SystemExit(f"Nieoczekiwana treść {name}: {got}")
+
+          xml = Path("Ursus1934.xml").read_text(encoding="utf-8")
+          if xml.count('jointType="trailer"') != 1:
+              raise SystemExit("Zmieniono liczbę górnych zaczepów trailer")
+          if xml.count('jointType="trailerLow"') != 1:
+              raise SystemExit("Zmieniono liczbę dolnych zaczepów trailerLow")
+          if '<transNode node="0&gt;5|1|0" minY="0.780" maxY="1.04" />' not in xml:
+              raise SystemExit("Brak zatwierdzonego zakresu górnego zaczepu")
+          if '<output attacherJointIndices="1 2 3" outputNode="0&gt;5|2|0" />' not in xml:
+              raise SystemExit("Zmieniono indeksy tylnego WOM")
+          if '<output attacherJointIndices="4" outputNode="0&gt;5|2|1" />' not in xml:
+              raise SystemExit("Zmieniono indeks przedniego WOM")
+          PY
+
+      - name: Validate and build 67-file package
+        run: |
+          set -euo pipefail
+          python3 tools/validate_current.py
+          ./build.sh
+
+      - name: Verify ZIP content and checksum
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          import zipfile
+          from pathlib import Path
+
+          path = Path("dist/FS25_Ursus_1654_1954_Pack.zip")
+          with zipfile.ZipFile(path) as zf:
+              names = zf.namelist()
+              if len(names) != 67 or len(names) != len(set(names)):
+                  raise SystemExit(f"Nieprawidłowa zawartość ZIP: {len(names)}")
+              mod = ET.fromstring(zf.read("modDesc.xml"))
+              if mod.findtext("version") != "1.0.2.1T1":
+                  raise SystemExit("Nieprawidłowa wersja w ZIP")
+              vehicle = zf.read("Ursus1934.xml").decode("utf-8")
+              expected = '<transNode node="0&gt;5|1|0" minY="0.780" maxY="1.04" />'
+              if vehicle.count(expected) != 1:
+                  raise SystemExit("ZIP nie zawiera zatwierdzonego zakresu zaczepu")
+          PY
+          (cd dist && sha256sum "$ZIP_NAME" > "$ZIP_NAME.sha256")
+
+      - name: Publish descriptive pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Tag lub release $TAG już istnieje"
+            exit 1
+          fi
+          cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
+          ## Regulacja tylnego zaczepu
+
+          - rozszerzony zakres wysokości górnego zaczepu na pin do Y 0.780–1.040,
+          - zachowany osobny, nieruchomy dolny zaczep kulowy,
+          - zachowane indeksy tylnego i przedniego WOM-u,
+          - bez zmian kolizji, przednich obciążników, TUZ-a i tankowania.
+
+          Wersja testowa do sprawdzenia z maszyną zaczepianą na pin i napędzaną WOM-em oraz osobno ze sprzętem na zaczep kulowy. Nazwa paczki pozostaje stała dla zgodności z zapisami gry.
+          EOF
+          gh release create "$TAG"             "dist/$ZIP_NAME"             "dist/$ZIP_NAME.sha256"             --target "$GITHUB_SHA"             --title "Regulacja tylnego zaczepu"             --notes-file "$RUNNER_TEMP/release-notes.md"             --prerelease
+
+      - name: Remove one-time workflow from branch
+        if: success()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm "$WORKFLOW_FILE"
+          git commit -m "Usuń jednorazowy workflow regulacji tylnego zaczepu"
+          git push origin "HEAD:rear-hitch-adjustment-1.0.2.1T1"

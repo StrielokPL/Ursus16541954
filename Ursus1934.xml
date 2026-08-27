@@ -442,7 +442,7 @@
     </attacherJointConfigurations>
     <attacherJoint node="0&gt;5|1|0|0" jointType="trailer" lowerRotLimit="10 70 50" comboTime="1" allowsJointLimitMovement="false">
       <distanceToGround lower="0.44" upper="0.95" />
-      <transNode node="0&gt;5|1|0" minY="0.959" maxY="1.04" />
+      <transNode node="0&gt;5|1|0" minY="0.780" maxY="1.04" />
       <schema position="1 0" rotation="0" invertX="false" />
       <objectChange node="0&gt;5|1|1" visibilityActive="false" visibilityInactive="true" />
       <objectChange node="0&gt;5|0|2" visibilityActive="false" visibilityInactive="true" />
