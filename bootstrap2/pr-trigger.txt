@@ -1,0 +1,2 @@
+Restore the complete SHA-verified V25 source tree on this PR branch.
+Integrity diagnostic run 4 after VERSION marker fix.
