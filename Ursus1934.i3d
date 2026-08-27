@@ -1010,7 +1010,7 @@
                 <TransformGroup name="camera" nodeId="494">
                   <Camera name="indoorCamera1" translation="1.82466e-08 0.662526 -0.0816528" rotation="-18 180 0" nodeId="495" fov="54.43" nearClip="0.1" farClip="5000" orthographicHeight="1"/>
                 </TransformGroup>
-                <TransformGroup name="playerRoot" translation="-1.0516e-14 0 0" nodeId="496">
+                <TransformGroup name="playerRoot" translation="-1.0516e-14 -0.04 0" nodeId="496">
                   <TransformGroup name="player_skin" translation="0 0 0.0649844" nodeId="497"/>
                 </TransformGroup>
               </TransformGroup>
