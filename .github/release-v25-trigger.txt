@@ -1,1 +1,1 @@
-Create stable V25 COLLISION SAFE release.
+Refresh stable V25 COLLISION SAFE release description: driver model position corrected.
