@@ -1279,6 +1279,9 @@
               </TransformGroup>
               <TransformGroup name="trailerAttacherJointFront" translation="-1.19515e-07 -0.0181748 0.300454" rotation="0 -90 0" nodeId="707" />
             </TransformGroup>
+            <Shape shapeId="149" name="frontWeightFrameCollisionA" translation="0 0.949 1.72869" rotation="-90 0 0" nodeId="7004" castsShadows="false" receiveShadows="false" compoundChild="true" density="0.001" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
+            <Shape shapeId="152" name="frontWeightLayer1CollisionA" translation="0 0.883 1.903817" scale="9 1 1" nodeId="7005" castsShadows="false" receiveShadows="false" compoundChild="true" density="0.001" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
+            <Shape shapeId="152" name="frontWeightLayer2CollisionA" translation="0 0.873516 2.265457" scale="17 1 1" nodeId="7006" castsShadows="false" receiveShadows="false" compoundChild="true" density="0.001" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
           </TransformGroup>
           <TransformGroup name="Tuz" nodeId="708">
             <TransformGroup name="tools" nodeId="709">
@@ -1407,6 +1410,7 @@
             <Shape shapeId="131" name="Plane134" translation="-0.286 0.891 1.728" rotation="180 -90 180" nodeId="805" materialIds="39" castsShadows="true" receiveShadows="true" />
             <Shape shapeId="156" name="frontHydraulicCollision1" translation="-7.80565e-08 0.858 1.75047" rotation="-90 -5.00896e-06 -5.00896e-06" nodeId="7002" castsShadows="false" receiveShadows="false" compoundChild="true" density="0.001" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
             <Shape shapeId="157" name="frontHydraulicCollision2" translation="0 1.00577 1.51864" rotation="-90 0 0" nodeId="7003" castsShadows="false" receiveShadows="false" compoundChild="true" density="0.001" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
+            <Shape shapeId="154" name="frontHydraulicArmCollision" translation="-1.90735e-08 0.715 1.776" rotation="21.9317 -0 0" nodeId="7010" castsShadows="false" receiveShadows="false" compoundChild="true" density="0.001" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
           </TransformGroup>
           <TransformGroup name="1934" translation="0 0 -0.022851" visibility="false" nodeId="806">
             <Shape shapeId="160" name="Plane103" translation="0.289 1.66992 1.41677" rotation="90 80 90" nodeId="807" materialIds="32" castsShadows="true" receiveShadows="true" />
@@ -1493,6 +1497,9 @@
               </TransformGroup>
               <TransformGroup name="trailerAttacherJointFront" translation="-1.19515e-07 -0.0181748 0.300454" rotation="0 -90 0" nodeId="875" />
             </TransformGroup>
+            <Shape shapeId="166" name="frontWeightFrameCollisionB" translation="0 0.949 1.72869" nodeId="7007" castsShadows="false" receiveShadows="false" compoundChild="true" density="0.001" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
+            <Shape shapeId="152" name="frontWeightLayer1CollisionB" translation="0 0.883 1.907097" scale="9 1 1" nodeId="7008" castsShadows="false" receiveShadows="false" compoundChild="true" density="0.001" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
+            <Shape shapeId="152" name="frontWeightLayer2CollisionB" translation="0 0.872855 2.267317" scale="9 1 1" nodeId="7009" castsShadows="false" receiveShadows="false" compoundChild="true" density="0.001" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
           </TransformGroup>
           <Shape shapeId="167" name="Plane129" rotation="90 80 90" visibility="false" nodeId="876" materialIds="33" castsShadows="true" receiveShadows="true" />
           <Shape shapeId="168" name="Plane131" rotation="90 80 90" visibility="false" nodeId="877" materialIds="33" castsShadows="true" receiveShadows="true" />
