@@ -1,0 +1,158 @@
+name: Prepare 1.0.1.1 cleanup test 9
+
+on:
+  push:
+    branches: [cleanup-1.0.1.1]
+    paths: [.github/workflows/cleanup-1.0.1.1-test9.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  front-hydraulic-configuration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup-1.0.1.1
+          fetch-depth: 0
+
+      - name: Configure front hydraulic joint and collision
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import copy
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          vehicle_path = Path('Ursus1934.xml')
+          tree = ET.parse(vehicle_path)
+          root = tree.getroot()
+          attacher_joints = root.find('attacherJoints')
+          designs = root.find('designConfigurations')
+          if attacher_joints is None or designs is None:
+              raise SystemExit('Expected attacherJoints/designConfigurations not found')
+          if designs.get('title') != '$l10n_configuration_weights':
+              raise SystemExit('Unexpected design configuration block')
+
+          joints = attacher_joints.findall('attacherJoint')
+          if len(joints) != 6:
+              raise SystemExit(f'Expected 6 base attacher joints, found {len(joints)}')
+          front_joint = joints[1]
+          if front_joint.get('node') != '0>10|7|1|0|0|0|0':
+              raise SystemExit('Expected front hydraulic as base joint index 2')
+          insert_at = list(attacher_joints).index(front_joint)
+          attacher_joints.remove(front_joint)
+
+          configurations = ET.Element('attacherJointConfigurations', {'title': designs.get('title')})
+          found_front = False
+          for design in list(designs):
+              config = copy.deepcopy(design)
+              config.tag = 'attacherJointConfiguration'
+              is_front = config.get('name') == 'FrontHydraulic'
+              if is_front:
+                  found_front = True
+                  config.insert(0, copy.deepcopy(front_joint))
+              for node in ('0>10|7|1|15', '0>10|7|1|16'):
+                  ET.SubElement(config, 'objectChange', {
+                      'node': node,
+                      'compoundChildActive': 'true' if is_front else 'false'
+                  })
+              configurations.append(config)
+          if not found_front:
+              raise SystemExit('FrontHydraulic configuration not found')
+          attacher_joints.insert(insert_at, configurations)
+          root.remove(designs)
+
+          ET.indent(tree, space='  ')
+          tree.write(vehicle_path, encoding='utf-8', xml_declaration=True)
+
+          i3d_path = Path('Ursus1934.i3d')
+          i3d_tree = ET.parse(i3d_path)
+          i3d_root = i3d_tree.getroot()
+          tuz = next((n for n in i3d_root.iter() if n.get('nodeId') == '712' and n.get('name') == 'Tuz'), None)
+          source1 = next((n for n in i3d_root.iter() if n.get('nodeId') == '720' and n.get('shapeId') == '156'), None)
+          source2 = next((n for n in i3d_root.iter() if n.get('nodeId') == '721' and n.get('shapeId') == '157'), None)
+          if tuz is None or source1 is None or source2 is None:
+              raise SystemExit('Front hydraulic collision source geometry not found')
+          if any(n.get('nodeId') in ('881', '882') for n in i3d_root.iter()):
+              raise SystemExit('TEST 9 collision nodeIds already exist')
+
+          for source, node_id, name in (
+              (source1, '881', 'frontHydraulicCollision1'),
+              (source2, '882', 'frontHydraulicCollision2')
+          ):
+              collision = copy.deepcopy(source)
+              collision.set('nodeId', node_id)
+              collision.set('name', name)
+              collision.set('compoundChild', 'true')
+              collision.set('density', '0.01')
+              collision.set('nonRenderable', 'true')
+              collision.set('castsShadows', 'false')
+              collision.set('receiveShadows', 'false')
+              collision.set('collisionFilterGroup', '0x10004')
+              collision.set('collisionFilterMask', '0xfe3ffb83')
+              collision.attrib.pop('materialIds', None)
+              tuz.append(collision)
+
+          component = next((n for n in i3d_root.iter() if n.get('nodeId') == '242'), None)
+          if component is None or component.get('collisionFilterGroup') != '0x40010004':
+              raise SystemExit('TEST 8 FILLABLE component state was not preserved')
+
+          ET.indent(i3d_tree, space='  ')
+          i3d_tree.write(i3d_path, encoding='utf-8', xml_declaration=True)
+
+          check = ET.parse(vehicle_path).getroot()
+          aj = check.find('attacherJoints')
+          cfgs = aj.find('attacherJointConfigurations')
+          if cfgs is None or len(cfgs.findall('attacherJointConfiguration')) != 8:
+              raise SystemExit('Front mounting configurations were not created correctly')
+          if len(aj.findall('attacherJoint')) != 5:
+              raise SystemExit('Front hydraulic joint still exists globally')
+          front_cfg = next(c for c in cfgs if c.get('name') == 'FrontHydraulic')
+          if front_cfg.find('attacherJoint') is None:
+              raise SystemExit('FrontHydraulic configuration has no joint')
+          print('Front joint is configuration-bound; two switchable TUZ collision shapes added')
+          PY
+
+      - name: Validate and build
+        run: |
+          python3 tools/validate_current.py
+          ./build.sh
+          test -f dist/FS25_Ursus_1654_1954_Pack.zip
+
+      - name: Commit cleanup test 9
+        run: |
+          rm .github/workflows/cleanup-1.0.1.1-test9.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Ursus1934.xml Ursus1934.i3d .github/workflows/cleanup-1.0.1.1-test9.yml
+          git commit -m 'Configure front hydraulic joint and collision test 9'
+          git push origin HEAD:cleanup-1.0.1.1
+
+      - name: Publish cleanup pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          sha256sum dist/FS25_Ursus_1654_1954_Pack.zip > dist/FS25_Ursus_1654_1954_Pack.zip.sha256
+          cat > /tmp/notes.md <<'EOF'
+          ## 1.0.1.1 CLEANUP TEST 9
+
+          Poprawka konfiguracji i kolizji przedniego TUZ-a.
+
+          Zmiany:
+          - przedni trzypunktowy attacherJoint istnieje tylko w konfiguracji FrontHydraulic,
+          - pozostałe konfiguracje nie pozwalają już podłączać narzędzi do niewidzialnego TUZ-a,
+          - dodano dwie przełączane kolizje ramy przedniego TUZ-a na bazie istniejącej geometrii,
+          - kolizje są aktywne tylko dla FrontHydraulic,
+          - zachowano działający mechanizm tankowania i kolizje TEST 8.
+
+          Do sprawdzenia:
+          - FrontHydraulic: podpinanie, podnoszenie/opuszczanie oraz kolizja,
+          - konfiguracja bez TUZ-a i wszystkie obciążniki: brak monitu podpięcia narzędzia z przodu,
+          - tankowanie przy niepełnym baku,
+          - brak nowych błędów w logu.
+          EOF
+          gh release create v1.0.1.1-test9 --target "$SHA" --title '1.0.1.1 CLEANUP TEST 9' --prerelease --notes-file /tmp/notes.md dist/FS25_Ursus_1654_1954_Pack.zip dist/FS25_Ursus_1654_1954_Pack.zip.sha256
