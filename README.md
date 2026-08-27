@@ -4,70 +4,67 @@ Prywatne repo robocze konwersji moda Ursus 1654–1954 do Farming Simulator 25.
 
 ## Stan
 
-Aktualna baza robocza: **V25 COLLISION SAFE**.
+Aktualna stabilna wersja: **1.0.1.0**.
 
-Najważniejsze punkty bezpieczeństwa:
-- **V23 GEAR SAFE** — stabilny punkt powrotu dla silnika/skrzyni.
-- **V24B HIGH/LOW SEQUENTIAL** — działająca skrzynia 8F/4R × L/H.
-- **V25 COLLISION SAFE** — V24B + prawidłowe filtry kolizji FS25; potwierdzone w grze.
-- Lusterka są zamknięte od V21 i nie należy zmieniać ich geometrii/rotacji bez wyraźnej potrzeby.
+Historyczne punkty bezpieczeństwa:
+- **V23 GEAR SAFE** — stabilny punkt powrotu dla silnika/skrzyni,
+- **V24B HIGH/LOW SEQUENTIAL** — działająca skrzynia 8F/4R × L/H,
+- **V25 COLLISION SAFE** — prawidłowe filtry kolizji FS25,
+- **1.0.1.0** — pierwszy kompletny baseline po zamknięciu konwersji i przejściu na nową numerację.
+
+Lusterka są zamknięte od V21 i nie należy zmieniać ich geometrii/rotacji bez wyraźnej potrzeby.
+
+## 1.0.1.0
+
+Względem V25:
+- poprawiono emissive powierzchni włączonych lamp,
+- model kierowcy obniżono łącznie o 6 cm bez ruszania kamer, fotela i targetów IK,
+- wykonano cleanup builda i walidację struktury moda,
+- wprowadzono nową czteroczłonową semantykę wersji.
+
+Od tej wersji plik moda ma stałą nazwę:
+
+`FS25_Ursus_1654_1954_Pack.zip`
+
+Numer wersji znajduje się w `modDesc.xml`, pliku `VERSION`, tagu Git i GitHub Release, ale nie w nazwie ZIP-a. Ma to utrzymać stałą tożsamość moda dla istniejących save'ów i zakupionych ciągników.
 
 ## Zawartość repo
 
-Repo zawiera kompletny stan moda na **V25**, łącznie z plikami `.xml`, `.i3d`, `.lua`, lokalnym shaderem kompatybilności oraz statycznymi binariami (`.dds`, `.ogg`, `.wav`, `.i3d.shapes`). Po zwykłym `git clone` nie trzeba już ręcznie uzupełniać assetów z oryginalnego ZIP-a.
+Repo zawiera kompletny stan moda, łącznie z `.xml`, `.i3d`, `.lua`, lokalnym shaderem kompatybilności oraz statycznymi binariami (`.dds`, `.ogg`, `.wav`, `.i3d.shapes`). Po zwykłym `git clone` nie trzeba uzupełniać assetów z oryginalnego ZIP-a.
 
-`CHANGELOG.md` dokumentuje rozwój V1–V25, `PROJECT_STATE.md` zawiera bieżące parametry techniczne i punkty bezpieczeństwa, `VERSIONING.md` opisuje przejście na nową numerację i zasady zachowania tożsamości moda, a `BINARY_ASSETS.md` pozostaje manifestem kontrolnym pochodzenia, rozmiarów i SHA-256 binariów.
+`CHANGELOG.md` dokumentuje historię V1–V25 i przejście do 1.0.1.0. `PROJECT_STATE.md` zawiera bieżące parametry techniczne i punkty bezpieczeństwa. `VERSIONING.md` opisuje zasady dalszego wersjonowania i zachowania tożsamości moda.
 
-## Budowanie moda
+## Walidacja i budowanie
 
-Builder używa dokładnej allowlisty plików gry z testowanego V25, dzięki czemu do ZIP-a nie trafiają `.git`, dokumentacja, narzędzia ani inne pliki repozytorium.
-
-Weryfikacja bazowego V25:
+Bieżąca walidacja:
 
 ```bash
-python3 tools/verify_v25.py
+python3 tools/validate_current.py
 ```
 
-Budowanie ZIP-a:
+Budowanie:
 
 ```bash
 ./build.sh
 ```
 
-Wynik trafia do `dist/`. Dla obecnej historycznej bazy V25 domyślna nazwa nadal odpowiada release'owi V25.
+`build.sh` automatycznie uruchamia walidator przed zbudowaniem paczki. Wynik trafia do:
 
-Referencja testowanego V25 znajduje się w `reference/v25/`: `files.txt` zawiera 67 plików gry, a `SHA256SUMS.txt` ich kontrolne SHA-256.
+`dist/FS25_Ursus_1654_1954_Pack.zip`
 
-## Google Drive
+Builder używa kontrolowanej 67-plikowej allowlisty, dzięki czemu do ZIP-a nie trafiają `.git`, dokumentacja, narzędzia ani pliki robocze repozytorium.
 
-Google Drive pozostaje archiwum wcześniejszych buildów i oryginalnych plików źródłowych.
+Historyczna referencja dokładnego V25 znajduje się w `reference/v25/`. `files.txt` jest nadal bazową listą 67 plików gry, natomiast `SHA256SUMS.txt` opisuje wyłącznie historyczny V25 i nie jest manifestem bieżącej wersji.
 
-Folder projektu: `FS25mods/Ursus 1654 1954`
+## Releases
 
-Folder ID: `1b1HHptqkSa0JwwYYPS2ZiDIMcFI4C25a`
+Gotowe buildy pobieramy z GitHub Releases. Stabilne wydania używają tagów w formie np. `v1.0.1.0`, a asset moda zachowuje stałą nazwę `FS25_Ursus_1654_1954_Pack.zip`.
 
-Oryginał FS22: `FS22_Ursus_1654_1954_Pack_ORIGINAL.zip`
+Google Drive pozostaje tylko archiwum wcześniejszych buildów i oryginalnych plików źródłowych.
 
-SHA-256 oryginalnego ZIP-a:
-`6e74ef00d15c8d685b8f24d3c3c588d60854998a3241b5fe5f29e0e2c8a4d2e5`
+## Workflow rozwoju
 
-## Workflow
-
-1. `main` jest stabilną bazą ostatniej potwierdzonej wersji.
-2. Kolejne poprawki robimy jako małe, czytelne commity/diffy.
-3. Gotowe i testowe buildy publikujemy przez GitHub Releases; Google Drive nie jest już wymagany do bieżącej pracy.
-4. Po potwierdzeniu testu aktualizujemy `CHANGELOG.md`, `PROJECT_STATE.md` i numer wersji.
-
-## Kolejne prace przed zmianą numeracji
-
-1. poprawa wyglądu powierzchni włączonych świateł / emissive,
-2. obniżenie pozycji modelu kierowcy o kilka centymetrów — obecnie postać lewituje nad fotelem, a jej głowa wchodzi w sufit,
-3. finalny przegląd logu i cleanup.
-
-Po ukończeniu i przetestowaniu tych trzech punktów przechodzimy z historycznej numeracji `Vxx` na nową czteroczłonową semantykę podobną do GIANTS. Pierwszy build w nowej numeracji będzie miał wersję **`1.0.1.0`**.
-
-Od `1.0.1.0` wszystkie wydania będą używać wyłącznie nowej semantyki, a gotowy plik moda będzie zawsze miał stałą nazwę:
-
-`FS25_Ursus_1654_1954_Pack.zip`
-
-Wersja będzie zapisywana w `modDesc.xml`, tagu Git i GitHub Release, ale nie w nazwie ZIP-a. Ma to zachować stałą tożsamość moda dla istniejących save'ów i zakupionych ciągników. Szczegóły: `VERSIONING.md`.
+1. `main` jest stabilną bazą ostatniego zaakceptowanego wydania.
+2. Zmiany robimy jako małe, czytelne commity/diffy i testujemy na osobnych buildach/pre-release'ach, gdy jest to potrzebne.
+3. Po akceptacji aktualizujemy numer wersji, changelog i publikujemy GitHub Release.
+4. Od 1.0.1.0 nie wracamy do numeracji `V26`, `V27` itd.; używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`.
