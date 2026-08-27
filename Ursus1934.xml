@@ -831,7 +831,6 @@
       <fillUnitConfiguration>
         <fillUnits>
           <fillUnit unitTextOverride="$l10n_unit_literShort" showOnHud="false" showInShop="false" fillTypes="diesel" capacity="300">
-            <exactFillRootNode node="0&gt;11|0" />
             <dashboard valueType="fillLevel" displayType="ANIMATION" groups="MOTOR_ACTIVE" animName="fuelDisplay" />
           </fillUnit>
           <fillUnit unitTextOverride="$l10n_unit_literShort" showOnHud="false" showInShop="false" showOnInfoHud="false" fillTypes="air" capacity="300">
