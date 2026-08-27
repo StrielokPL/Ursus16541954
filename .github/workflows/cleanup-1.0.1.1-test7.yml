@@ -1,0 +1,101 @@
+name: Prepare 1.0.1.1 cleanup test 7
+
+on:
+  push:
+    branches: [cleanup-1.0.1.1]
+    paths: [.github/workflows/cleanup-1.0.1.1-test7.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  revert-exact-fill-root:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup-1.0.1.1
+          fetch-depth: 0
+
+      - name: Restore functional legacy fuel behavior
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          i3d_path=Path('Ursus1934.i3d')
+          tree=ET.parse(i3d_path)
+          root=tree.getroot()
+
+          component=next((n for n in root.iter() if n.get('nodeId')=='242'),None)
+          fill_child=next((n for n in root.iter() if n.get('nodeId')=='879'),None)
+          if component is None or component.get('name')!='Ursus1934M8e':
+              raise SystemExit('Main component nodeId=242 not found')
+          if fill_child is None or fill_child.get('name')!='pCube2':
+              raise SystemExit('TEST 6 fill child nodeId=879 not found')
+          if component.get('collisionFilterGroup')!='0x10004':
+              raise SystemExit(f'Unexpected component group: {component.get("collisionFilterGroup")}')
+          if fill_child.get('collisionFilterGroup')!='0x40010004':
+              raise SystemExit(f'Unexpected TEST 6 child group: {fill_child.get("collisionFilterGroup")}')
+          fill_child.set('collisionFilterGroup','0x10004')
+
+          ET.indent(tree,space='  ')
+          tree.write(i3d_path,encoding='utf-8',xml_declaration=True)
+
+          xml_path=Path('Ursus1934.xml')
+          vehicle=ET.parse(xml_path)
+          exact=vehicle.findall('./fillUnit/fillUnitConfigurations/fillUnitConfiguration/fillUnits/fillUnit/exactFillRootNode')
+          if len(exact)!=1:
+              raise SystemExit(f'Expected one TEST 6 exactFillRootNode, found {len(exact)}')
+          parent=vehicle.find('./fillUnit/fillUnitConfigurations/fillUnitConfiguration/fillUnits/fillUnit')
+          if parent is None or exact[0] not in list(parent):
+              raise SystemExit('Diesel fill unit parent not found')
+          parent.remove(exact[0])
+          ET.indent(vehicle,space='  ')
+          vehicle.write(xml_path,encoding='utf-8',xml_declaration=True)
+
+          if vehicle.findall('.//exactFillRootNode'):
+              raise SystemExit('exactFillRootNode still present')
+          print('Legacy functional fuel behavior restored')
+          PY
+
+      - name: Validate and build
+        run: |
+          python3 tools/validate_current.py
+          ./build.sh
+          test -f dist/FS25_Ursus_1654_1954_Pack.zip
+
+      - name: Commit cleanup test 7
+        run: |
+          rm .github/workflows/cleanup-1.0.1.1-test7.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Ursus1934.i3d Ursus1934.xml .github/workflows/cleanup-1.0.1.1-test7.yml
+          git commit -m 'Restore functional legacy fuel behavior test 7'
+          git push origin HEAD:cleanup-1.0.1.1
+
+      - name: Publish cleanup pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          sha256sum dist/FS25_Ursus_1654_1954_Pack.zip > dist/FS25_Ursus_1654_1954_Pack.zip.sha256
+          cat > /tmp/notes.md <<'EOF'
+          ## 1.0.1.1 CLEANUP TEST 7
+
+          Przywrócenie działającego tankowania po nieudanych eksperymentach exactFillRootNode.
+
+          Zmiany:
+          - usunięto exactFillRootNode z jednostki paliwa,
+          - główny component oraz child pCube2 mają ponownie zatwierdzoną grupę 0x10004,
+          - wycofano regresję mapowania TEST 5 i niedziałające tankowanie TEST 6,
+          - pozostałe poprawki cleanup TEST 1-4 zachowano.
+
+          Oczekiwane:
+          - tankowanie znów działa,
+          - kolizje pozostają poprawne,
+          - może wrócić nieszkodliwy warning o braku exactFillRootNode; jest świadomie akceptowany.
+          EOF
+          gh release create v1.0.1.1-test7 --target "$SHA" --title '1.0.1.1 CLEANUP TEST 7' --prerelease --notes-file /tmp/notes.md dist/FS25_Ursus_1654_1954_Pack.zip dist/FS25_Ursus_1654_1954_Pack.zip.sha256
