@@ -1,0 +1,298 @@
+name: Prepare 1.0.1.1 cleanup test 16
+
+on:
+  push:
+    branches: [cleanup-1.0.1.1]
+    paths: [.github/workflows/cleanup-1.0.1.1-test16.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  add-configured-front-equipment-collisions:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup-1.0.1.1
+          fetch-depth: 0
+
+      - name: Add dedicated collision sets for front configurations
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          i3d_path = Path('Ursus1934.i3d')
+          text = i3d_path.read_text(encoding='utf-8')
+
+          new_names = [
+              'frontWeightFrameCollisionA',
+              'frontWeightLayer1CollisionA',
+              'frontWeightLayer2CollisionA',
+              'frontWeightFrameCollisionB',
+              'frontWeightLayer1CollisionB',
+              'frontWeightLayer2CollisionB',
+              'frontHydraulicArmCollision',
+          ]
+          if any(f'name="{name}"' in text for name in new_names):
+              raise SystemExit('A TEST 16 collision name already exists')
+          for node_id in range(7004, 7011):
+              if f'nodeId="{node_id}"' in text:
+                  raise SystemExit(f'Node ID {node_id} is already occupied')
+
+          node_tag = re.compile(
+              r'<(/?)(TransformGroup|Shape|Camera|Light)\b([^>]*)>'
+          )
+
+          def closing_line_start(source, node_id):
+              opening = re.search(
+                  rf'<(TransformGroup|Shape)\b[^>]*nodeId="{node_id}"[^>]*>',
+                  source,
+              )
+              if opening is None or opening.group(0).rstrip().endswith('/>'):
+                  raise SystemExit(f'Container node {node_id} was not found')
+              depth = 0
+              for match in node_tag.finditer(source, opening.start()):
+                  closing = match.group(1) == '/'
+                  self_closing = match.group(0).rstrip().endswith('/>')
+                  if not closing and not self_closing:
+                      depth += 1
+                  elif closing:
+                      depth -= 1
+                      if depth == 0:
+                          return source.rfind('\n', 0, match.start()) + 1
+              raise SystemExit(f'Closing tag for container {node_id} was not found')
+
+          common = (
+              'castsShadows="false" receiveShadows="false" '
+              'compoundChild="true" density="0.001" nonRenderable="true" '
+              'collisionFilterGroup="0x10004" '
+              'collisionFilterMask="0xfe3ffb83"'
+          )
+
+          block_a = (
+              f'            <Shape shapeId="149" name="frontWeightFrameCollisionA" '
+              f'translation="0 0.949 1.72869" rotation="-90 0 0" nodeId="7004" {common} />\n'
+              f'            <Shape shapeId="152" name="frontWeightLayer1CollisionA" '
+              f'translation="0 0.883 1.903817" scale="9 1 1" nodeId="7005" {common} />\n'
+              f'            <Shape shapeId="152" name="frontWeightLayer2CollisionA" '
+              f'translation="0 0.873516 2.265457" scale="17 1 1" nodeId="7006" {common} />\n'
+          )
+          block_b = (
+              f'            <Shape shapeId="166" name="frontWeightFrameCollisionB" '
+              f'translation="0 0.949 1.72869" nodeId="7007" {common} />\n'
+              f'            <Shape shapeId="152" name="frontWeightLayer1CollisionB" '
+              f'translation="0 0.883 1.907097" scale="9 1 1" nodeId="7008" {common} />\n'
+              f'            <Shape shapeId="152" name="frontWeightLayer2CollisionB" '
+              f'translation="0 0.872855 2.267317" scale="9 1 1" nodeId="7009" {common} />\n'
+          )
+          block_tuz = (
+              f'            <Shape shapeId="154" name="frontHydraulicArmCollision" '
+              f'translation="-1.90735e-08 0.715 1.776" rotation="21.9317 -0 0" '
+              f'nodeId="7010" {common} />\n'
+          )
+
+          insertions = [
+              (closing_line_start(text, 651), block_a),
+              (closing_line_start(text, 825), block_b),
+              (closing_line_start(text, 708), block_tuz),
+          ]
+          for position, block in sorted(insertions, reverse=True):
+              text = text[:position] + block + text[position:]
+          i3d_path.write_text(text, encoding='utf-8')
+
+          xml_path = Path('Ursus1934.xml')
+          vehicle_text = xml_path.read_text(encoding='utf-8')
+          container_pattern = re.compile(
+              r'(<attacherJointConfigurations\b[^>]*>)(.*?)(</attacherJointConfigurations>)',
+              re.S,
+          )
+          container_match = container_pattern.search(vehicle_text)
+          if container_match is None:
+              raise SystemExit('Front attacherJointConfigurations block not found')
+
+          config_pattern = re.compile(
+              r'(<attacherJointConfiguration\b([^>]*)>)(.*?)(</attacherJointConfiguration>)',
+              re.S,
+          )
+          matches = list(config_pattern.finditer(container_match.group(2)))
+          expected_names = [
+              '$l10n_configuration_valueNo',
+              'FrameWeight',
+              '1200kg',
+              '2000kg',
+              'FrameWeight',
+              '600kg',
+              '1500kg',
+              'FrontHydraulic',
+          ]
+          state_matrix = [
+              [False, False, False, False, False, False, False],
+              [True,  False, False, False, False, False, False],
+              [True,  True,  False, False, False, False, False],
+              [True,  True,  True,  False, False, False, False],
+              [False, False, False, True,  False, False, False],
+              [False, False, False, True,  True,  False, False],
+              [False, False, False, True,  True,  True,  False],
+              [False, False, False, False, False, False, True],
+          ]
+          collision_paths = [
+              '0&gt;10|7|0|3',
+              '0&gt;10|7|0|4',
+              '0&gt;10|7|0|5',
+              '0&gt;10|7|8|3',
+              '0&gt;10|7|8|4',
+              '0&gt;10|7|8|5',
+              '0&gt;10|7|1|17',
+          ]
+          if len(matches) != 8:
+              raise SystemExit(f'Expected eight front configurations, found {len(matches)}')
+
+          output = []
+          cursor = 0
+          inner = container_match.group(2)
+          for index, match in enumerate(matches):
+              attrs = match.group(2)
+              name_match = re.search(r'\bname="([^"]+)"', attrs)
+              name = name_match.group(1) if name_match else None
+              if name != expected_names[index]:
+                  raise SystemExit(
+                      f'Unexpected configuration {index + 1}: {name!r}'
+                  )
+              body = match.group(3)
+              if any(f'node="{path}"' in body for path in collision_paths):
+                  raise SystemExit(f'TEST 16 paths already exist in {name}')
+
+              colli_state = 'false' if index in (0, 7) else 'true'
+              marker = (
+                  '<objectChange node="0&gt;11|1" '
+                  f'compoundChildActive="{colli_state}" />'
+              )
+              if body.count(marker) != 1:
+                  raise SystemExit(f'Expected one colli05 marker in {name}')
+
+              lines = []
+              for path, active in zip(collision_paths, state_matrix[index]):
+                  state = 'true' if active else 'false'
+                  lines.append(
+                      f'        <objectChange node="{path}" '
+                      f'compoundChildActive="{state}" />'
+                  )
+              addition = marker + '\n' + '\n'.join(lines)
+              new_body = body.replace(marker, addition, 1)
+
+              output.append(inner[cursor:match.start()])
+              output.append(match.group(1) + new_body + match.group(4))
+              cursor = match.end()
+          output.append(inner[cursor:])
+
+          new_vehicle_text = (
+              vehicle_text[:container_match.start()]
+              + container_match.group(1)
+              + ''.join(output)
+              + container_match.group(3)
+              + vehicle_text[container_match.end():]
+          )
+          xml_path.write_text(new_vehicle_text, encoding='utf-8')
+
+          i3d_root = ET.parse(i3d_path).getroot()
+          by_name = {
+              node.get('name'): node
+              for node in i3d_root.iter()
+              if node.get('name') in new_names
+          }
+          if set(by_name) != set(new_names):
+              raise SystemExit('Not all TEST 16 collision shapes were created')
+          for name, node in by_name.items():
+              if node.get('compoundChild') != 'true':
+                  raise SystemExit(f'{name} is not a compound child')
+              if node.get('nonRenderable') != 'true':
+                  raise SystemExit(f'{name} is renderable')
+              if node.get('collisionFilterGroup') != '0x10004':
+                  raise SystemExit(f'{name} has the wrong collision group')
+              if node.get('collisionFilterMask') != '0xfe3ffb83':
+                  raise SystemExit(f'{name} has the wrong collision mask')
+
+          p_cube = next(
+              (node for node in i3d_root.iter() if node.get('nodeId') == '879'),
+              None,
+          )
+          if (
+              p_cube is None
+              or p_cube.get('translation') != '0 1.13534 0.661'
+              or p_cube.get('scale') != '1 1 0.93'
+          ):
+              raise SystemExit('Approved TEST 15 pCube2 state was not preserved')
+
+          vehicle = ET.parse(xml_path).getroot()
+          configs = vehicle.findall(
+              'attacherJoints/attacherJointConfigurations/attacherJointConfiguration'
+          )
+          decoded_paths = [path.replace('&gt;', '>') for path in collision_paths]
+          for index, config in enumerate(configs):
+              for path, active in zip(decoded_paths, state_matrix[index]):
+                  changes = [
+                      change
+                      for change in config.findall('objectChange')
+                      if change.get('node') == path
+                      and change.get('compoundChildActive') is not None
+                  ]
+                  expected = 'true' if active else 'false'
+                  if len(changes) != 1 or changes[0].get('compoundChildActive') != expected:
+                      raise SystemExit(
+                          f"Invalid {path} state in {config.get('name')}"
+                      )
+
+          print('Seven dedicated front-equipment collision shapes configured across eight variants')
+          PY
+
+      - name: Validate and build
+        run: |
+          python3 tools/validate_current.py
+          ./build.sh
+          test -f dist/FS25_Ursus_1654_1954_Pack.zip
+
+      - name: Commit cleanup test 16
+        run: |
+          rm .github/workflows/cleanup-1.0.1.1-test16.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Ursus1934.i3d Ursus1934.xml .github/workflows/cleanup-1.0.1.1-test16.yml
+          git commit -m 'Add configured front equipment collision sets test 16'
+          git push origin HEAD:cleanup-1.0.1.1
+
+      - name: Publish cleanup pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          sha256sum dist/FS25_Ursus_1654_1954_Pack.zip > dist/FS25_Ursus_1654_1954_Pack.zip.sha256
+          cat > /tmp/notes.md <<'EOF'
+          ## 1.0.1.1 CLEANUP TEST 16
+
+          Dedykowane kolizje wszystkich siedmiu wariantów przedniego wyposażenia.
+
+          Zmiany:
+          - pierwsza rodzina obciążników ma osobne bryły ramy i dwóch pakietów,
+          - druga rodzina obciążników ma osobne bryły ramy i dwóch pakietów,
+          - FrontHydraulic otrzymał dodatkową kolizję dolnych ramion,
+          - każdy z ośmiu wariantów aktywuje wyłącznie właściwy zestaw,
+          - opcja bez wyposażenia nie aktywuje żadnej nowej bryły,
+          - zatwierdzona główna kolizja pCube2 z TEST 15 pozostaje bez zmian,
+          - tankowanie, jointy, WOM i przewody pozostają bez zmian.
+
+          Uwaga:
+          - nowe bryły korzystają z siatek wizualnych i na PC będą gotowane podczas ładowania,
+          - warningi Non-cpu collision mesh są w tym teście oczekiwane.
+
+          Do sprawdzenia:
+          - podgląd F5 i fizyczna kolizja każdej z ośmiu opcji,
+          - brak kolizji dodatku w wariancie bez wyposażenia,
+          - ruch i podnoszenie FrontHydraulic,
+          - tankowanie oraz log.
+          EOF
+          gh release create v1.0.1.1-test16 --target "$SHA" --title '1.0.1.1 CLEANUP TEST 16' --prerelease --notes-file /tmp/notes.md dist/FS25_Ursus_1654_1954_Pack.zip dist/FS25_Ursus_1654_1954_Pack.zip.sha256
