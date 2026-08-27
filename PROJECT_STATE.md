@@ -1,8 +1,21 @@
-# Project state — V25 COLLISION SAFE
+# Project state — 1.0.1.0
 
-Current working baseline is V25. Mirrors, engine curves, transmission and collisions are considered closed unless a new regression is found.
+Current stable baseline is **1.0.1.0**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
+
+## Closed / confirmed areas
+
+- mirrors: final since V21,
+- engine curves and actual power,
+- transmission: 8F/4R × Low/High, POWERSHIFT splitter with automatic virtual order `1L → 1H → 2L → 2H ...`, same logic forward and reverse,
+- wheels and configurations,
+- front/rear hydraulics and animations,
+- interactive doors, roof and rear window,
+- native FS25 collisions,
+- light emissive appearance,
+- driver character vertical position.
 
 ## Mirrors
+
 Final rotations (do not change for simple in/out adjustment):
 - MirrorL: `-3.272027990 2.511693300 12.415270590`
 - MirrorP: `-3.088065090 2.579479800 12.954543890`
@@ -12,32 +25,45 @@ Indoor camera (Kabina-local): `(0, 1.01023, -0.839)`.
 For small 1 cm movements toward camera, child translation deltas from the current position are approximately:
 - MirrorL: `(-0.00590174, +0.00807091, -0.00017263)`
 - MirrorP: `(+0.00178997, +0.00982288, -0.00055404)`
+
 Reverse signs to move away from camera.
 
-## Transmission
-8F/4R × Low/High, POWERSHIFT splitter. Automatic virtual order: `1L → 1H → 2L → 2H ...`; reverse uses the same logic.
-
 ## Collisions
+
 Native FS25 filter values used by the tractor and weight:
 - `collisionFilterGroup="0x10004"`
 - `collisionFilterMask="0xfe3ffb83"`
 
 AI collision trigger: `<collisionTrigger useSize="true"/>`.
 
-## Pending before semantic-version baseline
-- emitted lamp surfaces are too white when switched on,
-- driver character model is positioned several centimetres too high: it floats above the seat and the head intersects the roof; this is a driver-position issue, not a camera-height issue,
-- final log review and cleanup.
+## Lights
 
-## Planned version transition
-After all three pending items above are completed and tested, the project leaves the historical conversion numbering (`V1`–`V25`) and adopts the new GIANTS-like four-part version scheme.
+The local `staticLight` compatibility shader keeps the original vertex-color lamp colors but scales emissive surface output to 40% and applies a subtle warm multiplier `1.0 0.88 0.72`. Actual light-node power, beam distance and direction are unchanged.
 
-The first release in the new scheme will be **`1.0.1.0`**.
+## Driver character
 
-From that point onward:
-- only the new four-part version scheme is used for releases and `modDesc.xml`,
-- legacy `Vxx` labels remain only as historical references,
-- release ZIP filename remains constant across upgrades so an existing save sees the new package as the same mod,
-- vehicle/store XML filenames and mod identity paths must remain stable unless an explicit migration is designed.
+`characterNode` points to `playerRoot` (`nodeId=496`). In 1.0.1.0 its local translation is:
 
-See `VERSIONING.md` for the complete policy.
+`-1.0516e-14 -0.06 0`
+
+This is 6 cm lower than V25. Cameras, seat geometry and IK targets were not moved.
+
+## Package identity
+
+Current version: **1.0.1.0**.
+
+Stable downloadable ZIP name from this version onward:
+
+`FS25_Ursus_1654_1954_Pack.zip`
+
+Do not rename `Ursus1934.xml`, `Weight2500kg.xml`, their store-item paths or other identity-bearing paths without an explicit savegame migration plan. See `VERSIONING.md`.
+
+## Validation / build
+
+`./build.sh` now runs `tools/validate_current.py` before building. The validator checks the 67-file game allowlist, parses all XML/I3D files, confirms the four-part version, store-item paths, transmission script reference and stable ZIP naming.
+
+The historical exact V25 SHA manifest remains under `reference/v25/` as a regression/reference point; it is not the current-release hash manifest.
+
+## Runtime note
+
+Repository/package validation cannot replace a Farming Simulator runtime log. A fresh FS25 log was not stored in this repository at the time of the 1.0.1.0 release; if a runtime warning is later found, treat it as a normal follow-up fix under the new version scheme.
