@@ -31,13 +31,13 @@ jobs:
           text = path.read_text(encoding='utf-8')
           old = "    mEmitColor *= mLightControl;\n    lighting.xyz += mEmitColor;"
           count = text.count(old)
-          if count != 2:
-              raise SystemExit(f'Expected 2 static-light emission blocks, found {count}')
+          if count != 1:
+              raise SystemExit(f'Expected 1 static-light emission block, found {count}')
           new = "    mEmitColor *= mLightControl;\n    // FS25 conversion test: reduce flat overbright lens emission and warm halogen output.\n    // This affects emissive surfaces only; actual Light nodes / beam power are unchanged.\n    mEmitColor *= 0.40;\n    mEmitColor *= float3(1.0, 0.88, 0.72);\n    lighting.xyz += mEmitColor;"
           text = text.replace(old, new)
           path.write_text(text, encoding='utf-8')
           ET.parse(path)
-          print('Patched both STATIC_LIGHT emission blocks; shader XML is well formed.')
+          print('Patched STATIC_LIGHT emission block; shader XML is well formed.')
           PY
 
       - name: Remove one-shot workflow and commit test
