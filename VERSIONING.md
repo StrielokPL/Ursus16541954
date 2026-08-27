@@ -31,6 +31,23 @@ Use the same four-part textual form in release naming and in `modDesc.xml`, for 
 
 Exact increment choice depends on the scope of the change; the important project rule is that all post-transition builds use this single four-part scheme consistently.
 
+## Znaczenie segmentów i sufiksów
+
+Wersje od `1.0.1.0` używają formatu `A.B.C.D[K][N]`:
+
+- `A` i `B` zmieniają się wyłącznie przy dużych zmianach zrywających zgodność z wcześniejszą iteracją moda. Taki skok sygnalizuje, że po aktualizacji gra może nie rozpoznać wcześniej kupionych maszyn bez planu migracji.
+- `C` oznacza kolejne stabilne wydanie.
+- `D` oznacza serię zmian rozwijaną pomiędzy stabilnymi wydaniami.
+- `H` oznacza brudny, awaryjny hotfix.
+- `F` oznacza czysty, niewielki fix w kodzie lub konfiguracji.
+- `T` oznacza iterację testową konkretnej zmiany.
+- `P` oznacza prerelease, czyli kandydata do stabilnego wydania.
+- `N` jest opcjonalnym kolejnym numerem iteracji danego rodzaju.
+
+Przykłady: `1.0.2.1H`, `1.0.2.1H2`, `1.0.2.1F`, `1.0.2.1F2`, `1.0.2.1T1`, `1.0.2.1T24`, `1.0.3.0P1`. Stabilne wydanie nie ma sufiksu, np. `1.0.3.0`.
+
+Numer iteracji występuje wyłącznie w identyfikatorze wersji i tagu. Tytuły oraz opisy wydań mają być opisowe; nie używamy nazw typu „TEST 1”, „TEST 2” ani „TEST 24”.
+
 ## Stable mod package identity
 
 Starting with `1.0.1.0`, every downloadable mod build must use one constant ZIP filename:

@@ -4,7 +4,7 @@ Prywatne repo robocze konwersji moda Ursus 1654–1954 do Farming Simulator 25.
 
 ## Stan
 
-Aktualna stabilna wersja: **1.0.2.0**.
+Aktualna stabilna wersja: **1.0.2.2**.
 
 Historyczne punkty bezpieczeństwa:
 - **V23 GEAR SAFE** — stabilny punkt powrotu dla silnika/skrzyni,
@@ -12,6 +12,7 @@ Historyczne punkty bezpieczeństwa:
 - **V25 COLLISION SAFE** — prawidłowe filtry kolizji FS25,
 - **1.0.1.0** — pierwszy kompletny baseline po zamknięciu konwersji i przejściu na nową numerację.
 - **1.0.2.0** — zatwierdzony cleanup FS25, działające tankowanie oraz finalne kolizje wariantów przedniego wyposażenia.
+- **1.0.2.2** — regulowany górny zaczep na pin z zakresem pozwalającym zejść poniżej tylnego WOM-u.
 
 Lusterka są zamknięte od V21 i nie należy zmieniać ich geometrii/rotacji bez wyraźnej potrzeby.
 
@@ -41,11 +42,19 @@ Względem 1.0.1.0:
 
 Tankowanie oraz kolizje wszystkich wariantów zostały potwierdzone w grze na buildzie CLEANUP TEST 24.
 
+## 1.0.2.2
+
+Względem 1.0.2.0:
+- rozszerzono regulację wysokości górnego zaczepu na pin do zakresu `Y 0.760–1.040`,
+- dolny, nieruchomy zaczep kulowy `trailerLow` pozostał bez zmian,
+- zachowano indeksy tylnego WOM-u `1 2 3` i przedniego WOM-u `4`,
+- wprowadzono walidację wersji w formacie `A.B.C.D[K][N]` oraz opisano znaczenie sufiksów `H/F/T/P`.
+
 ## Zawartość repo
 
 Repo zawiera kompletny stan moda, łącznie z `.xml`, `.i3d`, `.lua`, lokalnym shaderem kompatybilności oraz statycznymi binariami (`.dds`, `.ogg`, `.wav`, `.i3d.shapes`). Po zwykłym `git clone` nie trzeba uzupełniać assetów z oryginalnego ZIP-a.
 
-`CHANGELOG.md` dokumentuje historię V1–V25 oraz stabilne wydania 1.0.1.0 i 1.0.2.0. `PROJECT_STATE.md` zawiera bieżące parametry techniczne i punkty bezpieczeństwa. `VERSIONING.md` opisuje zasady dalszego wersjonowania i zachowania tożsamości moda.
+`CHANGELOG.md` dokumentuje historię V1–V25 oraz stabilne wydania 1.0.1.0, 1.0.2.0 i 1.0.2.2. `PROJECT_STATE.md` zawiera bieżące parametry techniczne i punkty bezpieczeństwa. `VERSIONING.md` opisuje zasady dalszego wersjonowania i zachowania tożsamości moda.
 
 ## Walidacja i budowanie
 

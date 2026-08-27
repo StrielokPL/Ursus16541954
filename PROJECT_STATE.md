@@ -1,6 +1,6 @@
-# Project state — 1.0.2.0
+# Project state — 1.0.2.2
 
-Current stable baseline is **1.0.2.0**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
+Current stable baseline is **1.0.2.2**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
 
 ## Closed / confirmed areas
 
@@ -12,7 +12,8 @@ Current stable baseline is **1.0.2.0**. The historical conversion numbering V1�
 - interactive doors, roof and rear window,
 - native FS25 collisions,
 - light emissive appearance,
-- driver character vertical position.
+- driver character vertical position,
+- rear pin hitch height range and rear PTO routing.
 
 ## Mirrors
 
@@ -27,6 +28,13 @@ For small 1 cm movements toward camera, child translation deltas from the curren
 - MirrorP: `(+0.00178997, +0.00982288, -0.00055404)`
 
 Reverse signs to move away from camera.
+
+## Rear hitch and PTO
+
+- upper adjustable pin hitch: `jointType="trailer"`, range `Y 0.760–1.040`,
+- lower fixed ball hitch: `jointType="trailerLow"`,
+- rear PTO output remains assigned to attacher joint indices `1 2 3`,
+- front PTO output remains assigned to attacher joint index `4`.
 
 ## Collisions
 
@@ -53,7 +61,7 @@ This is 6 cm lower than V25. Cameras, seat geometry and IK targets were not move
 
 ## Package identity
 
-Current version: **1.0.2.0**.
+Current version: **1.0.2.2**.
 
 Stable downloadable ZIP name from this version onward:
 
@@ -63,12 +71,12 @@ Do not rename `Ursus1934.xml`, `Weight2500kg.xml`, their store-item paths or oth
 
 ## Validation / build
 
-`./build.sh` now runs `tools/validate_current.py` before building. The validator checks the 67-file game allowlist, parses all XML/I3D files, confirms the four-part version, store-item paths, transmission script reference and stable ZIP naming.
+`./build.sh` now runs `tools/validate_current.py` before building. The validator checks the 67-file game allowlist, parses all XML/I3D files, confirms the `A.B.C.D[K][N]` version form, store-item paths, transmission script reference and stable ZIP naming.
 
 The historical exact V25 SHA manifest remains under `reference/v25/` as a regression/reference point; it is not the current-release hash manifest.
 
 ## Runtime note
 
-The 1.0.2.0 candidate was verified in Farming Simulator 25: refuelling works, general collisions remain correct, and the front equipment collision variants switch and align as intended.
+The 1.0.2.0 baseline was verified in Farming Simulator 25: refuelling works, general collisions remain correct, and the front equipment collision variants switch and align as intended. Version 1.0.2.2 adds only the approved rear pin-hitch height range change plus versioning/documentation updates.
 
 Accepted legacy warnings remain outside this release scope: missing `exactFillRootNode` fallback, dashboard emitters, one `staticLight`, the 2500 kg weight AI attachment definition and non-binary indexed triangle sets.

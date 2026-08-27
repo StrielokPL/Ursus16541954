@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FILE_LIST = ROOT / "reference" / "v25" / "files.txt"
-VERSION_RE = re.compile(r"^\d+\.\d+\.\d+\.\d+$")
+VERSION_RE = re.compile(r"^\d+\.\d+\.\d+\.\d+(?:[HFTP](?:[1-9]\d*)?)?$")
 
 
 def fail(message: str) -> None:
@@ -39,7 +39,7 @@ def main() -> int:
 
     version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
     if not VERSION_RE.fullmatch(version):
-        fail(f"VERSION nie ma formatu x.x.x.x: {version}")
+        fail(f"VERSION nie ma formatu A.B.C.D[K][N]: {version}")
 
     mod_desc = ET.parse(ROOT / "modDesc.xml").getroot()
     if mod_desc.findtext("version") != version:

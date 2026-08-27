@@ -5,6 +5,7 @@
 - **V24B HIGH/LOW SEQUENTIAL** — działająca skrzynia 8F/4R × L/H.
 - **V25 COLLISION SAFE** — prawidłowe kolizje FS25; historyczny ostatni baseline numeracji Vxx.
 - **1.0.1.0** — pierwszy stabilny baseline nowej czteroczłonowej numeracji.
+- **1.0.2.2** — stabilna regulacja górnego tylnego zaczepu względem WOM-u.
 
 ## Wersje historyczne V1–V25
 - **V1** — pierwsza uruchamialna konwersja FS25; sklep, geometria, silniki, hydraulika i animacje działały; shader i opony wymagały naprawy.
@@ -60,6 +61,18 @@ Najważniejsze zmiany względem 1.0.1.0:
 - zachowano działającą skrzynię, silniki, lusterka, koła, hydraulikę, animacje, światła i pozycję kierowcy z wcześniejszych zatwierdzonych baz.
 
 Testy runtime potwierdziły tankowanie, ogólne kolizje, poprawne przełączanie wariantów przedniego wyposażenia i finalne pozycje boxów.
+
+## 1.0.2.2
+Stabilne wydanie regulacji tylnego zaczepu.
+
+Zmiany względem 1.0.2.0:
+- górny zaczep na pin `trailer` zachowuje maksymalną wysokość `Y 1.040`, a jego dolny limit ustawiono na `Y 0.760`,
+- dolny, nieruchomy zaczep kulowy `trailerLow` pozostał bez zmian,
+- tylne wyjście WOM nadal obsługuje indeksy zaczepów `1 2 3`, a przednie wyjście indeks `4`,
+- nie zmieniono kolizji, przednich obciążników, TUZ-a, tankowania ani tożsamości paczki,
+- walidator i `VERSIONING.md` obsługują uzgodniony format `A.B.C.D[K][N]` oraz sufiksy `H/F/T/P`.
+
+Pośrednia wersja `1.0.2.1T1` służyła do sprawdzenia rozszerzonego zakresu górnego zaczepu. W wydaniu stabilnym dolny limit obniżono o kolejne 2 cm.
 
 ## Dalszy rozwój
 Od **1.0.1.0** używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`. Numeracji V26/V27 nie stosujemy do nowych buildów.
