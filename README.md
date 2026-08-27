@@ -14,9 +14,9 @@ Najważniejsze punkty bezpieczeństwa:
 
 ## Zawartość repo
 
-Historia commitów odtwarza kolejne wersje konwersji na podstawie zachowanych ZIP-ów testowych. Repo zawiera wszystkie edytowalne pliki moda (`.xml`, `.i3d`, `.lua`) oraz lokalny shader kompatybilności.
+Repo odtwarza edytowalny stan moda na V25 i zawiera changelog V1–V25. Wszystkie edytowalne pliki moda (`.xml`, `.i3d`, `.lua`) oraz lokalny shader kompatybilności są wersjonowane bezpośrednio w Git.
 
-Duże statyczne binaria (`.dds`, `.ogg`, `.wav`, `.i3d.shapes`) pochodzą z oryginalnego ZIP-a FS22. Ze względu na ograniczenia konektora GitHub dla lokalnych plików binarnych są opisane w `BINARY_ASSETS.md` wraz z SHA-256 i ścieżkami źródłowymi. Oryginalny ZIP jest zachowany w folderze projektu na Google Drive.
+Duże statyczne binaria (`.dds`, `.ogg`, `.wav`, `.i3d.shapes`) pochodzą z oryginalnego ZIP-a FS22. Ze względu na ograniczenia konektora GitHub dla lokalnych plików binarnych są opisane w `BINARY_ASSETS.md` wraz z SHA-256 i ścieżkami źródłowymi. Skrypt `tools/hydrate_binary_assets.py` odtwarza je z oryginalnego ZIP-a.
 
 ## Google Drive
 
