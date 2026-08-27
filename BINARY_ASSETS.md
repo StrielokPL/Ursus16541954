@@ -1,12 +1,12 @@
 # Binary assets
 
-Statyczne pliki binarne moda pochodzą z oryginalnego ZIP-a FS22 i nie są zmieniane przez bieżące patche tekstowe.
+Statyczne pliki binarne moda pochodzą z oryginalnego ZIP-a FS22 i od commita `07fe2a3` są wersjonowane bezpośrednio w repozytorium razem z V25. Ten plik pozostaje manifestem kontrolnym pochodzenia, rozmiarów i SHA-256.
 
-Źródło na Google Drive: `FS22_Ursus_1654_1954_Pack_ORIGINAL.zip` (ID `1_oxUZFaMJUI73_rS0UhjlyxQwcPfgEX3`).
+Źródło archiwalne na Google Drive: `FS22_Ursus_1654_1954_Pack_ORIGINAL.zip` (ID `1_oxUZFaMJUI73_rS0UhjlyxQwcPfgEX3`).
 
 SHA-256 ZIP-a: `6e74ef00d15c8d685b8f24d3c3c588d60854998a3241b5fe5f29e0e2c8a4d2e5`
 
-Aby odtworzyć kompletny katalog moda lokalnie, umieść oryginalny ZIP obok repo i uruchom `python tools/hydrate_binary_assets.py /ścieżka/do/FS22_Ursus_1654_1954_Pack.zip`.
+Po zwykłym `git clone` kompletne binaria są już obecne lokalnie. `tools/hydrate_binary_assets.py` można traktować wyłącznie jako narzędzie awaryjne do odtworzenia assetów z oryginalnego ZIP-a.
 
 | Ścieżka | Rozmiar | SHA-256 |
 |---|---:|---|
