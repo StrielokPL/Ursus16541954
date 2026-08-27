@@ -1,0 +1,168 @@
+name: Prepare 1.0.1.1 cleanup test 3
+
+on:
+  push:
+    branches:
+      - cleanup-1.0.1.1
+    paths:
+      - .github/workflows/cleanup-1.0.1.1-test3.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-build-release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup-1.0.1.1
+          fetch-depth: 0
+
+      - name: Apply cleanup test 3
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          import re
+
+          # 1) Remove obsolete FS22 texture maps from connector materials,
+          # while keeping connector geometry and all connection target nodes.
+          i3d_path = Path('Ursus1934.i3d')
+          tree = ET.parse(i3d_path)
+          root = tree.getroot()
+          files_el = root.find('./Files')
+          mats_el = root.find('./Materials')
+          files = {e.get('fileId'): e for e in files_el.findall('File')}
+          obsolete_ids = set()
+          for mid in ('11','24'):
+              m = next((x for x in mats_el.findall('Material') if x.get('materialId') == mid), None)
+              if m is None:
+                  raise SystemExit(f'Material {mid} not found')
+              for child in list(m):
+                  fid = child.get('fileId')
+                  if fid and fid in files:
+                      fn = files[fid].get('filename','')
+                      if 'cableBoundleHoses_normal.dds' in fn or 'cableBoundleHoses_vmask.dds' in fn or 'frontConnector_normal.dds' in fn:
+                          obsolete_ids.add(fid)
+                          m.remove(child)
+          expected = {'47','48','51'}
+          if obsolete_ids != expected:
+              raise SystemExit(f'Unexpected obsolete file ids: {obsolete_ids}, expected {expected}')
+          # Remove file declarations only if they are no longer referenced.
+          for fid in sorted(obsolete_ids):
+              for m in mats_el.findall('Material'):
+                  for child in m:
+                      if child.get('fileId') == fid:
+                          raise SystemExit(f'File id {fid} still referenced by material {m.get("materialId")}')
+              files_el.remove(files[fid])
+
+          # Find the unique Fuel transform and compute GIANTS XML node path.
+          scene = root.find('./Scene')
+          valid_tags = {'TransformGroup','Shape','Camera','Light'}
+          def children(el):
+              return [c for c in el if c.tag in valid_tags]
+          matches=[]
+          def walk(el, indices):
+              for i,c in enumerate(children(el)):
+                  p=indices+[i]
+                  if c.get('name') == 'Fuel':
+                      matches.append((c,p))
+                  walk(c,p)
+          walk(scene,[])
+          if len(matches) != 1:
+              raise SystemExit(f'Expected one Fuel node, found {len(matches)}')
+          _, indices = matches[0]
+          if not indices or indices[0] != 0:
+              raise SystemExit(f'Unexpected Fuel path indices {indices}')
+          fuel_path = '0>' + '|'.join(map(str,indices[1:]))
+          print('Fuel exactFillRootNode path:', fuel_path)
+          ET.indent(tree, space='  ')
+          tree.write(i3d_path, encoding='utf-8', xml_declaration=True)
+
+          # 2) Add exactFillRootNode to diesel unit.
+          vehicle_path = Path('Ursus1934.xml')
+          vehicle = vehicle_path.read_text(encoding='utf-8-sig')
+          diesel_pat = re.compile(r'(<fillUnit\s+unitTextOverride="\$l10n_unit_literShort"\s+showOnHud="false"\s+showInShop="false"\s+fillTypes="diesel"\s+capacity="300">\s*)')
+          vehicle, n = diesel_pat.subn(r'\1\n                        <exactFillRootNode node="' + fuel_path + r'"/>\n', vehicle, count=1)
+          if n != 1:
+              raise SystemExit(f'Could not add exactFillRootNode, matches={n}')
+          vehicle_path.write_text(vehicle, encoding='utf-8')
+          ET.parse(vehicle_path)
+
+          # 3) Modernize Weight2500kg schema overlay and remove obsolete ATTACH_01.
+          weight_path = Path('Weight2500kg.xml')
+          weight = weight_path.read_text(encoding='utf-8-sig')
+          old = '''        <schemaOverlay attacherJointPosition="0 0">\n            <default name="DEFAULT_IMPLEMENT"/>\n            <selected name="DEFAULT_IMPLEMENT_SELECTED"/>\n        </schemaOverlay>'''
+          if old not in weight.replace('\r\n','\n'):
+              raise SystemExit('Old Weight schemaOverlay block not found')
+          normalized = weight.replace('\r\n','\n')
+          normalized = normalized.replace(old, '        <schemaOverlay name="DEFAULT_IMPLEMENT" attacherJointPosition="0 0"/>', 1)
+          normalized, n = re.subn(r'\n        <sounds>\n            <attach template="ATTACH_01" linkNode="0&gt;"\s*/>\n        </sounds>', '', normalized, count=1)
+          if n != 1:
+              # original file may contain literal > instead of &gt;
+              normalized, n = re.subn(r'\n        <sounds>\n            <attach template="ATTACH_01" linkNode="0>"\s*/>\n        </sounds>', '', normalized, count=1)
+          if n != 1:
+              raise SystemExit(f'Weight ATTACH_01 block removal matches={n}')
+          weight_path.write_text(normalized, encoding='utf-8')
+          ET.parse(weight_path)
+
+          # Safety checks
+          text_i3d=i3d_path.read_text(encoding='utf-8')
+          for s in ('cableBoundleHoses_normal.dds','cableBoundleHoses_vmask.dds','frontConnector_normal.dds'):
+              if s in text_i3d:
+                  raise SystemExit(f'Obsolete I3D texture reference remains: {s}')
+          print('Cleanup test 3 applied successfully')
+          PY
+
+      - name: Validate cleanup tree
+        run: |
+          python3 tools/validate_current.py
+          ./build.sh
+          test -f dist/FS25_Ursus_1654_1954_Pack.zip
+
+      - name: Commit cleanup test 3
+        shell: bash
+        run: |
+          rm .github/workflows/cleanup-1.0.1.1-test3.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Ursus1934.i3d Ursus1934.xml Weight2500kg.xml .github/workflows/cleanup-1.0.1.1-test3.yml
+          git commit -m 'Cleanup remaining connector and weight warnings test 3'
+          git push origin HEAD:cleanup-1.0.1.1
+
+      - name: Publish cleanup pre-release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          sha256sum dist/FS25_Ursus_1654_1954_Pack.zip > dist/FS25_Ursus_1654_1954_Pack.zip.sha256
+          if gh release view v1.0.1.1-test3 >/dev/null 2>&1; then
+            gh release delete v1.0.1.1-test3 --yes --cleanup-tag
+          fi
+          cat > /tmp/notes.md <<'EOF'
+          ## 1.0.1.1 CLEANUP TEST 3
+
+          Trzeci etap czyszczenia logu FS25 na bazie CLEANUP TEST 2.
+
+          Dodatkowe zmiany:
+          - usunięto trzy nieistniejące referencje tekstur FS22 z materiałów gniazd hydraulicznych/elektrycznych; geometria gniazd i connection targets pozostają,
+          - dodano `exactFillRootNode` wskazujący istniejący node `Fuel` w I3D,
+          - Weight2500kg: schemaOverlay przeniesiony do formatu FS25,
+          - Weight2500kg: usunięto nieistniejący template dźwięku `ATTACH_01`.
+
+          Nadal celowo pozostawione do osobnego testu:
+          - 5 dashboard emitter warnings i 1 static light warning,
+          - `Missing ai agent attachment definition` dla Weight2500kg,
+          - non-binary indexed triangle sets w głównym I3D.
+          EOF
+          gh release create v1.0.1.1-test3 \
+            --target "$SHA" \
+            --title '1.0.1.1 CLEANUP TEST 3' \
+            --prerelease \
+            --notes-file /tmp/notes.md \
+            dist/FS25_Ursus_1654_1954_Pack.zip \
+            dist/FS25_Ursus_1654_1954_Pack.zip.sha256
