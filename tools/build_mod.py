@@ -33,9 +33,7 @@ def main() -> int:
             print(f"  - {rel}")
         return 1
 
-    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
-    safe_version = "".join(c if c.isalnum() or c in "._-" else "_" for c in version)
-    output = Path(sys.argv[1]).expanduser() if len(sys.argv) > 1 else DIST / f"FS25_Ursus_1654_1954_Pack_{safe_version}.zip"
+    output = Path(sys.argv[1]).expanduser() if len(sys.argv) > 1 else DIST / "FS25_Ursus_1654_1954_Pack.zip"
     if not output.is_absolute():
         output = ROOT / output
 
