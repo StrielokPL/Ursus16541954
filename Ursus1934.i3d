@@ -1405,8 +1405,8 @@
             </TransformGroup>
             <Shape shapeId="131" name="Plane134" translation="0.285 0.891053 1.72756" rotation="2.50448e-06 90 0" nodeId="804" materialIds="39" castsShadows="true" receiveShadows="true" />
             <Shape shapeId="131" name="Plane134" translation="-0.286 0.891 1.728" rotation="180 -90 180" nodeId="805" materialIds="39" castsShadows="true" receiveShadows="true" />
-            <Shape shapeId="156" name="frontHydraulicCollision1" translation="-7.80565e-08 0.858 1.75047" rotation="-90 -5.00896e-06 -5.00896e-06" nodeId="7002" castsShadows="false" receiveShadows="false" compoundChild="false" density="0.01" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
-            <Shape shapeId="157" name="frontHydraulicCollision2" translation="0 1.00577 1.51864" rotation="-90 0 0" nodeId="7003" castsShadows="false" receiveShadows="false" compoundChild="false" density="0.01" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />
+            <Shape shapeId="156" name="frontHydraulicCollision1" translation="-7.80565e-08 0.858 1.75047" rotation="-90 -5.00896e-06 -5.00896e-06" nodeId="7002" castsShadows="false" receiveShadows="false" compoundChild="false" density="0.01" nonRenderable="true" />
+            <Shape shapeId="157" name="frontHydraulicCollision2" translation="0 1.00577 1.51864" rotation="-90 0 0" nodeId="7003" castsShadows="false" receiveShadows="false" compoundChild="false" density="0.01" nonRenderable="true" />
           </TransformGroup>
           <TransformGroup name="1934" translation="0 0 -0.022851" visibility="false" nodeId="806">
             <Shape shapeId="160" name="Plane103" translation="0.289 1.66992 1.41677" rotation="90 80 90" nodeId="807" materialIds="32" castsShadows="true" receiveShadows="true" />
