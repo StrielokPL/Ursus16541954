@@ -1,0 +1,302 @@
+name: Prepare 1.0.1.1 cleanup test 20
+
+on:
+  push:
+    branches: [cleanup-1.0.1.1]
+    paths: [.github/workflows/cleanup-1.0.1.1-test20.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  regroup-front-collision-boxes:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup-1.0.1.1
+          fetch-depth: 0
+
+      - name: Regroup front collision boxes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          i3d_path = Path('Ursus1934.i3d')
+          text = i3d_path.read_text(encoding='utf-8')
+
+          old_weight_block = (
+              '        <Shape shapeId="170" name="frontWeightHeavyCollisionBox" '
+              'translation="0 0.933008 2.03072" compoundChild="true" '
+              'nodeId="7003" materialIds="42" castsShadows="false" '
+              'receiveShadows="false" nonRenderable="true" '
+              'collisionFilterGroup="0x10004" '
+              'collisionFilterMask="0xfe3ffb83" />\n'
+              '        <Shape shapeId="170" name="frontWeight2000CollisionBoxLeft" '
+              'translation="-0.1 0.933008 2.03072" compoundChild="true" '
+              'nodeId="7004" materialIds="42" castsShadows="false" '
+              'receiveShadows="false" nonRenderable="true" '
+              'collisionFilterGroup="0x10004" '
+              'collisionFilterMask="0xfe3ffb83" />\n'
+              '        <Shape shapeId="170" name="frontWeight2000CollisionBoxRight" '
+              'translation="0.1 0.933008 2.03072" compoundChild="true" '
+              'nodeId="7005" materialIds="42" castsShadows="false" '
+              'receiveShadows="false" nonRenderable="true" '
+              'collisionFilterGroup="0x10004" '
+              'collisionFilterMask="0xfe3ffb83" />'
+          )
+          new_weight_block = (
+              '        <Shape shapeId="170" name="frontWeightGroup2CollisionBoxLeft" '
+              'translation="-0.1 0.933008 2.03072" compoundChild="true" '
+              'nodeId="7003" materialIds="42" castsShadows="false" '
+              'receiveShadows="false" nonRenderable="true" '
+              'collisionFilterGroup="0x10004" '
+              'collisionFilterMask="0xfe3ffb83" />\n'
+              '        <Shape shapeId="170" name="frontWeightGroup2CollisionBoxRight" '
+              'translation="0.1 0.933008 2.03072" compoundChild="true" '
+              'nodeId="7004" materialIds="42" castsShadows="false" '
+              'receiveShadows="false" nonRenderable="true" '
+              'collisionFilterGroup="0x10004" '
+              'collisionFilterMask="0xfe3ffb83" />'
+          )
+          if text.count(old_weight_block) != 1:
+              raise SystemExit('Exact TEST 19 front weight box block was not found')
+          text = text.replace(old_weight_block, new_weight_block, 1)
+          i3d_path.write_text(text, encoding='utf-8')
+
+          xml_path = Path('Ursus1934.xml')
+          vehicle_text = xml_path.read_text(encoding='utf-8')
+          container_pattern = re.compile(
+              r'(<attacherJointConfigurations\b[^>]*>)(.*?)(</attacherJointConfigurations>)',
+              re.S,
+          )
+          container_match = container_pattern.search(vehicle_text)
+          if container_match is None:
+              raise SystemExit('Front attacherJointConfigurations block not found')
+
+          config_pattern = re.compile(
+              r'(<attacherJointConfiguration\b([^>]*)>)(.*?)(</attacherJointConfiguration>)',
+              re.S,
+          )
+          inner = container_match.group(2)
+          matches = list(config_pattern.finditer(inner))
+          expected_names = [
+              '$l10n_configuration_valueNo',
+              'FrameWeight',
+              '1200kg',
+              '2000kg',
+              'FrameWeight',
+              '600kg',
+              '1500kg',
+              'FrontHydraulic',
+          ]
+          old_group1 = [False, True, True, False, True, True, False, False]
+          old_center = [False, False, False, False, False, False, True, False]
+          old_wide = [False, False, False, True, False, False, False, False]
+          new_group1 = [False, True, True, False, False, True, False, False]
+          new_group2 = [False, False, False, True, True, False, True, False]
+          tuz_states = [False, False, False, False, False, False, False, True]
+
+          if len(matches) != 8:
+              raise SystemExit(f'Expected eight front configurations, found {len(matches)}')
+
+          def replace_state(body, path, old_state, new_state, name):
+              old = (
+                  f'<objectChange node="{path}" '
+                  f'compoundChildActive="{"true" if old_state else "false"}" />'
+              )
+              new = (
+                  f'<objectChange node="{path}" '
+                  f'compoundChildActive="{"true" if new_state else "false"}" />'
+              )
+              if body.count(old) != 1:
+                  raise SystemExit(f'Expected one {path} marker in {name}')
+              return body.replace(old, new, 1)
+
+          output = []
+          cursor = 0
+          for index, match in enumerate(matches):
+              attrs = match.group(2)
+              name_match = re.search(r'\bname="([^"]+)"', attrs)
+              name = name_match.group(1) if name_match else None
+              if name != expected_names[index]:
+                  raise SystemExit(f'Unexpected configuration {index + 1}: {name!r}')
+
+              body = match.group(3)
+              body = replace_state(
+                  body, '0&gt;11|1', old_group1[index], new_group1[index], name
+              )
+              body = replace_state(
+                  body, '0&gt;11|2', old_center[index], new_group2[index], name
+              )
+              body = replace_state(
+                  body, '0&gt;11|3', old_wide[index], new_group2[index], name
+              )
+
+              old_path4 = (
+                  '\n        <objectChange node="0&gt;11|4" '
+                  f'compoundChildActive="{"true" if old_wide[index] else "false"}" />'
+              )
+              if body.count(old_path4) != 1:
+                  raise SystemExit(f'Expected one 0&gt;11|4 marker in {name}')
+              body = body.replace(old_path4, '', 1)
+
+              output.append(inner[cursor:match.start()])
+              output.append(match.group(1) + body + match.group(4))
+              cursor = match.end()
+          output.append(inner[cursor:])
+
+          vehicle_text = (
+              vehicle_text[:container_match.start()]
+              + container_match.group(1)
+              + ''.join(output)
+              + container_match.group(3)
+              + vehicle_text[container_match.end():]
+          )
+          xml_path.write_text(vehicle_text, encoding='utf-8')
+
+          i3d_root = ET.parse(i3d_path).getroot()
+          nodes = {
+              node.get('nodeId'): node
+              for node in i3d_root.iter()
+              if node.get('nodeId') is not None
+          }
+          expected_boxes = {
+              '880': ('colli05', '170', '0 0.933008 1.78072'),
+              '7003': (
+                  'frontWeightGroup2CollisionBoxLeft',
+                  '170',
+                  '-0.1 0.933008 2.03072',
+              ),
+              '7004': (
+                  'frontWeightGroup2CollisionBoxRight',
+                  '170',
+                  '0.1 0.933008 2.03072',
+              ),
+              '7002': (
+                  'frontHydraulicCollisionBoxLeft',
+                  '170',
+                  '-0.1 0.8 2.13872',
+              ),
+              '7006': (
+                  'frontHydraulicCollisionBoxRight',
+                  '170',
+                  '0.1 0.8 2.13872',
+              ),
+          }
+          for node_id, (name, shape_id, translation) in expected_boxes.items():
+              node = nodes.get(node_id)
+              if (
+                  node is None
+                  or node.get('name') != name
+                  or node.get('shapeId') != shape_id
+                  or node.get('translation') != translation
+                  or node.get('compoundChild') != 'true'
+                  or node.get('nonRenderable') != 'true'
+                  or node.get('collisionFilterGroup') != '0x10004'
+                  or node.get('collisionFilterMask') != '0xfe3ffb83'
+              ):
+                  raise SystemExit(f'Invalid TEST 20 collision box node {node_id}')
+          if '7005' in nodes:
+              raise SystemExit('Redundant TEST 19 box node 7005 still exists')
+
+          p_cube = nodes.get('879')
+          if (
+              p_cube is None
+              or p_cube.get('translation') != '0 1.13534 0.661'
+              or p_cube.get('scale') != '1 1 0.93'
+          ):
+              raise SystemExit('Approved TEST 15 pCube2 state was not preserved')
+
+          root_component = nodes.get('242')
+          if (
+              root_component is None
+              or root_component.get('collisionFilterGroup') != '0x40010004'
+          ):
+              raise SystemExit('Approved TEST 8 FILLABLE root state was not preserved')
+
+          vehicle = ET.parse(xml_path).getroot()
+          configs = vehicle.findall(
+              'attacherJoints/attacherJointConfigurations/attacherJointConfiguration'
+          )
+          if len(configs) != 8:
+              raise SystemExit(f'Expected eight parsed front configurations, found {len(configs)}')
+
+          for index, config in enumerate(configs):
+              if config.get('name') != expected_names[index]:
+                  raise SystemExit(f'Unexpected parsed configuration at index {index + 1}')
+              changes = config.findall('objectChange')
+              expected_paths = (
+                  ('0>11|1', new_group1[index]),
+                  ('0>11|2', new_group2[index]),
+                  ('0>11|3', new_group2[index]),
+                  ('0>10|7|1|15', tuz_states[index]),
+                  ('0>10|7|1|16', tuz_states[index]),
+              )
+              for path, expected_active in expected_paths:
+                  matching = [
+                      change for change in changes
+                      if change.get('node') == path
+                      and change.get('compoundChildActive') is not None
+                  ]
+                  expected = 'true' if expected_active else 'false'
+                  if len(matching) != 1 or matching[0].get('compoundChildActive') != expected:
+                      raise SystemExit(f'Wrong {path} state in configuration {index + 1}')
+              if any(
+                  change.get('node') == '0>11|4'
+                  for change in changes
+              ):
+                  raise SystemExit(f'Obsolete 0>11|4 marker remains in configuration {index + 1}')
+
+          print('TEST 20 group mapping and width validated')
+          PY
+
+      - name: Validate and build
+        run: |
+          python3 tools/validate_current.py
+          ./build.sh
+          test -f dist/FS25_Ursus_1654_1954_Pack.zip
+
+      - name: Commit cleanup test 20
+        run: |
+          rm .github/workflows/cleanup-1.0.1.1-test20.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Ursus1934.i3d Ursus1934.xml .github/workflows/cleanup-1.0.1.1-test20.yml
+          git commit -m 'Regroup front collision boxes test 20'
+          git push origin HEAD:cleanup-1.0.1.1
+
+      - name: Publish cleanup pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          sha256sum dist/FS25_Ursus_1654_1954_Pack.zip > dist/FS25_Ursus_1654_1954_Pack.zip.sha256
+          cat > /tmp/notes.md <<'EOF'
+          ## 1.0.1.1 CLEANUP TEST 20
+
+          Poprawione grupowanie kolizji przedniego wyposażenia.
+
+          Grupy:
+          - brak wyposażenia: bez dodatkowego boxa,
+          - FrameWeight, 600 kg i 1200 kg: wspólny węższy box, offset +0,472 m,
+          - drugi FrameWeight, 1500 kg i 2000 kg: wspólny box, offset +0,722 m i poszerzenie o 0,20 m,
+          - FrontHydraulic: osobny box, dotychczasowy offset +0,722 m i poszerzenie o 0,20 m.
+
+          Zmiany techniczne:
+          - dwa boxy grupy FrameWeight(2) są przesunięte o -0,10 m i +0,10 m,
+          - usunięto zbędny trzeci box ciężkiej grupy,
+          - każda konfiguracja aktywuje wyłącznie własną grupę,
+          - główna kolizja pCube2, tankowanie, jointy, WOM, przewody i geometria wizualna pozostają bez zmian.
+
+          Do sprawdzenia:
+          - F5: wszystkie trzy konfiguracje grupy FrameWeight,
+          - F5: wszystkie trzy konfiguracje grupy FrameWeight(2),
+          - F5: TUZ i wariant bez wyposażenia,
+          - fizyczne kolizje, tankowanie oraz log.
+          EOF
+          gh release create v1.0.1.1-test20 --target "$SHA" --title '1.0.1.1 CLEANUP TEST 20' --prerelease --notes-file /tmp/notes.md dist/FS25_Ursus_1654_1954_Pack.zip dist/FS25_Ursus_1654_1954_Pack.zip.sha256
