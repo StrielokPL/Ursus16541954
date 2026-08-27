@@ -40,6 +40,8 @@ Referencja testowanego V25 znajduje się w `reference/v25/`: `files.txt` zawiera
 
 ## Google Drive
 
+Google Drive pozostaje archiwum wcześniejszych buildów i oryginalnych plików źródłowych.
+
 Folder projektu: `FS25mods/Ursus 1654 1954`
 
 Folder ID: `1b1HHptqkSa0JwwYYPS2ZiDIMcFI4C25a`
@@ -53,11 +55,11 @@ SHA-256 oryginalnego ZIP-a:
 
 1. `main` jest stabilną bazą ostatniej potwierdzonej wersji.
 2. Kolejne poprawki robimy jako małe, czytelne commity/diffy.
-3. Po zbudowaniu wersji testowej ZIP nadal trafia do folderu projektu na Google Drive.
+3. Gotowe i testowe buildy publikujemy przez GitHub Releases; Google Drive nie jest już wymagany do bieżącej pracy.
 4. Po potwierdzeniu testu aktualizujemy `CHANGELOG.md`, `PROJECT_STATE.md` i numer wersji.
 
 ## Kolejne prace
 
 1. poprawa wyglądu powierzchni włączonych świateł / emissive,
-2. obniżenie wyłącznie kamery zewnętrznej,
+2. obniżenie pozycji modelu kierowcy o kilka centymetrów — obecnie postać lewituje nad fotelem, a jej głowa wchodzi w sufit,
 3. finalny przegląd logu i cleanup.
