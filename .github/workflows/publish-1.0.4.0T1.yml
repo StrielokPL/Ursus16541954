@@ -1,0 +1,48 @@
+name: Publish 1.0.4.0T1 prerelease
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-1.0.4.0T1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate
+        run: python3 tools/validate_current.py
+
+      - name: Build ZIP
+        run: ./build.sh
+
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: dda821cc1f1a91354ebb934aee3a336c0ee60dd9
+        run: |
+          gh release create v1.0.4.0T1 \
+            dist/FS25_Ursus_1654_1954_Pack.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$TARGET_SHA" \
+            --title "1.0.4.0T1 — ADS compatibility test" \
+            --prerelease \
+            --notes $'Test build based on 1.0.3.0.\n\nChanges:\n- added vehicle year 2009 for Vehicle Years / ADS compatibility,\n- increased diesel tank capacity from 300 L to 355 L,\n- added optional Advanced Damage System bridge for automatic L/H powershift changes, including gear-shift failure and powershift engagement lag handling.\n\nNo graphics, wheel physics, mass, hydraulics or approved mirror/light settings were changed.'
+
+      - name: Remove one-shot workflow
+        run: |
+          rm .github/workflows/publish-1.0.4.0T1.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/publish-1.0.4.0T1.yml
+          git commit -m "Remove 1.0.4.0T1 prerelease workflow"
+          git push origin HEAD:main
