@@ -1,6 +1,6 @@
-# Project state — 1.0.2.2
+# Project state — 1.0.3.0
 
-Current stable baseline is **1.0.2.2**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
+Current stable baseline is **1.0.3.0**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
 
 ## Closed / confirmed areas
 
@@ -13,7 +13,10 @@ Current stable baseline is **1.0.2.2**. The historical conversion numbering V1�
 - native FS25 collisions,
 - light emissive appearance,
 - driver character vertical position,
-- rear pin hitch height range and rear PTO routing.
+- rear pin hitch height range and rear PTO routing,
+- 2500 kg weight AI attachment outline,
+- exact diesel fill root area,
+- dead light and dashboard emitter mappings removed without visual changes.
 
 ## Mirrors
 
@@ -43,13 +46,17 @@ Native FS25 collision state:
 - the approved collision mask remains `collisionFilterMask="0xfe3ffb83"`,
 - the hood collision is aligned with the visual tractor outline,
 - front equipment collision is configuration-dependent: wide FrameWeight/1200/2000 kg family, narrow FrameWeight(2)/600/1500 kg family, separate TUZ, or no added collision,
-- all weight-family boxes are 5 cm lower than the preceding test; the wide family is spread to x = ±0.20 m.
+- all weight-family boxes are 5 cm lower than the preceding test; the wide family is spread to x = ±0.20 m,
+- the 2500 kg weight defines `<agentAttachment useSize="true"/>` for its AI outline,
+- the tractor has a separate non-renderable FILLABLE box `exactFillRootNodeFuel` at `0>11|7`, assigned only to the diesel fill unit.
 
 AI collision trigger: `<collisionTrigger useSize="true"/>`.
 
 ## Lights
 
 The local `staticLight` compatibility shader keeps the original vertex-color lamp colors but scales emissive surface output to 40% and applies a subtle warm multiplier `1.0 0.88 0.72`. Actual light-node power, beam distance and direction are unchanged.
+
+Version 1.0.3.0 removes one rejected `defaultLight` mapping and five rejected dashboard `EMITTER` mappings. No light geometry, shader, emissive texture, brightness, color or valid light behavior was changed; runtime appearance was confirmed unchanged.
 
 ## Driver character
 
@@ -61,7 +68,7 @@ This is 6 cm lower than V25. Cameras, seat geometry and IK targets were not move
 
 ## Package identity
 
-Current version: **1.0.2.2**.
+Current version: **1.0.3.0**.
 
 Stable downloadable ZIP name from this version onward:
 
@@ -77,6 +84,6 @@ The historical exact V25 SHA manifest remains under `reference/v25/` as a regres
 
 ## Runtime note
 
-The 1.0.2.0 baseline was verified in Farming Simulator 25: refuelling works, general collisions remain correct, and the front equipment collision variants switch and align as intended. Version 1.0.2.2 adds only the approved rear pin-hitch height range change plus versioning/documentation updates.
+Version 1.0.3.0 was verified in Farming Simulator 25. Refuelling works, the 2500 kg weight provides a valid AI attachment outline, and lights plus dashboards remain visually and functionally unchanged. The final runtime log contains no Ursus-related errors.
 
-Accepted legacy warnings remain outside this release scope: missing `exactFillRootNode` fallback, dashboard emitters, one `staticLight`, the 2500 kg weight AI attachment definition and non-binary indexed triangle sets.
+Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary indexed triangle sets` for the inline `FS25MirrorExact` geometry. This non-fatal storage/performance-format warning has no observed gameplay or visual effect. Converting it to binary `.i3d.shapes` is deferred because that asset change requires a new regression test of the approved mirrors.
