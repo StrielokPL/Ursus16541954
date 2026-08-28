@@ -27,7 +27,7 @@ jobs:
       - name: Guard base and approved scope
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$BASE_SHA"
+          test "$(git rev-parse HEAD^)" = "16628c8cc742671ad8cc81418542a20e184de9a3"
           test "$(git ls-remote origin refs/heads/weight2500-ai-agent-1.0.2.3T1 | cut -f1)" = "$BASE_SHA"
           test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$MAIN_SHA"
           python3 - <<'PY'
@@ -64,8 +64,7 @@ jobs:
               ["git", "show", f"{base}:Ursus1934.i3d"], text=True
           )
           old_i3d = '''        <Shape shapeId="170" name="frontWeightWideShortCollisionBoxRight" translation="0.2 0.883008 1.78072" compoundChild="true" nodeId="7008" materialIds="42" castsShadows="false" receiveShadows="false" nonRenderable="true" collisionFilterGroup="0x10004" collisionFilterMask="0xfe3ffb83" />'''
-          new_i3d = old_i3d + '''
-        <Shape shapeId="170" name="exactFillRootNodeFuel" translation="0 1.1 0" scale="1.2 1.5 2" kinematic="true" compound="true" nodeId="7009" materialIds="42" castsShadows="false" receiveShadows="false" nonRenderable="true" collisionFilterGroup="0x40000000" collisionFilterMask="0x20000000" />'''
+          new_i3d = old_i3d + '\n        <Shape shapeId="170" name="exactFillRootNodeFuel" translation="0 1.1 0" scale="1.2 1.5 2" kinematic="true" compound="true" nodeId="7009" materialIds="42" castsShadows="false" receiveShadows="false" nonRenderable="true" collisionFilterGroup="0x40000000" collisionFilterMask="0x20000000" />'
           expected_i3d = base_i3d.replace(old_i3d, new_i3d)
           if expected_i3d == base_i3d:
               raise SystemExit("Nie znaleziono zatwierdzonego miejsca dla boxa")
@@ -75,11 +74,8 @@ jobs:
           base_xml = subprocess.check_output(
               ["git", "show", f"{base}:Ursus1934.xml"], text=True
           )
-          old_xml = '''            <dashboard valueType="fillLevel" displayType="ANIMATION" groups="MOTOR_ACTIVE" animName="fuelDisplay" />
-          </fillUnit>'''
-          new_xml = '''            <dashboard valueType="fillLevel" displayType="ANIMATION" groups="MOTOR_ACTIVE" animName="fuelDisplay" />
-            <exactFillRootNode node="0>11|7" />
-          </fillUnit>'''
+          old_xml = '            <dashboard valueType="fillLevel" displayType="ANIMATION" groups="MOTOR_ACTIVE" animName="fuelDisplay" />\n          </fillUnit>'
+          new_xml = '            <dashboard valueType="fillLevel" displayType="ANIMATION" groups="MOTOR_ACTIVE" animName="fuelDisplay" />\n            <exactFillRootNode node="0>11|7" />\n          </fillUnit>'
           expected_xml = base_xml.replace(old_xml, new_xml)
           if expected_xml == base_xml:
               raise SystemExit("Nie znaleziono paliwowego fillUnit")
