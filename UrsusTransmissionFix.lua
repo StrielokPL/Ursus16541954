@@ -1,9 +1,11 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- V24B: native 8F/4R + L/H powershift splitter.
+-- 1.0.4.0T1: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
 -- Manual modes retain the normal GIANTS gear/group controls.
+-- If Advanced Damage System is installed, automatic L/H changes also respect
+-- ADS gear-shift failures and powershift engagement lag without requiring ADS.
 
 UrsusTransmissionFix = UrsusTransmissionFix or {}
 
@@ -38,6 +40,108 @@ if not UrsusTransmissionFix.installed then
             and #motor.gearGroups == 2
             and motor.gearGroups[1] ~= nil
             and motor.gearGroups[2] ~= nil
+    end
+
+    local function clearAdsPendingSplitter(motor)
+        motor.ursusAdsPendingGroup = nil
+        motor.ursusAdsPendingGroupUntil = nil
+    end
+
+    local function getAdsData(motor)
+        local vehicle = motor ~= nil and motor.vehicle or nil
+        local spec = vehicle ~= nil and vehicle.spec_AdvancedDamageSystem or nil
+        if spec == nil or spec.activeEffects == nil then
+            return nil, nil, nil
+        end
+
+        return vehicle, spec, spec.activeEffects
+    end
+
+    local function sendAdsEffectSync(vehicle, effectId, status, duration)
+        if ADS_EffectSyncEvent ~= nil and ADS_EffectSyncEvent.send ~= nil then
+            ADS_EffectSyncEvent.send(vehicle, effectId, status, 0, 0, duration or 0)
+        end
+    end
+
+    local function playAdsShiftFailure(spec, effect)
+        if effect == nil or effect.value == nil or effect.value >= 1.0 then
+            return
+        end
+
+        local samples = spec ~= nil and spec.samples or nil
+        if g_soundManager ~= nil and samples ~= nil then
+            local sample = samples["transmissionShiftFailed" .. math.random(3)]
+            if sample ~= nil then
+                g_soundManager:playSample(sample)
+            end
+        end
+    end
+
+    -- ADS wraps normal gear changes, but the Ursus automatic splitter changes
+    -- L/H directly via setGearGroup(). This bridge mirrors the relevant ADS
+    -- behavior only for those automatic splitter engagements.
+    local function canEngageSplitterWithAds(motor, targetGroup)
+        local vehicle, spec, effects = getAdsData(motor)
+        if effects == nil then
+            clearAdsPendingSplitter(motor)
+            return true
+        end
+
+        local lagEffect = effects.POWERSHIFT_ENGAGEMENT_LAG_AND_HARSH_EFFECT
+        if lagEffect ~= nil and lagEffect.value ~= nil and lagEffect.value > 0 then
+            if lagEffect.value >= 1.0 then
+                clearAdsPendingSplitter(motor)
+                return false
+            end
+
+            local delayMs = math.max(0, math.floor(lagEffect.value * 1000 + 0.5))
+            if motor.ursusAdsPendingGroup ~= targetGroup then
+                motor.ursusAdsPendingGroup = targetGroup
+                motor.ursusAdsPendingGroupUntil = g_time + delayMs
+                return delayMs <= 0
+            end
+
+            if motor.ursusAdsPendingGroupUntil ~= nil and g_time < motor.ursusAdsPendingGroupUntil then
+                return false
+            end
+        else
+            clearAdsPendingSplitter(motor)
+        end
+
+        -- The probability is rolled only when the delayed engagement actually
+        -- reaches the clutch, not on every prediction frame while it is waiting.
+        local failureEffect = effects.GEAR_SHIFT_FAILURE_CHANCE
+        if failureEffect ~= nil and failureEffect.value ~= nil and failureEffect.extraData ~= nil then
+            if failureEffect.extraData.status == "FAILED" then
+                return false
+            end
+
+            if vehicle.isServer and math.random() < failureEffect.value then
+                failureEffect.extraData.status = "FAILED"
+                failureEffect.extraData.timer = 0
+                sendAdsEffectSync(vehicle, "GEAR_SHIFT_FAILURE_CHANCE", "FAILED", 0)
+                playAdsShiftFailure(spec, failureEffect)
+                clearAdsPendingSplitter(motor)
+                return false
+            end
+        end
+
+        clearAdsPendingSplitter(motor)
+        return true
+    end
+
+    local function trySetAutomaticSplitterGroup(motor, targetGroup)
+        if motor.activeGearGroupIndex == targetGroup then
+            clearAdsPendingSplitter(motor)
+            return true
+        end
+
+        if not canEngageSplitterWithAds(motor, targetGroup) then
+            return false
+        end
+
+        motor:setGearGroup(targetGroup)
+        return true
     end
 
     -- In AUTOMATIC mode only, stop the base game from optimizing the two
@@ -99,13 +203,21 @@ if not UrsusTransmissionFix.installed then
         if targetGear > curGear then
             if group == 1 then
                 -- e.g. 3L -> 3H
-                self:setGearGroup(2)
+                if not trySetAutomaticSplitterGroup(self, 2) then
+                    self.ursusHighLowCooldownUntil = g_time + 100
+                    self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 100)
+                    return curGear
+                end
                 self.ursusHighLowCooldownUntil = g_time + 350
                 self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 350)
                 return curGear
             else
                 -- e.g. 3H -> 4L
-                self:setGearGroup(1)
+                if not trySetAutomaticSplitterGroup(self, 1) then
+                    self.ursusHighLowCooldownUntil = g_time + 100
+                    self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 100)
+                    return curGear
+                end
                 self.ursusHighLowCooldownUntil = g_time + 350
                 self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 350)
                 nextGear = math.min(curGear + 1, targetGear)
@@ -114,13 +226,21 @@ if not UrsusTransmissionFix.installed then
         elseif targetGear < curGear then
             if group == 2 then
                 -- e.g. 4H -> 4L
-                self:setGearGroup(1)
+                if not trySetAutomaticSplitterGroup(self, 1) then
+                    self.ursusHighLowCooldownUntil = g_time + 100
+                    self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 100)
+                    return curGear
+                end
                 self.ursusHighLowCooldownUntil = g_time + 350
                 self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 350)
                 return curGear
             else
                 -- e.g. 4L -> 3H
-                self:setGearGroup(2)
+                if not trySetAutomaticSplitterGroup(self, 2) then
+                    self.ursusHighLowCooldownUntil = g_time + 100
+                    self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 100)
+                    return curGear
+                end
                 self.ursusHighLowCooldownUntil = g_time + 350
                 self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 350)
                 nextGear = math.max(curGear - 1, targetGear)
@@ -134,5 +254,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] V24B sequential 8x4 L/H splitter enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.4.0T1 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end
