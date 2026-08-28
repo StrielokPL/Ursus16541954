@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.4.0T1: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.4.0T2: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -17,6 +17,16 @@ if not UrsusTransmissionFix.installed then
     local originalGetBestStartGear = VehicleMotor.getBestStartGear
     local originalFindGearChangeTargetGearPrediction = VehicleMotor.findGearChangeTargetGearPrediction
     local originalGetUseAutomaticGroupShifting = VehicleMotor.getUseAutomaticGroupShifting
+
+    -- ADS uses these thresholds internally to classify engine lugging.
+    -- Keep the transmission guard aligned with ADS instead of inventing
+    -- a second, unrelated load model.
+    local ADS_LUGGING_LOAD_THRESHOLD = 0.80
+    local ADS_LUGGING_RPM_THRESHOLD = 0.60
+    local ADS_UPSHIFT_RPM_GUARD = 0.75
+    local ADS_LOAD_DOWNSHIFT_COOLDOWN = 700
+    local ADS_LOAD_UPSHIFT_HOLD = 1800
+    local ADS_LOAD_LOG_COOLDOWN = 1200
 
     local function isUrsusMotor(motor)
         if motor == nil or motor.vehicle == nil then
@@ -55,6 +65,61 @@ if not UrsusTransmissionFix.installed then
         end
 
         return vehicle, spec, spec.activeEffects
+    end
+
+    local function getAdsLoadState(motor)
+        local vehicle = motor ~= nil and motor.vehicle or nil
+        local spec = vehicle ~= nil and vehicle.spec_AdvancedDamageSystem or nil
+        if spec == nil or spec.dynamicMotorLoad == nil then
+            return nil, nil, nil, nil, nil
+        end
+
+        local load = tonumber(spec.dynamicMotorLoad)
+        local maxRpm = tonumber(motor.maxRpm)
+        local rpm = nil
+
+        if motor.getLastModulatedMotorRpm ~= nil then
+            rpm = tonumber(motor:getLastModulatedMotorRpm())
+        end
+        rpm = rpm or tonumber(motor.lastMotorRpm)
+
+        if load == nil or rpm == nil or maxRpm == nil or maxRpm <= 0 then
+            return nil, nil, nil, nil, nil
+        end
+
+        local speed = 0
+        if vehicle.getLastSpeed ~= nil then
+            speed = tonumber(vehicle:getLastSpeed()) or 0
+        end
+
+        return spec, math.max(load, 0), rpm, rpm / maxRpm, speed
+    end
+
+    local function splitterGroupLabel(group)
+        if group == 1 then
+            return "L"
+        elseif group == 2 then
+            return "H"
+        end
+        return tostring(group or "?")
+    end
+
+    local function logAdsLoadGuard(motor, action, fromGear, fromGroup, toGear, toGroup, load, rpm)
+        if motor.ursusAdsLoadLogUntil ~= nil and g_time < motor.ursusAdsLoadLogUntil then
+            return
+        end
+
+        motor.ursusAdsLoadLogUntil = g_time + ADS_LOAD_LOG_COOLDOWN
+        Logging.info(string.format(
+            "[UrsusTransmissionFix] ADS load guard: %s %d%s -> %d%s | load=%d%% rpm=%d",
+            action,
+            fromGear or 0,
+            splitterGroupLabel(fromGroup),
+            toGear or 0,
+            splitterGroupLabel(toGroup),
+            math.floor((load or 0) * 100 + 0.5),
+            math.floor((rpm or 0) + 0.5)
+        ))
     end
 
     local function sendAdsEffectSync(vehicle, effectId, status, duration)
@@ -190,6 +255,51 @@ if not UrsusTransmissionFix.installed then
             return targetGear
         end
 
+        local adsSpec, adsLoad, adsRpm, adsRpmRatio, adsSpeed = getAdsLoadState(self)
+        local adsIsLugging = adsLoad ~= nil
+            and adsLoad > ADS_LUGGING_LOAD_THRESHOLD
+            and adsRpmRatio < ADS_LUGGING_RPM_THRESHOLD
+            and adsSpeed > 0.5
+
+        -- ADS itself treats >80% dynamic load below 60% max RPM as lugging.
+        -- If that state occurs, force exactly one step down in the virtual
+        -- 1L -> 1H -> 2L -> 2H sequence, then give the engine time to recover.
+        if adsIsLugging
+            and (self.ursusAdsLoadDownshiftCooldownUntil == nil
+                or g_time >= self.ursusAdsLoadDownshiftCooldownUntil) then
+            local loadGroup = self.activeGearGroupIndex or 1
+            local loadTargetGroup = loadGroup
+            local loadTargetGear = curGear
+
+            if loadGroup == 2 then
+                -- e.g. 4H -> 4L
+                loadTargetGroup = 1
+            elseif curGear > 1 then
+                -- e.g. 4L -> 3H
+                loadTargetGroup = 2
+                loadTargetGear = curGear - 1
+            end
+
+            if loadTargetGroup ~= loadGroup or loadTargetGear ~= curGear then
+                if not trySetAutomaticSplitterGroup(self, loadTargetGroup) then
+                    self.ursusHighLowCooldownUntil = g_time + 100
+                    self.ursusAdsLoadDownshiftCooldownUntil = g_time + 100
+                    self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 100)
+                    return curGear
+                end
+
+                self.ursusHighLowCooldownUntil = g_time + ADS_LOAD_DOWNSHIFT_COOLDOWN
+                self.ursusAdsLoadDownshiftCooldownUntil = g_time + ADS_LOAD_DOWNSHIFT_COOLDOWN
+                self.ursusAdsLoadUpshiftHoldUntil = g_time + ADS_LOAD_UPSHIFT_HOLD
+                self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, ADS_LOAD_DOWNSHIFT_COOLDOWN)
+                logAdsLoadGuard(
+                    self, "DOWNSHIFT", curGear, loadGroup,
+                    loadTargetGear, loadTargetGroup, adsLoad, adsRpm
+                )
+                return loadTargetGear
+            end
+        end
+
         -- Small local cooldown after a splitter change. Powershift groups apply
         -- instantly in GIANTS, so without this the prediction can be run again
         -- in the same decision window.
@@ -199,6 +309,40 @@ if not UrsusTransmissionFix.installed then
 
         local group = self.activeGearGroupIndex or 1
         local nextGear = curGear
+
+        -- After a load-protection downshift, briefly keep the lower virtual
+        -- ratio so vanilla cannot immediately undo it.
+        if targetGear > curGear
+            and self.ursusAdsLoadUpshiftHoldUntil ~= nil
+            and g_time < self.ursusAdsLoadUpshiftHoldUntil then
+            self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 250)
+            return curGear
+        end
+
+        -- At high ADS dynamic load, do not allow an upshift while the engine
+        -- is already below 75% max RPM. With the 1.25 -> 1.00 L/H splitter
+        -- this prevents a 20% RPM drop from pushing the engine straight into
+        -- ADS's <60% RPM lugging zone.
+        if targetGear > curGear
+            and adsLoad ~= nil
+            and adsLoad > ADS_LUGGING_LOAD_THRESHOLD
+            and adsRpmRatio < ADS_UPSHIFT_RPM_GUARD then
+            local guardTargetGear = curGear
+            local guardTargetGroup = group
+            if group == 1 then
+                guardTargetGroup = 2
+            else
+                guardTargetGroup = 1
+                guardTargetGear = math.min(curGear + 1, targetGear)
+            end
+
+            logAdsLoadGuard(
+                self, "BLOCK UPSHIFT", curGear, group,
+                guardTargetGear, guardTargetGroup, adsLoad, adsRpm
+            )
+            self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 250)
+            return curGear
+        end
 
         if targetGear > curGear then
             if group == 1 then
@@ -254,5 +398,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.4.0T1 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.4.0T2 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end

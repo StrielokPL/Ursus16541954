@@ -97,5 +97,24 @@ Testy runtime:
 - Warning nie powoduje zaobserwowanych problemów z działaniem ani wyglądem moda. Konwersję tej geometrii do binarnego `.i3d.shapes` odłożono, ponieważ wymaga zmiany assetu modelu i ponownego testu zatwierdzonych lusterek.
 - Warningi generowane przez grę, zapis lub inne mody nie należą do tego wydania.
 
+## 1.0.4.0T1
+Testowa iteracja kompatybilności z modami realizmu.
+
+Zmiany względem 1.0.3.0:
+- dodano rok produkcji `2009` do danych sklepowych pojazdu dla zgodności z Vehicle Years i systemami korzystającymi z `storeData.year`,
+- pojemność zbiornika oleju napędowego zwiększono z `300 l` do historycznie właściwych `355 l`,
+- `UrsusTransmissionFix.lua` otrzymał opcjonalny bridge do Advanced Damage System: automatyczny splitter L/H respektuje `GEAR_SHIFT_FAILURE_CHANCE` oraz opóźnienie uszkodzonego powershiftu; bez ADS zachowanie pozostaje bez zmian.
+
+## 1.0.4.0T2
+Test doboru przełożeń automatu zależnego od obciążenia silnika z ADS.
+
+Zmiany względem 1.0.4.0T1:
+- automat przy aktywnym ADS odczytuje ten sam `spec.dynamicMotorLoad`, którego ADS używa do telemetrii i zużycia silnika,
+- przy stanie lugging zgodnym z ADS (`dynamicMotorLoad > 80%`, obroty `< 60% max RPM`, pojazd w ruchu) wymuszany jest jeden krok w dół w sekwencji L/H,
+- przy obciążeniu >80% blokowany jest upshift, jeśli silnik pracuje poniżej 75% maksymalnych obrotów; chroni to przed spadkiem obrotów po zmianie L→H do strefy lugging,
+- po ochronnym downshifcie działa krótka histereza 1,8 s, aby automat nie cofał natychmiast decyzji,
+- log zapisuje tylko faktyczne ingerencje load guarda (`DOWNSHIFT` / `BLOCK UPSHIFT`) wraz z biegiem, obciążeniem i RPM,
+- bez ADS oraz w trybie manualnym zachowanie pozostaje takie jak w T1.
+
 ## Dalszy rozwój
 Od **1.0.1.0** używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`. Numeracji V26/V27 nie stosujemy do nowych buildów.
