@@ -4,7 +4,7 @@ Prywatne repo robocze konwersji moda Ursus 1654–1954 do Farming Simulator 25.
 
 ## Stan
 
-Aktualna stabilna wersja: **1.0.2.2**.
+Aktualna stabilna wersja: **1.0.3.0**.
 
 Historyczne punkty bezpieczeństwa:
 - **V23 GEAR SAFE** — stabilny punkt powrotu dla silnika/skrzyni,
@@ -13,6 +13,7 @@ Historyczne punkty bezpieczeństwa:
 - **1.0.1.0** — pierwszy kompletny baseline po zamknięciu konwersji i przejściu na nową numerację.
 - **1.0.2.0** — zatwierdzony cleanup FS25, działające tankowanie oraz finalne kolizje wariantów przedniego wyposażenia.
 - **1.0.2.2** — regulowany górny zaczep na pin z zakresem pozwalającym zejść poniżej tylnego WOM-u.
+- **1.0.3.0** — poprawiony obrys AI obciążnika 2500 kg, dokładny obszar tankowania i oczyszczone mapowania świateł oraz zegarów.
 
 Lusterka są zamknięte od V21 i nie należy zmieniać ich geometrii/rotacji bez wyraźnej potrzeby.
 
@@ -50,11 +51,25 @@ Względem 1.0.2.0:
 - zachowano indeksy tylnego WOM-u `1 2 3` i przedniego WOM-u `4`,
 - wprowadzono walidację wersji w formacie `A.B.C.D[K][N]` oraz opisano znaczenie sufiksów `H/F/T/P`.
 
+
+## 1.0.3.0
+
+Względem 1.0.2.2:
+- dodano prawidłowy obrys AI obciążnika 2500 kg,
+- dodano niewidoczny, dokładny obszar tankowania przypisany wyłącznie do paliwa,
+- usunięto jeden martwy wpis `defaultLight` i pięć martwych wpisów `EMITTER` zegarów,
+- zachowano bez zmian wygląd, jasność, kolor i działanie właściwych świateł,
+- potwierdzono w grze tankowanie, działanie obciążnika oraz brak zmian wizualnych świateł i zegarów.
+
+## Znane problemy
+
+`Ursus1934.i3d` nadal generuje niekrytyczny warning `i3d contains non-binary indexed triangle sets` dla tekstowo zapisanej geometrii `FS25MirrorExact`. Nie powoduje on zaobserwowanych problemów z działaniem lub wyglądem moda. Konwersję do binarnego `.i3d.shapes` odłożono, aby nie ryzykować regresji zatwierdzonych lusterek.
+
 ## Zawartość repo
 
 Repo zawiera kompletny stan moda, łącznie z `.xml`, `.i3d`, `.lua`, lokalnym shaderem kompatybilności oraz statycznymi binariami (`.dds`, `.ogg`, `.wav`, `.i3d.shapes`). Po zwykłym `git clone` nie trzeba uzupełniać assetów z oryginalnego ZIP-a.
 
-`CHANGELOG.md` dokumentuje historię V1–V25 oraz stabilne wydania 1.0.1.0, 1.0.2.0 i 1.0.2.2. `PROJECT_STATE.md` zawiera bieżące parametry techniczne i punkty bezpieczeństwa. `VERSIONING.md` opisuje zasady dalszego wersjonowania i zachowania tożsamości moda.
+`CHANGELOG.md` dokumentuje historię V1–V25 oraz stabilne wydania 1.0.1.0, 1.0.2.0, 1.0.2.2 i 1.0.3.0. `PROJECT_STATE.md` zawiera bieżące parametry techniczne i punkty bezpieczeństwa. `VERSIONING.md` opisuje zasady dalszego wersjonowania i zachowania tożsamości moda.
 
 ## Walidacja i budowanie
 
