@@ -22,7 +22,7 @@ jobs:
       REPOSITORY: StrielokPL/Ursus16541954
       RELEASE_BRANCH: release-1.0.3.0
       SOURCE_BRANCH: lights-dashboards-1.0.2.4T1
-      EXPECTED_PARENT: 32b622e0f2cbe363b367901597744f40b8b175d9
+      EXPECTED_PARENT: 4536f3312315a7a9140f193692784d04e864806d
       EXPECTED_MAIN: 11705c56cac4433cf4adeef06b9a3a4cc4230e8c
       TAG: v1.0.3.0
       ZIP: dist/FS25_Ursus_1654_1954_Pack.zip
@@ -109,7 +109,7 @@ jobs:
           default_lights = list(vehicle.iter("defaultLight"))
           dashboards = list(vehicle.iter("dashboard"))
           assert len(default_lights) == 16
-          assert len(dashboards) == 10
+          assert len(dashboards) == 17
           assert all(light.get("shaderNode") != "0>10|2|0|0|3|0" for light in default_lights)
           assert all(dashboard.get("displayType") != "EMITTER" for dashboard in dashboards)
 
