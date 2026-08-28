@@ -1,0 +1,235 @@
+name: Publish stable 1.0.3.0
+
+on:
+  push:
+    branches:
+      - release-1.0.3.0
+    paths:
+      - .github/workflows/release-1.0.3.0.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-1.0.3.0
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      REPOSITORY: StrielokPL/Ursus16541954
+      RELEASE_BRANCH: release-1.0.3.0
+      SOURCE_BRANCH: lights-dashboards-1.0.2.4T1
+      EXPECTED_PARENT: 32b622e0f2cbe363b367901597744f40b8b175d9
+      EXPECTED_MAIN: 11705c56cac4433cf4adeef06b9a3a4cc4230e8c
+      TAG: v1.0.3.0
+      ZIP: dist/FS25_Ursus_1654_1954_Pack.zip
+      WORKFLOW_FILE: .github/workflows/release-1.0.3.0.yml
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify immutable release inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_PARENT"
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$EXPECTED_MAIN"
+          test -z "$(git ls-remote --tags origin "refs/tags/$TAG")"
+          if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists" >&2
+            exit 1
+          fi
+
+          git fetch origin "$SOURCE_BRANCH"
+          git merge-base --is-ancestor "origin/$SOURCE_BRANCH" "$GITHUB_SHA"
+
+          git diff --name-only "origin/$SOURCE_BRANCH" "$GITHUB_SHA" | sort > "$RUNNER_TEMP/changed-files"
+          cat > "$RUNNER_TEMP/expected-files" <<'EOF'
+          .github/workflows/release-1.0.3.0.yml
+          CHANGELOG.md
+          PROJECT_STATE.md
+          README.md
+          VERSION
+          modDesc.xml
+          EOF
+          diff -u "$RUNNER_TEMP/expected-files" "$RUNNER_TEMP/changed-files"
+
+          test "$(git hash-object Ursus1934.i3d)" = "5e32a71388966cf68674f5cb0e4115a40bb2ec3e"
+          test "$(git hash-object Ursus1934.xml)" = "f6e61336ae4cb1da80116b9a49222d703bf5f382"
+          test "$(git hash-object Weight2500kg.xml)" = "77911b7fec357f43e6af1e7a01b192fd7e4d65ff"
+          test "$(git hash-object shaders/vehicleShader.xml)" = "3f30e09bc600d7714ef4c4bf97a6f0031cb97d4c"
+          test "$(git hash-object textures/decals_emissive.dds)" = "f516a411680658d7b55faf62e6937f0ef791f68c"
+
+      - name: Verify version, documentation and runtime definitions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          assert Path("VERSION").read_text(encoding="utf-8") == "1.0.3.0\n"
+
+          mod_desc = ET.parse("modDesc.xml").getroot()
+          assert mod_desc.findtext("version") == "1.0.3.0"
+          assert mod_desc.findtext("author") == "M8E, StrielokPL"
+
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          assert changelog.count("## 1.0.3.0") == 1
+          assert "### Znane problemy" in changelog
+          assert "i3d contains non-binary indexed triangle sets" in changelog
+          assert "FS25MirrorExact" in changelog
+
+          readme = Path("README.md").read_text(encoding="utf-8")
+          assert "Aktualna stabilna wersja: **1.0.3.0**." in readme
+          project_state = Path("PROJECT_STATE.md").read_text(encoding="utf-8")
+          assert project_state.startswith("# Project state — 1.0.3.0")
+          assert "Current stable baseline is **1.0.3.0**." in project_state
+
+          weight = ET.parse("Weight2500kg.xml").getroot()
+          attachment = weight.find("./ai/agentAttachment")
+          assert attachment is not None
+          assert attachment.get("useSize") == "true"
+
+          vehicle = ET.parse("Ursus1934.xml").getroot()
+          diesel_units = [
+              unit for unit in vehicle.iter("fillUnit")
+              if "diesel" in unit.get("fillTypes", "").split()
+          ]
+          assert len(diesel_units) == 1
+          exact = diesel_units[0].find("exactFillRootNode")
+          assert exact is not None and exact.get("node") == "0>11|7"
+          assert len(list(vehicle.iter("exactFillRootNode"))) == 1
+
+          default_lights = list(vehicle.iter("defaultLight"))
+          dashboards = list(vehicle.iter("dashboard"))
+          assert len(default_lights) == 16
+          assert len(dashboards) == 10
+          assert all(light.get("shaderNode") != "0>10|2|0|0|3|0" for light in default_lights)
+          assert all(dashboard.get("displayType") != "EMITTER" for dashboard in dashboards)
+
+          scene = ET.parse("Ursus1934.i3d").getroot()
+          nodes = [node for node in scene.iter("Shape") if node.get("name") == "exactFillRootNodeFuel"]
+          assert len(nodes) == 1
+          node = nodes[0]
+          assert node.get("nodeId") == "7009"
+          assert node.get("translation") == "0 1.1 0"
+          assert node.get("scale") == "1.2 1.5 2"
+          assert node.get("nonRenderable") == "true"
+          assert node.get("collisionFilterGroup") == "0x40000000"
+          assert node.get("collisionFilterMask") == "0x20000000"
+          PY
+
+      - name: Validate and build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/validate_current.py
+          ./build.sh
+
+      - name: Verify package and calculate checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          import zipfile
+
+          zip_path = Path("dist/FS25_Ursus_1654_1954_Pack.zip")
+          assert zip_path.is_file()
+          with zipfile.ZipFile(zip_path) as archive:
+              names = [name for name in archive.namelist() if not name.endswith("/")]
+              assert len(names) == 67
+              assert len(names) == len(set(names))
+              assert "modDesc.xml" in names
+              assert "VERSION" not in names
+              assert not any(name.startswith(".github/") for name in names)
+              root = ET.fromstring(archive.read("modDesc.xml"))
+              assert root.findtext("version") == "1.0.3.0"
+              for name in (
+                  "Ursus1934.i3d",
+                  "Ursus1934.xml",
+                  "Weight2500kg.xml",
+                  "shaders/vehicleShader.xml",
+                  "textures/decals_emissive.dds",
+              ):
+                  assert archive.read(name) == Path(name).read_bytes()
+          PY
+
+          DIGEST="$(sha256sum "$ZIP" | awk '{print $1}')"
+          printf '%s\n' "$DIGEST" > "$RUNNER_TEMP/release_digest"
+          (
+            cd dist
+            sha256sum FS25_Ursus_1654_1954_Pack.zip > FS25_Ursus_1654_1954_Pack.zip.sha256
+          )
+
+      - name: Create one stable commit on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASE_SHA="$GITHUB_SHA"
+          DIGEST="$(cat "$RUNNER_TEMP/release_digest")"
+
+          git switch --detach "$EXPECTED_MAIN"
+          git read-tree --reset -u "$RELEASE_SHA"
+          git rm "$WORKFLOW_FILE"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Release 1.0.3.0" -m "SHA-256: $DIGEST"
+
+          FINAL_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_MAIN"
+          printf '%s\n' "$FINAL_SHA" > "$RUNNER_TEMP/final_sha"
+          git push origin "$FINAL_SHA:refs/heads/main"
+
+      - name: Publish full release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          FINAL_SHA="$(cat "$RUNNER_TEMP/final_sha")"
+          DIGEST="$(cat "$RUNNER_TEMP/release_digest")"
+
+          {
+            echo "Stabilne wydanie domykające czyszczenie logu po 1.0.2.2."
+            echo
+            echo "### Zmiany"
+            echo "- dodano prawidłowy obrys AI obciążnika 2500 kg,"
+            echo "- dodano dokładny obszar tankowania przypisany wyłącznie do paliwa,"
+            echo "- usunięto jeden martwy wpis defaultLight i pięć martwych wpisów EMITTER zegarów,"
+            echo "- zachowano wygląd i działanie właściwych świateł oraz zegarów,"
+            echo "- zachowano stałą nazwę paczki i tożsamość moda."
+            echo
+            echo "### Testy"
+            echo "- tankowanie działa,"
+            echo "- obciążnik 2500 kg działa prawidłowo z AI,"
+            echo "- światła i zegary nie zmieniły wyglądu ani działania,"
+            echo "- log nie zawiera błędów związanych z Ursusem."
+            echo
+            echo "### Znane problemy"
+            echo "- Ursus1934.i3d nadal zgłasza niekrytyczny warning: i3d contains non-binary indexed triangle sets."
+            echo "- Źródłem jest tekstowo zapisana geometria FS25MirrorExact. Warning nie powoduje zaobserwowanych problemów; konwersję do binarnego .i3d.shapes odłożono, aby nie ryzykować regresji lusterek."
+            echo
+            echo "SHA-256: \`$DIGEST\`"
+          } > "$RUNNER_TEMP/release-notes.md"
+
+          gh release create "$TAG"             "$ZIP"             "$ZIP.sha256"             --repo "$REPOSITORY"             --target "$FINAL_SHA"             --title "1.0.3.0 — AI, tankowanie i czystszy log"             --notes-file "$RUNNER_TEMP/release-notes.md"             --latest
+
+      - name: Remove one-time workflow from release branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch --detach "$GITHUB_SHA"
+          git rm "$WORKFLOW_FILE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Remove one-time 1.0.3.0 release workflow"
+          git push origin "HEAD:refs/heads/$RELEASE_BRANCH"
