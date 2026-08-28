@@ -74,5 +74,28 @@ Zmiany względem 1.0.2.0:
 
 Pośrednia wersja `1.0.2.1T1` służyła do sprawdzenia rozszerzonego zakresu górnego zaczepu. W wydaniu stabilnym dolny limit obniżono o kolejne 2 cm.
 
+
+## 1.0.3.0
+Stabilne wydanie domykające czyszczenie logu po 1.0.2.2.
+
+Zmiany względem 1.0.2.2:
+- dodano `<ai><agentAttachment useSize="true"/></ai>` do obciążnika 2500 kg, dzięki czemu gra otrzymuje prawidłowy obrys AI i nie zgłasza brakującej definicji,
+- dodano osobny niewidoczny box FILLABLE `exactFillRootNodeFuel` w centralnej części ciągnika i przypisano go wyłącznie do paliwowego `fillUnit`; tankowanie nadal działa jak wcześniej,
+- usunięto jeden odrzucany `defaultLight` wskazujący zwykłą warstwę kokpitu oraz pięć odrzucanych wpisów `EMITTER` zegarów,
+- geometria świateł, lokalny shader, tekstura emisyjna, jasność, kolor i zachowanie właściwych lamp pozostały bez zmian,
+- zachowano stałą nazwę paczki i ścieżki XML, więc aktualizacja nie zmienia tożsamości moda ani zakupionych maszyn.
+
+Testy runtime:
+- potwierdzono działanie tankowania,
+- potwierdzono poprawne zachowanie obciążnika 2500 kg dla AI,
+- potwierdzono brak zmian w wyglądzie i działaniu świateł oraz zegarów,
+- usunięto łącznie osiem wcześniejszych warningów: jeden obciążnika AI, jeden `exactFillRootNode`, jeden `staticLight` i pięć `dashboard EMITTER`,
+- log nie zawiera błędów związanych z Ursusem.
+
+### Znane problemy
+- `Ursus1934.i3d` nadal zgłasza nieszkodliwy warning `i3d contains non-binary indexed triangle sets`. Źródłem jest tekstowo zapisana geometria `FS25MirrorExact`.
+- Warning nie powoduje zaobserwowanych problemów z działaniem ani wyglądem moda. Konwersję tej geometrii do binarnego `.i3d.shapes` odłożono, ponieważ wymaga zmiany assetu modelu i ponownego testu zatwierdzonych lusterek.
+- Warningi generowane przez grę, zapis lub inne mody nie należą do tego wydania.
+
 ## Dalszy rozwój
 Od **1.0.1.0** używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`. Numeracji V26/V27 nie stosujemy do nowych buildów.
