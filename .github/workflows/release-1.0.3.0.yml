@@ -22,7 +22,7 @@ jobs:
       REPOSITORY: StrielokPL/Ursus16541954
       RELEASE_BRANCH: release-1.0.3.0
       SOURCE_BRANCH: lights-dashboards-1.0.2.4T1
-      EXPECTED_PARENT: 4536f3312315a7a9140f193692784d04e864806d
+      EXPECTED_PARENT: 33daac2e21ea9386533e7c7a9ca164c816d9615a
       EXPECTED_MAIN: 11705c56cac4433cf4adeef06b9a3a4cc4230e8c
       TAG: v1.0.3.0
       ZIP: dist/FS25_Ursus_1654_1954_Pack.zip
@@ -178,7 +178,7 @@ jobs:
 
           git switch --detach "$EXPECTED_MAIN"
           git read-tree --reset -u "$RELEASE_SHA"
-          git rm "$WORKFLOW_FILE"
+          git rm -f "$WORKFLOW_FILE"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
