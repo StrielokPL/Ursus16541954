@@ -233,7 +233,6 @@
       <defaultLight shaderNode="0&gt;10|2|0|0|23|0" lightTypes="2" />
       <defaultLight shaderNode="0&gt;10|2|0|0|24|0" lightTypes="2" />
       <defaultLight shaderNode="0&gt;10|2|0|0|10|0|0" lightTypes="2" />
-      <defaultLight shaderNode="0&gt;10|2|0|0|3|0" lightTypes="0" />
     </defaultLights>
     <brakeLights>
       <brakeLight shaderNode="0&gt;10|2|0|0|15|0" />
@@ -259,11 +258,6 @@
       <dashboard displayType="VISIBILITY" valueType="lightState" node="0&gt;2|11" lightTypes="2" />
       <dashboard displayType="VISIBILITY" valueType="lightState" node="0&gt;2|12" lightTypes="1" />
       <dashboard displayType="VISIBILITY" valueType="lightState" node="0&gt;2|13" lightTypes="1" />
-      <dashboard displayType="EMITTER" valueType="lightState" node="0&gt;10|2|0|0|3|1" intensity="0.8" lightTypes="0" groups="MOTOR_ACTIVE" />
-      <dashboard displayType="EMITTER" valueType="lightState" node="0&gt;10|2|0|0|3|2|3|0" intensity="0.8" lightTypes="0" groups="MOTOR_ACTIVE" />
-      <dashboard displayType="EMITTER" valueType="lightState" node="0&gt;10|2|0|0|3|2|2|0|0" intensity="0.8" lightTypes="0" groups="MOTOR_ACTIVE" />
-      <dashboard displayType="EMITTER" valueType="lightState" node="0&gt;10|2|0|0|3|2|1|0|0" intensity="0.8" lightTypes="0" groups="MOTOR_ACTIVE" />
-      <dashboard displayType="EMITTER" valueType="lightState" node="0&gt;10|2|0|0|30|0|0" intensity="0.8" lightTypes="0" groups="MOTOR_ACTIVE" />
     </dashboards>
   </lights>
   <speedRotatingParts>
