@@ -1,0 +1,56 @@
+name: Analyze color materials
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-color-materials.yml'
+permissions:
+  contents: write
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Analyze material usage
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from collections import defaultdict
+
+          def analyze(path):
+              root = ET.parse(path).getroot()
+              mats = {}
+              for m in root.findall('./Materials/Material'):
+                  mid = m.get('materialId')
+                  params = {p.get('name'): p.get('value') for p in m.findall('CustomParameter')}
+                  mats[mid] = {
+                      'name': m.get('name'),
+                      'slot': m.get('materialSlotName'),
+                      'variation': m.get('customShaderVariation'),
+                      'color0': params.get('colorMat0'),
+                      'gloss': (m.find('Glossmap').get('fileId') if m.find('Glossmap') is not None else None),
+                  }
+              uses = defaultdict(list)
+              for s in root.findall('.//Shape'):
+                  mids = (s.get('materialIds') or '').split()
+                  for mid in mids:
+                      uses[mid].append((s.get('name'), s.get('nodeId')))
+              print(f'===== {path} =====')
+              for mid in sorted(mats, key=lambda x:int(x)):
+                  m=mats[mid]
+                  print(f"MATERIAL {mid}: name={m['name']} slot={m['slot']} variation={m['variation']} colorMat0={m['color0']} glossFileId={m['gloss']} uses={len(uses[mid])}")
+                  for name,node in uses[mid][:120]:
+                      print(f'  - node {node}: {name}')
+                  if len(uses[mid])>120:
+                      print(f'  ... +{len(uses[mid])-120} more')
+          analyze('Ursus1934.i3d')
+          analyze('wheels/rims.i3d')
+          PY
+      - name: Remove one-shot workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/analyze-color-materials.yml
+          git commit -m 'Remove one-shot color material analysis'
+          git push
