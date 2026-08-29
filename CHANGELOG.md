@@ -110,6 +110,17 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T10
+Test zmniejszonej przyczepności bocznej tylnej osi wyłącznie dla `1934 Widmo`.
+
+Zmiany względem 1.0.6.0T9:
+- tylne koła Widma: `maxLatStiffness x0.85`,
+- `maxLongStiffness x1.20` pozostaje bez zmian, więc uciąg przy ruszaniu nie jest celowo zmniejszony,
+- `frictionScale`, forcePointRatio, moc, COM, skrzynia 8/4, ręczne RWD/4x4 i naprawiona fizyka przednich balastów pozostają bez zmian,
+- pliki `wheels/` nie są modyfikowane; zmiana działa runtime tylko na tylne koła wybranego Widma,
+- cel: pozwolić tylnej osi wcześniej rozpocząć kontrolowany uślizg boczny zamiast podnosić wewnętrzne koło i przewracać ciągnik.
+
 ## 1.0.6.0T9
 Naprawa fizyki przedniego balastu; konfiguracje kół pozostają nietknięte.
 

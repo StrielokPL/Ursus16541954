@@ -194,3 +194,12 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Punkty masy balastu: 600/1200 kg `0 0.65 2.45`; 1500/2000 kg `0 0.70 2.65`. Wynikowy COM jest liczony jako średnia ważona.
 - FrameWeight-only oraz FrontHydraulic nie dostają dodatkowej masy w T9; poprawka dotyczy nominalnych pakietów 600/1200/1500/2000 kg.
 - T8 drivetrain toggle i całe strojenie Widma pozostają bez zmian.
+
+
+### Widmo rear lateral grip test — 1.0.6.0T10
+- User confirmed T9 front ballast physics works.
+- Only rear wheels of `1934 Widmo`: maxLatStiffness multiplied by 0.85 at WheelPhysics load.
+- Rear maxLongStiffness x1.20 and forcePointRatio 0.80 remain unchanged.
+- No wheel XML files changed.
+- Purpose: reduce rollover tendency in corners by allowing earlier lateral rear slip while preserving launch traction/wheelie behavior.
+- T9 ballast physics, T8 manual RWD/4x4, 290 hp, direct 8F/4R and COM remain unchanged.

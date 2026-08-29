@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.6.0T9: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.6.0T10: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -180,7 +180,7 @@ if not UrsusTransmissionFix.installed then
 
         if ballast ~= nil then
             Logging.info("%s", string.format(
-                "[UrsusTransmissionFix] 1.0.6.0T9 front ballast %s: +%d kg, body component=%d kg, COM=%.3f %.3f %.3f",
+                "[UrsusTransmissionFix] 1.0.6.0T10 front ballast %s: +%d kg, body component=%d kg, COM=%.3f %.3f %.3f",
                 configName,
                 addedMassKg,
                 targetMassKg,
@@ -459,7 +459,7 @@ if not UrsusTransmissionFix.installed then
             vehicle:updateMotorProperties()
         end
 
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T9 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T10 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
         return true
     end
 
@@ -513,7 +513,7 @@ if not UrsusTransmissionFix.installed then
 
         self.ursusWidmoUse4wd = false
         spec.differentials = {self.ursusWidmoAllDifferentials[2]}
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T9 Widmo drivetrain initial state: RWD; manual RWD/4x4 toggle enabled")
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T10 Widmo drivetrain initial state: RWD; manual RWD/4x4 toggle enabled")
     end
 
     function Motorized:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)
@@ -575,11 +575,12 @@ if not UrsusTransmissionFix.installed then
             if not self.ursusWidmoTractionApplied then
                 self.forcePointRatio = 0.80
                 self.maxLongStiffness = (self.maxLongStiffness or 30.0) * 1.20
+                self.maxLatStiffness = (self.maxLatStiffness or 30.0) * 0.85
                 self.ursusWidmoTractionApplied = true
             end
             if not vehicle.ursusWidmoRearForcePointLogged then
                 vehicle.ursusWidmoRearForcePointLogged = true
-                Logging.info("[UrsusTransmissionFix] 1.0.6.0T9 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20")
+                Logging.info("[UrsusTransmissionFix] 1.0.6.0T10 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20, maxLatStiffness x0.85")
             end
         end
 
@@ -776,5 +777,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.6.0T9 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.6.0T10 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end
