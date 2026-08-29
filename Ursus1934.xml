@@ -922,7 +922,7 @@
     <i3dMapping id="playerRightFootTarget" node="0&gt;10|2|0|0|0|12|0|0" />
   </i3dMappings>
 
-  <!-- 1.0.5.0T1: isolated color configuration test -->
+  <!-- 1.0.5.0T2: runtime shader color application test -->
   <baseColorConfigurations title="Kolor nadwozia" useDefaultColors="false" defaultColorMaterialTemplateName="calibratedPaint" price="0">
     <baseColorConfiguration name="Fabryczny czerwony" color="0.4 0.03 0" isDefault="true" price="0"/>
     <baseColorConfiguration name="Czarny" color="0.02 0.02 0.02" price="0"/>
@@ -930,7 +930,7 @@
     <baseColorConfiguration name="Niebieski test" color="0.03 0.12 0.45" price="0"/>
     <baseColorConfiguration name="Zielony test" color="0.06 0.30 0.07" price="0"/>
     <baseColorConfiguration name="Żółty test" color="0.72 0.42 0.02" price="0"/>
-    <material materialSlotName="ursusBodyPaint" shaderParameter="colorMat0" materialTemplateUseColorOnly="true"/>
+    <baseColorConfiguration name="Wściekły róż test" color="1 0 1" price="0"/>
   </baseColorConfigurations>
 
   <rimColorConfigurations title="Kolor felg" useDefaultColors="false" defaultColorMaterialTemplateName="calibratedMetallicPaint" price="0">
@@ -939,6 +939,6 @@
     <rimColorConfiguration name="Biały" color="0.82 0.82 0.82" price="0"/>
     <rimColorConfiguration name="Czerwony" color="0.40 0.03 0" price="0"/>
     <rimColorConfiguration name="Żółty test" color="0.72 0.42 0.02" price="0"/>
-    <material materialSlotName="ursusRimPaint" shaderParameter="colorMat0" materialTemplateUseColorOnly="true"/>
+    <rimColorConfiguration name="Wściekły róż test" color="1 0 1" price="0"/>
   </rimColorConfigurations>
 </vehicle>
