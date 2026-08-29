@@ -112,3 +112,9 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - `UrsusColorFix.lua` jest częścią ZIP allowlisty.
 - Walidator wymusza obecność wszystkich `extraSourceFiles` w paczce.
 - Log T3 potwierdził, że brak tego pliku w ZIP powodował `Can't load resource` i wyłączał runtime bridge kolorów.
+
+
+### T5 roof hatch color fix — 1.0.5.0T5
+- `SzyberDach/szyber` jest objęty kolorem nadwozia.
+- Pozostałe części grupy `SzyberDach` pozostają bez zmian.
+- T5 jest izolowaną poprawką whitelisty `UrsusColorFix`; brak zmian w fizyce i skrzyni.

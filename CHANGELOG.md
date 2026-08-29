@@ -99,6 +99,15 @@ Testy runtime:
 
 
 
+
+## 1.0.5.0T5
+Poprawka koloru klapy dachowej.
+
+Zmiany względem 1.0.5.0T4:
+- dodano mesh `szyber` z grupy `SzyberDach` do listy elementów malowanych kolorem nadwozia,
+- klapa dachowa korzysta z materiału z `colorMat0` i typem materiału 16, więc otrzymuje ten sam wybrany kolor co karoseria,
+- ramy, uszczelki, mechanizm klapy, koła, skrzynia, ADS i pozostałe elementy nie zostały zmienione.
+
 ## 1.0.5.0T4
 Hotfix pakowania po 1.0.5.0T3.
 
