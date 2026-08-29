@@ -1,0 +1,154 @@
+name: Publish 1.0.6.0T1
+
+on:
+  push:
+    paths:
+      - '.github/workflows/release-1.0.6.0T1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply Widmo physics test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          OLD = '1.0.5.1'
+          VERSION = '1.0.6.0T1'
+
+          current = Path('VERSION').read_text(encoding='utf-8').strip()
+          if current != OLD:
+              raise SystemExit(f'Expected {OLD}, got {current}')
+          Path('VERSION').write_text(VERSION + '\n', encoding='utf-8')
+
+          p = Path('modDesc.xml')
+          s = p.read_text(encoding='utf-8')
+          old = f'<version>{OLD}</version>'
+          new = f'<version>{VERSION}</version>'
+          if old not in s:
+              raise SystemExit('modDesc version anchor not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          p = Path('UrsusTransmissionFix.lua')
+          s = p.read_text(encoding='utf-8').replace(OLD, VERSION)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('UrsusColorFix.lua')
+          s = p.read_text(encoding='utf-8').replace(OLD, VERSION)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('Ursus1934.xml')
+          s = p.read_text(encoding='utf-8')
+          if s.count('name="1934 Robert"') != 1:
+              raise SystemExit('Expected exactly one 1934 Robert motor configuration')
+          s = s.replace('name="1934 Robert"', 'name="1934 Widmo"', 1)
+
+          start = s.index('<motorConfiguration name="1934 Widmo"')
+          end = s.index('</motorConfiguration>', start)
+          segment = s[start:end]
+          com_line = '        <objectChange node="0&gt;" centerOfMassActive="0 1.05 -1.25" />\n'
+          if com_line not in segment:
+              motor_end_rel = segment.index('</motor>') + len('</motor>')
+              segment = segment[:motor_end_rel] + '\n' + com_line.rstrip('\n') + segment[motor_end_rel:]
+              s = s[:start] + segment + s[end:]
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('CHANGELOG.md')
+          s = p.read_text(encoding='utf-8')
+          addition = '''\n## 1.0.6.0T1\nTest fizycznej skłonności wersji Widmo do podnoszenia przedniej osi pod bardzo dużym obciążeniem.\n\nZmiany względem stabilnego 1.0.5.1:\n- konfigurację silnika `1934 Robert` przemianowano na `1934 Widmo`,\n- tylko Widmo otrzymuje zmieniony środek masy głównego komponentu: `0 1.05 -1.25` zamiast bazowego `0 0.8 -0.88`,\n- środek masy jest około 25 cm wyżej i 37 cm bardziej z tyłu; celem jest umożliwienie naturalnego odciążenia lub uniesienia przodu przy dużym uciągu,\n- brak sztucznego `addTorque`, `addForce` i innych skryptowych impulsów; T1 testuje wyłącznie fizykę silnika gry,\n- techniczne nazwy plików kół Robert pozostają bez zmian,\n- pozostałe konfiguracje silnika, skrzynia, ADS, kolory, koła, kolizje i hydraulika pozostają bez zmian.\n\n'''
+          marker = '## 1.0.5.1'
+          if '## 1.0.6.0T1' not in s:
+              if marker not in s:
+                  # 1.0.5.1 may not yet have a dedicated heading in older changelog layout
+                  marker = '## 1.0.5.0T5'
+              if marker not in s:
+                  raise SystemExit('CHANGELOG insertion marker not found')
+              s = s.replace(marker, addition + marker, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('PROJECT_STATE.md')
+          s = p.read_text(encoding='utf-8')
+          if '### Widmo wheelie physics test — 1.0.6.0T1' not in s:
+              s += '''\n\n### Widmo wheelie physics test — 1.0.6.0T1\n- Bazą pozostaje stabilne 1.0.5.1.\n- `1934 Robert` otrzymał nazwę sklepową `1934 Widmo`.\n- Wyłącznie Widmo: `centerOfMassActive="0 1.05 -1.25"` na głównym komponencie.\n- T1 nie używa skryptowego momentu ani siły; sprawdza tylko naturalną fizykę pod dużym obciążeniem.\n- Jeżeli efekt będzie zbyt mały, następny test może zwiększyć przesunięcie albo dodać warunkowy fizyczny assist.\n'''
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate source tree
+        run: python3 tools/validate_current.py
+
+      - name: Build test ZIP
+        run: ./build.sh
+
+      - name: Verify Widmo changes in ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+          z = zipfile.ZipFile('dist/FS25_Ursus_1654_1954_Pack.zip')
+          xml = z.read('Ursus1934.xml').decode('utf-8')
+          moddesc = z.read('modDesc.xml').decode('utf-8')
+          assert '<version>1.0.6.0T1</version>' in moddesc
+          assert 'name="1934 Widmo"' in xml
+          assert 'name="1934 Robert"' not in xml
+          start = xml.index('<motorConfiguration name="1934 Widmo"')
+          end = xml.index('</motorConfiguration>', start)
+          seg = xml[start:end]
+          assert 'centerOfMassActive="0 1.05 -1.25"' in seg
+          print('ZIP Widmo physics test check: OK')
+          PY
+
+      - name: Commit 1.0.6.0T1
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION modDesc.xml Ursus1934.xml UrsusTransmissionFix.lua UrsusColorFix.lua CHANGELOG.md PROJECT_STATE.md
+          git commit -m 'Release 1.0.6.0T1 Widmo physics test'
+          git push origin HEAD:main
+
+      - name: Publish GitHub prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TARGET_SHA=$(git rev-parse HEAD)
+          cat > /tmp/release-notes.md <<'EOF'
+          First Widmo wheelie-physics experiment based on stable 1.0.5.1.
+
+          Changes:
+          - `1934 Robert` is renamed to `1934 Widmo`,
+          - only Widmo moves the main component center of mass from `0 0.8 -0.88` to `0 1.05 -1.25`,
+          - approximately +25 cm height and 37 cm rearward bias,
+          - no scripted torque/force assist in T1,
+          - all other engine variants keep the stable 1.0.5.1 physics.
+
+          Test goal: with no or light front ballast, apply a very heavy rear load at low speed and see whether the front axle naturally unloads or lifts. Front ballast should counteract the effect normally.
+          EOF
+          gh release create v1.0.6.0T1 dist/FS25_Ursus_1654_1954_Pack.zip \
+            --target "$TARGET_SHA" \
+            --title '1.0.6.0T1 — Widmo wheelie physics test' \
+            --prerelease \
+            --notes-file /tmp/release-notes.md
+
+      - name: Remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          git rm .github/workflows/release-1.0.6.0T1.yml
+          git commit -m 'Remove one-shot 1.0.6.0T1 release workflow'
+          git push origin HEAD:main
