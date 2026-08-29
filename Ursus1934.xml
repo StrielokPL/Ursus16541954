@@ -29,8 +29,8 @@
     <sounds filename="configurations/Ursus1934_sounds.xml" />
     <size width="2.5" length="5" />
     <components>
-      <component centerOfMass="0 0.8 -0.88" solverIterationCount="10" mass="3700" />
-      <component centerOfMass="0 0 0" solverIterationCount="10" mass="2500" />
+      <component centerOfMass="0 0.8 -0.88" solverIterationCount="10" mass="3720" />
+      <component centerOfMass="0 0 0" solverIterationCount="10" mass="1340" />
       <joint component1="1" component2="2" node="1&gt;0" rotLimit="0 0 14" rotLimitSpring="0 0 4000" rotLimitDamping="0 0 0" maxRotDriveForce="0 0 0" rotDriveRotation="0 0 0" rotDriveSpring="0 0 0" rotDriveDamping="0 0 0" breakable="false" />
     </components>
     <schemaOverlay name="VEHICLE" attacherJointPosition="0.5 0" />

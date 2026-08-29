@@ -229,3 +229,12 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Mass diagnostic emits `[UrsusMassDiag]` lines after ~2.5 s stationary: four tire loads, front/rear percentage, total/raw axle load, component mass/COM and wheel mass.
 - Purpose: collect real in-game axle split before changing standard tractor component masses/COM.
 - No T13 mass/COM change. Widmo mass layout is explicitly frozen for this diagnostic stage.
+
+
+### Mass rebalance verification — 1.0.6.0T14
+- Normal-family XML baseline components: C1=3720 kg, C2=1340 kg, COM1 unchanged `0 0.80 -0.88`.
+- Expected full-fuel + standard-wheel operating mass: ~6.18 t; target static axle split ~40/60.
+- Widmo is explicitly restored at runtime to its proven T13 layout: C1=3700 kg, C2=2500 kg, COM1 `0 1.10 -1.80`.
+- Front ballast weighted-COM calculation now uses 3720 kg base C1 for normal variants and 3700 kg for Widmo.
+- `[UrsusMassDiag] T14` remains enabled for one more verification pass.
+- Do not tune normal COM or Widmo mass/COM further until T14 log confirms runtime axle loads.

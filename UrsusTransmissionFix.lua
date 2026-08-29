@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.6.0T13: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.6.0T14: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -156,11 +156,14 @@ if not UrsusTransmissionFix.installed then
         return xmlFile:getValue(key .. "#name")
     end
 
-    -- Component #1 is the 3700 kg tractor body. The optional front ballast is
-    -- modeled as an added point mass at the approximate physical centre of the
-    -- visible weight pack. Lighter/short packs sit slightly closer to the tractor;
-    -- 1500/2000 kg packs extend farther forward.
-    local URSUS_BODY_MASS_KG = 3700
+    -- T14 normal-family mass target: 3720 kg for component #1 and 1340 kg for
+    -- component #2. Widmo intentionally keeps the proven T13 3700/2500 kg
+    -- component layout. Front ballast is added to component #1 as a point mass
+    -- and its COM effect is calculated from the correct base mass for the motor.
+    local URSUS_STANDARD_BODY_MASS_KG = 3720
+    local URSUS_STANDARD_SECOND_COMPONENT_MASS_KG = 1340
+    local URSUS_WIDMO_BODY_MASS_KG = 3700
+    local URSUS_WIDMO_SECOND_COMPONENT_MASS_KG = 2500
     local URSUS_FRONT_BALLAST = {
         ["600kg"]  = {massKg=600,  y=0.65, z=2.45},
         ["1200kg"] = {massKg=1200, y=0.65, z=2.45},
@@ -180,21 +183,33 @@ if not UrsusTransmissionFix.installed then
         end
 
         local motorName = getSelectedMotorConfigurationName(vehicle, xmlFile)
+        local isWidmo = motorName == "1934 Widmo"
+        local baseBodyMassKg = isWidmo and URSUS_WIDMO_BODY_MASS_KG or URSUS_STANDARD_BODY_MASS_KG
+        local secondComponentMassKg = isWidmo and URSUS_WIDMO_SECOND_COMPONENT_MASS_KG or URSUS_STANDARD_SECOND_COMPONENT_MASS_KG
         local baseX, baseY, baseZ = 0, 0.80, -0.88
-        if motorName == "1934 Widmo" then
+        if isWidmo then
             baseY, baseZ = 1.10, -1.80
+        end
+
+        -- XML carries the normal-family baseline. Restore component #2 for
+        -- Widmo (and explicitly normalize it for the other motors) before the
+        -- vehicle is added to physics.
+        local secondComponent = vehicle.components[2]
+        if secondComponent ~= nil and secondComponent.node ~= nil then
+            setMass(secondComponent.node, secondComponentMassKg / 1000)
+            secondComponent.defaultMass = secondComponentMassKg / 1000
         end
 
         local configName = getSelectedAttacherJointConfigurationName(vehicle, xmlFile)
         local ballast = URSUS_FRONT_BALLAST[configName]
         local addedMassKg = ballast ~= nil and ballast.massKg or 0
-        local targetMassKg = URSUS_BODY_MASS_KG + addedMassKg
+        local targetMassKg = baseBodyMassKg + addedMassKg
         local comX, comY, comZ = baseX, baseY, baseZ
 
         if ballast ~= nil and addedMassKg > 0 then
-            comX = (URSUS_BODY_MASS_KG * baseX) / targetMassKg
-            comY = (URSUS_BODY_MASS_KG * baseY + addedMassKg * ballast.y) / targetMassKg
-            comZ = (URSUS_BODY_MASS_KG * baseZ + addedMassKg * ballast.z) / targetMassKg
+            comX = (baseBodyMassKg * baseX) / targetMassKg
+            comY = (baseBodyMassKg * baseY + addedMassKg * ballast.y) / targetMassKg
+            comZ = (baseBodyMassKg * baseZ + addedMassKg * ballast.z) / targetMassKg
         end
 
         -- GIANTS setMass() uses tons. Keep defaultMass in sync so total-mass
@@ -206,9 +221,17 @@ if not UrsusTransmissionFix.installed then
         end
         setCenterOfMass(node, comX, comY, comZ)
 
+        if not vehicle.ursusT14MassLayoutLogged then
+            vehicle.ursusT14MassLayoutLogged = true
+            Logging.info("%s", string.format(
+                "[UrsusTransmissionFix] 1.0.6.0T14 mass layout motor=%s: C1base=%d kg C2=%d kg COMbase=%.3f %.3f %.3f",
+                tostring(motorName or "?"), baseBodyMassKg, secondComponentMassKg, baseX, baseY, baseZ
+            ))
+        end
+
         if ballast ~= nil then
             Logging.info("%s", string.format(
-                "[UrsusTransmissionFix] 1.0.6.0T13 front ballast %s: +%d kg, body component=%d kg, COM=%.3f %.3f %.3f",
+                "[UrsusTransmissionFix] 1.0.6.0T14 front ballast %s: +%d kg, body component=%d kg, COM=%.3f %.3f %.3f",
                 configName,
                 addedMassKg,
                 targetMassKg,
@@ -487,7 +510,7 @@ if not UrsusTransmissionFix.installed then
             vehicle:updateMotorProperties()
         end
 
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T13 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T14 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
         return true
     end
 
@@ -545,7 +568,7 @@ if not UrsusTransmissionFix.installed then
         end
 
         Logging.info(
-            "[UrsusTransmissionFix] 1.0.6.0T13 store transmission: %s | motor=%s",
+            "[UrsusTransmissionFix] 1.0.6.0T14 store transmission: %s | motor=%s",
             getUrsusTransmissionLabel(self),
             tostring(getSelectedMotorConfigurationName(self, xmlFile) or "?")
         )
@@ -592,7 +615,7 @@ if not UrsusTransmissionFix.installed then
         end
 
         Logging.info(
-            "[UrsusTransmissionFix] 1.0.6.0T13 store drivetrain: %s | motor=%s%s",
+            "[UrsusTransmissionFix] 1.0.6.0T14 store drivetrain: %s | motor=%s%s",
             getUrsusDrivetrainLabel(self),
             tostring(motorName or "?"),
             motorName == "1934 Widmo" and "; Ctrl+4 runtime toggle enabled" or ""
@@ -663,7 +686,7 @@ if not UrsusTransmissionFix.installed then
             end
             if not vehicle.ursusWidmoRearForcePointLogged then
                 vehicle.ursusWidmoRearForcePointLogged = true
-                Logging.info("[UrsusTransmissionFix] 1.0.6.0T13 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20, maxLatStiffness x0.85")
+                Logging.info("[UrsusTransmissionFix] 1.0.6.0T14 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20, maxLatStiffness x0.85")
             end
         end
 
@@ -741,7 +764,7 @@ if not UrsusTransmissionFix.installed then
         if not state.logged then
             state.logged = true
             Logging.info("%s", string.format(
-                "[UrsusTransmissionFix] 1.0.6.0T13 %s dynamic suspension: maxLoad x%.2f, spring x%.2f, damping x%.2f, interpolation %dms",
+                "[UrsusTransmissionFix] 1.0.6.0T14 %s dynamic suspension: maxLoad x%.2f, spring x%.2f, damping x%.2f, interpolation %dms",
                 axleName,
                 maxLoadFactor,
                 maxSpringMultiplier,
@@ -829,15 +852,15 @@ if not UrsusTransmissionFix.installed then
         local wheelConfig = vehicle.configurations ~= nil and (vehicle.configurations["wheel"] or 0) or 0
 
         Logging.info(
-            "[UrsusMassDiag] T13 cfg motor=%s | gearbox=%s | drivetrain=%s | wheelConfig=%d | frontBallast=%s",
+            "[UrsusMassDiag] T14 cfg motor=%s | gearbox=%s | drivetrain=%s | wheelConfig=%d | frontBallast=%s",
             tostring(motorName), getUrsusTransmissionLabel(vehicle), getUrsusDrivetrainLabel(vehicle), wheelConfig, tostring(ballastName)
         )
         Logging.info(
-            "[UrsusMassDiag] T13 tireLoadRaw FL=%.4f FR=%.4f RL=%.4f RR=%.4f | front=%.4f (%.2f%%) rear=%.4f (%.2f%%) total=%.4f",
+            "[UrsusMassDiag] T14 tireLoadRaw FL=%.4f FR=%.4f RL=%.4f RR=%.4f | front=%.4f (%.2f%%) rear=%.4f (%.2f%%) total=%.4f",
             loads[1], loads[2], loads[3], loads[4], frontLoad, frontPct, rearLoad, rearPct, totalLoad
         )
         Logging.info(
-            "[UrsusMassDiag] T13 masses total=%.3ft | C1=%.3ft COM1=%.3f %.3f %.3f | C2=%.3ft COM2=%.3f %.3f %.3f | wheelMass=%.3f %.3f %.3f %.3f t",
+            "[UrsusMassDiag] T14 masses total=%.3ft | C1=%.3ft COM1=%.3f %.3f %.3f | C2=%.3ft COM2=%.3f %.3f %.3f | wheelMass=%.3f %.3f %.3f %.3f t",
             totalMass, c1Mass, c1x, c1y, c1z, c2Mass, c2x, c2y, c2z,
             wheelMasses[1], wheelMasses[2], wheelMasses[3], wheelMasses[4]
         )
@@ -1085,5 +1108,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.6.0T13 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.6.0T14 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end

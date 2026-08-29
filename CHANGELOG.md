@@ -114,6 +114,19 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T14
+Realistyczna masa bazowych wariantów na podstawie diagnostyki T13; Widmo pozostawione bez zmian.
+
+Zmiany względem 1.0.6.0T13:
+- zwykłe warianty: component #1 `3720 kg`, component #2 `1340 kg`,
+- bazowy COM zwykłych wariantów pozostaje `0 0.80 -0.88`,
+- przy standardowych kołach i pełnym 355 l zbiorniku celem jest około `6.18 t` masy roboczej i około `40/60` przód/tył,
+- Widmo zachowuje runtime `3700/2500 kg` oraz COM `0 1.10 -1.80`,
+- fizyka balastów używa teraz osobnej bazowej masy C1 dla zwykłych wersji (3720 kg) i Widma (3700 kg),
+- diagnostyka `[UrsusMassDiag] T14` pozostaje aktywna dla potwierdzenia rzeczywistej masy i rozkładu osi,
+- skrzynie, konfiguracje napędu, dynamic suspension i ustawienia trakcji Widma pozostają bez zmian.
+
 ## 1.0.6.0T13
 Niezależny wybór skrzyni i układu napędowego w sklepie oraz diagnostyka rozkładu masy.
 
