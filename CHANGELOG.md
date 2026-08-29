@@ -111,6 +111,20 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T11
+Test natywnej, zależnej od obciążenia pracy tylnego zawieszenia `1934 Widmo`.
+
+Zmiany względem 1.0.6.0T10:
+- tylko tylna oś Widma dostaje dynamiczne mnożniki sprężyny i tłumienia zależne od rzeczywistego `getTireLoad()`,
+- logika odpowiada mechanizmowi GIANTS `WheelAxle.dynamicSuspension`: używa `WheelPhysics:setSuspensionMultipliers()` i nie dodaje żadnego `addForce`/`addTorque`,
+- efekt narasta od obciążenia spoczynkowego do pełnego przy ok. 1.60x obciążenia spoczynkowego osi,
+- przy pełnym efekcie: spring x1.15, damping x0.60; interpolacja ok. 500 ms,
+- celem jest umożliwienie krótkiego naturalnego power-hop/odbicia opon pod dużym obciążeniem bez rozbujania pustego ciągnika,
+- T10: tylne maxLongStiffness x1.20, maxLatStiffness x0.85 i forcePointRatio 0.80 pozostają bez zmian,
+- T9 balasty, T8 ręczne RWD/4x4, 290 KM, COM i direct 8F/4R pozostają bez zmian,
+- pliki `wheels/` i `Ursus1934.xml` nie są zmieniane.
+
 ## 1.0.6.0T10
 Test zmniejszonej przyczepności bocznej tylnej osi wyłącznie dla `1934 Widmo`.
 

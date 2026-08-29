@@ -203,3 +203,11 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - No wheel XML files changed.
 - Purpose: reduce rollover tendency in corners by allowing earlier lateral rear slip while preserving launch traction/wheelie behavior.
 - T9 ballast physics, T8 manual RWD/4x4, 290 hp, direct 8F/4R and COM remain unchanged.
+
+
+### Widmo rear dynamic suspension / power-hop test — 1.0.6.0T11
+- T10 prowadzi się nieco lepiej po zmniejszeniu bocznej sztywności tylnej osi.
+- T11 nie używa sztucznych sił. Hook `Wheel:update` po aktualizacji koła #4 mierzy load kół #3/#4 i stosuje natywne `setSuspensionMultipliers()` dla tylnej pary.
+- Zakres: axleLoad rest -> 1.60x rest; spring 1.00 -> 1.15; damping 1.00 -> 0.60; interpolacja 500 ms.
+- Cel: sprawdzić, czy pod dużym obciążeniem i dużym momentem Widmo zacznie naturalnie odbijać/power-hopować na tylnych oponach.
+- T10/T9/T8 zachowane bez zmian; `wheels/` i `Ursus1934.xml` bez zmian.
