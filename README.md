@@ -1,5 +1,8 @@
 # Ursus 1654–1954 — Farming Simulator 25
 
+Najnowsze pełne wydanie
+https://github.com/StrielokPL/Ursus16541954/releases/latest
+
 Konwersja i dalszy rozwój moda **Ursus 1654–1954** z Farming Simulator 22 do Farming Simulator 25.
 
 Repozytorium zawiera kompletny stan moda: XML, I3D, Lua, lokalne shadery kompatybilności oraz wymagane assety binarne. Po zwykłym `git clone` nie trzeba uzupełniać plików z oryginalnego ZIP-a.
