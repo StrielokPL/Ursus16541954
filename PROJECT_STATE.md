@@ -176,3 +176,11 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - T7 increases only Widmo engine torque by 10% (`torqueScale=1.100`, 290 hp store value).
 - Rear WheelPhysics only: `maxLongStiffness` x1.20; lateral stiffness and overall friction scale unchanged to avoid worsening cornering wheel lift.
 - RWD, COM `0 1.10 -1.80`, rear forcePointRatio 0.80 and direct 8F/4R retained.
+
+
+### Widmo manual drivetrain toggle — 1.0.6.0T8
+- T7 produced a clean wheelie when the loaded trailer set hung on an obstacle; no further COM change is made.
+- Only `1934 Widmo`: manual RWD/4x4 input action, default `Ctrl+4`, remappable in FS25 controls.
+- Default/load state is RWD. 4x4 restores the original front, rear and centre differential definitions; RWD keeps only the rear differential.
+- The authoritative differential rebuild happens server-side and the selected state is broadcast to clients.
+- T7 tuning remains unchanged: 290 hp, torqueScale 1.100, direct 8F/4R, COM `0 1.10 -1.80`, rear forcePointRatio 0.80 and rear maxLongStiffness x1.20.

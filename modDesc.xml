@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="108" xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
     <author>M8E, StrielokPL</author>
-    <version>1.0.6.0T7</version>
+    <version>1.0.6.0T8</version>
     <iconFilename>icon_ursus1934.dds</iconFilename>
     <multiplayer supported="true"/>
     <extraSourceFiles>
@@ -130,7 +130,33 @@ Mod ma:
             <fr>Avant Hydraulique</fr>
             <pl>Przedni TUZ</pl>
         </text>
+        <text name="input_URSUS_WIDMO_TOGGLE_4WD">
+            <en>Toggle RWD / 4x4</en>
+            <de>Antrieb RWD / 4x4 umschalten</de>
+            <fr>Basculer RWD / 4x4</fr>
+            <pl>Przełącz napęd RWD / 4x4</pl>
+        </text>
+        <text name="widmo_drive_rwd">
+            <en>Widmo drive: RWD</en>
+            <de>Widmo Antrieb: RWD</de>
+            <fr>Transmission Widmo : RWD</fr>
+            <pl>Napęd Widma: RWD</pl>
+        </text>
+        <text name="widmo_drive_4wd">
+            <en>Widmo drive: 4x4</en>
+            <de>Widmo Antrieb: 4x4</de>
+            <fr>Transmission Widmo : 4x4</fr>
+            <pl>Napęd Widma: 4x4</pl>
+        </text>
     </l10n>
+    <actions>
+        <action name="URSUS_WIDMO_TOGGLE_4WD" category="VEHICLE" axisType="HALF"/>
+    </actions>
+    <inputBinding>
+        <actionBinding action="URSUS_WIDMO_TOGGLE_4WD">
+            <binding device="KB_MOUSE_DEFAULT" input="KEY_lctrl KEY_4"/>
+        </actionBinding>
+    </inputBinding>
     <storeItems>
         <storeItem rootNode="vehicle" xmlFilename="Ursus1934.xml"/>
         <storeItem rootNode="vehicle" xmlFilename="Weight2500kg.xml"/>

@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.6.0T7: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.6.0T8: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -8,6 +8,42 @@
 -- ADS gear-shift failures and powershift engagement lag without requiring ADS.
 
 UrsusTransmissionFix = UrsusTransmissionFix or {}
+
+UrsusWidmoDrivetrainEvent = UrsusWidmoDrivetrainEvent or {}
+local UrsusWidmoDrivetrainEvent_mt = Class(UrsusWidmoDrivetrainEvent, Event)
+InitEventClass(UrsusWidmoDrivetrainEvent, "UrsusWidmoDrivetrainEvent")
+
+function UrsusWidmoDrivetrainEvent.emptyNew()
+    return Event.new(UrsusWidmoDrivetrainEvent_mt)
+end
+
+function UrsusWidmoDrivetrainEvent.new(vehicle, use4wd)
+    local self = UrsusWidmoDrivetrainEvent.emptyNew()
+    self.vehicle = vehicle
+    self.use4wd = use4wd == true
+    return self
+end
+
+function UrsusWidmoDrivetrainEvent:readStream(streamId, connection)
+    self.vehicle = NetworkUtil.readNodeObject(streamId)
+    self.use4wd = streamReadBool(streamId)
+    self:run(connection)
+end
+
+function UrsusWidmoDrivetrainEvent:writeStream(streamId, connection)
+    NetworkUtil.writeNodeObject(streamId, self.vehicle)
+    streamWriteBool(streamId, self.use4wd)
+end
+
+function UrsusWidmoDrivetrainEvent:run(connection)
+    if self.vehicle ~= nil and UrsusTransmissionFix.applyWidmoDrivetrain ~= nil then
+        UrsusTransmissionFix.applyWidmoDrivetrain(self.vehicle, self.use4wd)
+    end
+
+    if not connection:getIsServer() and g_server ~= nil and self.vehicle ~= nil then
+        g_server:broadcastEvent(UrsusWidmoDrivetrainEvent.new(self.vehicle, self.use4wd), nil, nil, self.vehicle)
+    end
+end
 
 if not UrsusTransmissionFix.installed then
     UrsusTransmissionFix.installed = true
@@ -19,6 +55,7 @@ if not UrsusTransmissionFix.installed then
     local originalGetUseAutomaticGroupShifting = VehicleMotor.getUseAutomaticGroupShifting
     local originalLoadDifferentials = Motorized.loadDifferentials
     local originalWheelPhysicsLoadFromXML = WheelPhysics.loadFromXML
+    local originalMotorizedOnRegisterActionEvents = Motorized.onRegisterActionEvents
 
     -- ADS uses these thresholds internally to classify engine lugging.
     -- Keep the transmission guard aligned with ADS instead of inventing
@@ -248,11 +285,119 @@ if not UrsusTransmissionFix.installed then
         return true
     end
 
-    -- T3 diagnostic drivetrain experiment: only the Widmo motor configuration
-    -- is converted to rear-wheel drive. loadDifferentials() populates the Lua
-    -- differential table before Motorized:addToPhysics() creates the physical
-    -- drivetrain, so keeping only differential #2 leaves the rear axle driven
-    -- while the front axle remains free-rolling. Other motor variants are unchanged.
+    -- T8: keep the original three differential definitions for Widmo, but
+    -- start in RWD. They can be rebuilt at runtime by a manual input action.
+    local function addWidmoPhysicalDifferential(vehicle, differential)
+        local spec = vehicle.spec_motorized
+        if spec == nil or spec.motorizedNode == nil or differential == nil then
+            return false
+        end
+
+        local diffIndex1 = differential.diffIndex1
+        local diffIndex2 = differential.diffIndex2
+
+        if differential.diffIndex1IsWheel then
+            local wheel = vehicle:getWheelFromWheelIndex(diffIndex1)
+            if wheel == nil or wheel.physics == nil or wheel.physics.wheelShape == nil then
+                return false
+            end
+            diffIndex1 = wheel.physics.wheelShape
+        end
+
+        if differential.diffIndex2IsWheel then
+            local wheel = vehicle:getWheelFromWheelIndex(diffIndex2)
+            if wheel == nil or wheel.physics == nil or wheel.physics.wheelShape == nil then
+                return false
+            end
+            diffIndex2 = wheel.physics.wheelShape
+        end
+
+        addDifferential(
+            spec.motorizedNode,
+            diffIndex1,
+            differential.diffIndex1IsWheel,
+            diffIndex2,
+            differential.diffIndex2IsWheel,
+            differential.torqueRatio,
+            differential.maxSpeedRatio
+        )
+        return true
+    end
+
+    local function getWidmoDriveStatusText(vehicle, use4wd)
+        local key = use4wd and "widmo_drive_4wd" or "widmo_drive_rwd"
+        if g_i18n ~= nil then
+            return g_i18n:getText(key, vehicle.customEnvironment)
+        end
+        return use4wd and "Widmo: 4x4" or "Widmo: RWD"
+    end
+
+    function UrsusTransmissionFix.applyWidmoDrivetrain(vehicle, use4wd)
+        if not isUrsusVehicle(vehicle) then
+            return false
+        end
+        if getSelectedMotorConfigurationName(vehicle, vehicle.xmlFile) ~= "1934 Widmo" then
+            return false
+        end
+
+        use4wd = use4wd == true
+        vehicle.ursusWidmoUse4wd = use4wd
+
+        -- Only the server creates the physical differential graph in FS25.
+        if vehicle.isServer then
+            local spec = vehicle.spec_motorized
+            local allDifferentials = vehicle.ursusWidmoAllDifferentials
+            if spec == nil or spec.motorizedNode == nil or allDifferentials == nil or #allDifferentials < 3 then
+                Logging.warning("[UrsusTransmissionFix] Widmo drivetrain toggle: original 4x4 differential set is unavailable")
+                return false
+            end
+
+            removeAllDifferentials(spec.motorizedNode)
+
+            local activeDifferentials
+            if use4wd then
+                activeDifferentials = allDifferentials
+            else
+                activeDifferentials = {allDifferentials[2]}
+            end
+
+            for _, differential in ipairs(activeDifferentials) do
+                if not addWidmoPhysicalDifferential(vehicle, differential) then
+                    Logging.warning("[UrsusTransmissionFix] Widmo drivetrain toggle: failed to rebuild a differential")
+                    return false
+                end
+            end
+
+            spec.differentials = activeDifferentials
+            vehicle:updateMotorProperties()
+        end
+
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T8 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
+        return true
+    end
+
+    function UrsusTransmissionFix.actionEventToggleWidmoDrivetrain(vehicle, actionName, inputValue, callbackState, isAnalog)
+        if vehicle == nil then
+            return
+        end
+
+        local use4wd = not (vehicle.ursusWidmoUse4wd == true)
+
+        if g_server ~= nil then
+            UrsusTransmissionFix.applyWidmoDrivetrain(vehicle, use4wd)
+            g_server:broadcastEvent(UrsusWidmoDrivetrainEvent.new(vehicle, use4wd), nil, nil, vehicle)
+        elseif g_client ~= nil then
+            -- Optimistic local state keeps the help/status text responsive;
+            -- the authoritative server event rebuilds the actual drivetrain.
+            vehicle.ursusWidmoUse4wd = use4wd
+            g_client:getServerConnection():sendEvent(UrsusWidmoDrivetrainEvent.new(vehicle, use4wd))
+        end
+
+        if g_currentMission ~= nil and g_currentMission.showBlinkingWarning ~= nil then
+            g_currentMission:showBlinkingWarning(getWidmoDriveStatusText(vehicle, use4wd), 1500)
+        end
+    end
+
     function Motorized:loadDifferentials(xmlFile, configDifferentialIndex)
         originalLoadDifferentials(self, xmlFile, configDifferentialIndex)
 
@@ -265,14 +410,54 @@ if not UrsusTransmissionFix.installed then
 
         local spec = self.spec_motorized
         local differentials = spec ~= nil and spec.differentials or nil
-        if differentials == nil or #differentials < 2 then
-            Logging.warning("[UrsusTransmissionFix] Widmo RWD test: expected front/rear/center differential set")
+        if differentials == nil or #differentials < 3 then
+            Logging.warning("[UrsusTransmissionFix] Widmo drivetrain: expected front/rear/center differential set")
             return
         end
 
-        local rearDifferential = differentials[2]
-        spec.differentials = {rearDifferential}
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T7 Widmo drivetrain: rear differential only (RWD test)")
+        self.ursusWidmoAllDifferentials = {}
+        for i, differential in ipairs(differentials) do
+            self.ursusWidmoAllDifferentials[i] = differential
+        end
+
+        self.ursusWidmoUse4wd = false
+        spec.differentials = {self.ursusWidmoAllDifferentials[2]}
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T8 Widmo drivetrain initial state: RWD; manual RWD/4x4 toggle enabled")
+    end
+
+    function Motorized:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)
+        originalMotorizedOnRegisterActionEvents(self, isActiveForInput, isActiveForInputIgnoreSelection)
+
+        if not self.isClient
+            or not isActiveForInputIgnoreSelection
+            or not isUrsusVehicle(self)
+            or getSelectedMotorConfigurationName(self, self.xmlFile) ~= "1934 Widmo" then
+            return
+        end
+
+        local inputAction = InputAction.URSUS_WIDMO_TOGGLE_4WD
+        local spec = self.spec_motorized
+        if inputAction == nil or spec == nil or spec.actionEvents == nil then
+            return
+        end
+
+        local _, actionEventId = self:addActionEvent(
+            spec.actionEvents,
+            inputAction,
+            self,
+            UrsusTransmissionFix.actionEventToggleWidmoDrivetrain,
+            false,
+            true,
+            false,
+            true,
+            nil
+        )
+
+        if actionEventId ~= nil then
+            self.ursusWidmoDriveActionEventId = actionEventId
+            g_inputBinding:setActionEventText(actionEventId, g_i18n:getText("input_URSUS_WIDMO_TOGGLE_4WD", self.customEnvironment))
+            g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_HIGH)
+        end
     end
 
     -- T4 final pure-physics experiment: raise the Widmo centre of mass and
@@ -303,7 +488,7 @@ if not UrsusTransmissionFix.installed then
             end
             if not vehicle.ursusWidmoRearForcePointLogged then
                 vehicle.ursusWidmoRearForcePointLogged = true
-                Logging.info("[UrsusTransmissionFix] 1.0.6.0T7 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20")
+                Logging.info("[UrsusTransmissionFix] 1.0.6.0T8 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20")
             end
         end
 
@@ -500,5 +685,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.6.0T7 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.6.0T8 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end

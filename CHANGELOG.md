@@ -108,6 +108,18 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T8
+Ręczne przełączanie napędu wyłącznie dla `1934 Widmo`.
+
+Zmiany względem 1.0.6.0T7:
+- Widmo uruchamia się jak dotąd w RWD, ale kierowca może ręcznie przełączyć RWD ↔ 4x4 podczas gry,
+- dodano remapowalną akcję `URSUS_WIDMO_TOGGLE_4WD`; domyślnie `Ctrl+4`,
+- RWD wykorzystuje wyłącznie tylny dyferencjał, a 4x4 odbudowuje oryginalny zestaw: przód + tył + centralny dyferencjał,
+- stan jest przekazywany zdarzeniem sieciowym; fizyczne dyferencjały przebudowuje serwer,
+- parametry T7 pozostają: 290 KM, torqueScale 1.100, direct 8F/4R, COM `0 1.10 -1.80`, rear forcePointRatio 0.80 i rear maxLongStiffness x1.20,
+- pozostałe warianty ciągnika nie dostają tej akcji i zachowują seryjne 4x4.
+
 ## 1.0.6.0T7
 Test dodatkowego momentu i przyczepności wzdłużnej wyłącznie dla `1934 Widmo`.
 
