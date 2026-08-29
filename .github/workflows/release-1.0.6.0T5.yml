@@ -1,0 +1,174 @@
+name: Publish 1.0.6.0T5
+
+on:
+  push:
+    paths:
+      - '.github/workflows/release-1.0.6.0T5.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply Widmo T5 tuning
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          OLD = '1.0.6.0T4'
+          VERSION = '1.0.6.0T5'
+
+          p = Path('VERSION')
+          current = p.read_text(encoding='utf-8').strip()
+          if current != OLD:
+              raise SystemExit(f'Expected {OLD}, got {current}')
+          p.write_text(VERSION + '\n', encoding='utf-8')
+
+          p = Path('modDesc.xml')
+          s = p.read_text(encoding='utf-8')
+          if f'<version>{OLD}</version>' not in s:
+              raise SystemExit('modDesc old version not found')
+          p.write_text(s.replace(f'<version>{OLD}</version>', f'<version>{VERSION}</version>', 1), encoding='utf-8')
+
+          for filename in ('UrsusTransmissionFix.lua', 'UrsusColorFix.lua'):
+              p = Path(filename)
+              s = p.read_text(encoding='utf-8')
+              if OLD not in s:
+                  raise SystemExit(f'{filename}: {OLD} marker not found')
+              p.write_text(s.replace(OLD, VERSION), encoding='utf-8')
+
+          p = Path('Ursus1934.xml')
+          s = p.read_text(encoding='utf-8')
+          start = s.index('<motorConfiguration name="1934 Widmo"')
+          end = s.index('</motorConfiguration>', start)
+          seg = s[start:end]
+
+          if 'name="1934 Widmo" hp="225" price="20000"' not in seg:
+              raise SystemExit('Widmo hp anchor not found')
+          seg = seg.replace('name="1934 Widmo" hp="225" price="20000"', 'name="1934 Widmo" hp="265" price="20000"', 1)
+
+          if 'torqueScale="0.850"' not in seg:
+              raise SystemExit('Widmo torqueScale anchor not found')
+          seg = seg.replace('torqueScale="0.850"', 'torqueScale="1.000"', 1)
+
+          if 'centerOfMassActive="0 1.40 -1.65"' not in seg:
+              raise SystemExit('Widmo T4 COM anchor not found')
+          seg = seg.replace('centerOfMassActive="0 1.40 -1.65"', 'centerOfMassActive="0 1.10 -1.80"', 1)
+
+          s = s[:start] + seg + s[end:]
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('CHANGELOG.md')
+          s = p.read_text(encoding='utf-8')
+          marker = '## 1.0.6.0T4'
+          addition = (
+              '\n## 1.0.6.0T5\n'
+              'Test kompromisu pomiędzy wheelie a stabilnością boczną Widma.\n\n'
+              'Zmiany względem 1.0.6.0T4:\n'
+              '- środek masy Widma obniżono z `Y=1.40` do `Y=1.10`, aby ograniczyć podnoszenie wewnętrznego tylnego koła w zakrętach,\n'
+              '- środek masy cofnięto o dodatkowe 15 cm: `Z=-1.65` -> `Z=-1.80`,\n'
+              '- Widmo otrzymuje `torqueScale=1.000` zamiast `0.850`, około 17,6% więcej momentu,\n'
+              '- moc sklepowa Widma: 265 KM, przy zachowaniu tej samej krzywej momentu,\n'
+              '- RWD oraz tylny `forcePointRatio=0.80` pozostają bez zmian,\n'
+              '- nadal brak `addTorque` i `addForce`; efekt wheelie ma pozostać wynikiem fizyki napędu i masy.\n\n'
+          )
+          if '## 1.0.6.0T5' not in s:
+              if marker not in s:
+                  raise SystemExit('CHANGELOG T4 marker not found')
+              s = s.replace(marker, addition + marker, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('PROJECT_STATE.md')
+          s = p.read_text(encoding='utf-8')
+          note = (
+              '\n\n### Widmo balance/torque test — 1.0.6.0T5\n'
+              '- T4 potrafi unieść przód z ciężkim pługiem, ale przy skręcie około 20 km/h odrywa wewnętrzne tylne koło.\n'
+              '- T5: COM `0 1.10 -1.80`, RWD i rear forcePointRatio 0.80.\n'
+              '- Widmo: 265 KM, torqueScale 1.000, ta sama krzywa momentu co T4/Chip.\n'
+              '- Cel: zachować wheelie pod dużym obciążeniem przy wyraźnie lepszej stabilności bocznej.\n'
+          )
+          if '### Widmo balance/torque test — 1.0.6.0T5' not in s:
+              s += note
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate source tree
+        run: python3 tools/validate_current.py
+
+      - name: Build test ZIP
+        run: ./build.sh
+
+      - name: Verify Widmo T5 changes in ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+          z = zipfile.ZipFile('dist/FS25_Ursus_1654_1954_Pack.zip')
+          xml = z.read('Ursus1934.xml').decode('utf-8')
+          moddesc = z.read('modDesc.xml').decode('utf-8')
+          lua = z.read('UrsusTransmissionFix.lua').decode('utf-8')
+          assert '<version>1.0.6.0T5</version>' in moddesc
+          start = xml.index('<motorConfiguration name="1934 Widmo"')
+          end = xml.index('</motorConfiguration>', start)
+          seg = xml[start:end]
+          assert 'hp="265"' in seg
+          assert 'torqueScale="1.000"' in seg
+          assert 'centerOfMassActive="0 1.10 -1.80"' in seg
+          assert 'forcePointRatio = 0.80' in lua
+          assert '1.0.6.0T5 Widmo rear forcePointRatio=0.80' in lua
+          print('ZIP Widmo T5 check: OK')
+          PY
+
+      - name: Commit 1.0.6.0T5
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION modDesc.xml Ursus1934.xml UrsusTransmissionFix.lua UrsusColorFix.lua CHANGELOG.md PROJECT_STATE.md
+          git commit -m 'Release 1.0.6.0T5 Widmo balance and torque test'
+          git push origin HEAD:main
+
+      - name: Publish GitHub prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TARGET_SHA=$(git rev-parse HEAD)
+          cat > /tmp/release-notes.md <<'EOF'
+          Widmo balance and torque experiment following the successful T4 wheelie test.
+
+          Changes:
+          - center of mass: 0 1.40 -1.65 -> 0 1.10 -1.80,
+          - Widmo torqueScale: 0.850 -> 1.000 (~17.6% more torque),
+          - store power: 265 hp,
+          - RWD and rear forcePointRatio 0.80 retained,
+          - no scripted addTorque/addForce assistance.
+
+          Test goal: retain the ability to lift the front under a heavy plough while reducing inside-rear-wheel lift in normal cornering.
+          EOF
+          gh release create v1.0.6.0T5 dist/FS25_Ursus_1654_1954_Pack.zip \
+            --target "$TARGET_SHA" \
+            --title '1.0.6.0T5 — Widmo balance and torque test' \
+            --prerelease \
+            --notes-file /tmp/release-notes.md
+
+      - name: Remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          git rm .github/workflows/release-1.0.6.0T5.yml
+          git commit -m 'Remove one-shot 1.0.6.0T5 release workflow'
+          git push origin HEAD:main
