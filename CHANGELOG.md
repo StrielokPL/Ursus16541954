@@ -136,5 +136,27 @@ Zmiany względem 1.0.4.0T3:
 - zmiana zostawia bezpieczny zapas obrotów po przejściu L→H (1.25 → 1.00) zamiast lądowania dokładnie na granicy luggingu ADS,
 - próg obciążenia, czasy cooldown/histerezy, redukcja o jeden wirtualny stopień i bridge awarii ADS pozostają bez zmian.
 
+## 1.0.4.1
+Stabilne wydanie zmian testowanych w serii 1.0.4.0T1–T4, ukierunkowanych na zgodność z modami realizmu i zachowanie automatycznej skrzyni pod dużym obciążeniem.
+
+Zmiany względem 1.0.3.0:
+- dodano rok produkcji `2009` do danych sklepowych dla zgodności z Vehicle Years i systemami korzystającymi z `storeData.year`,
+- pojemność zbiornika oleju napędowego zwiększono z `300 l` do `355 l`, zgodnie z danymi ciężkiej serii Ursusa,
+- dodano opcjonalny bridge do Advanced Damage System dla automatycznego splittera L/H; zmiany splittera respektują awarie zmiany biegu ADS oraz opóźnienie/uszkodzenie powershiftu,
+- automat z aktywnym ADS korzysta z `spec.dynamicMotorLoad`, czyli tego samego sygnału obciążenia, którego ADS używa do telemetrii i zużycia silnika,
+- przy obciążeniu >80% ochronna redukcja uruchamia się poniżej 65% maksymalnych obrotów (~1430 rpm przy 2200 rpm),
+- przy obciążeniu >80% blokowany jest upshift poniżej 83% maksymalnych obrotów (~1825 rpm), aby po przejściu L→H zachować zapas ponad strefą luggingu,
+- ochronna redukcja pozostaje ograniczona do jednego wirtualnego stopnia naraz, z cooldownem oraz histerezą 1,8 s zapobiegającą polowaniu między przełożeniami,
+- naprawiono diagnostykę load guarda, tak aby wpisy `DOWNSHIFT` / `BLOCK UPSHIFT` nie powodowały błędu formattera GIANTS Logging,
+- bez ADS oraz w trybie manualnym zachowanie skrzyni pozostaje zgodne ze stabilnym mechanizmem 8F/4R × L/H.
+
+Testy runtime:
+- seria T4 przeszła test normalnej pracy oraz test graniczny z pługiem wymagającym 210 KM, w deszczu i przy 100% wilgotności gleby,
+- load guard poprawnie blokował zbyt wczesne upshifty i wykonywał ochronne redukcje bez błędów Lua,
+- brak nowych błędów związanych z Ursusem.
+
+### Znane problemy
+- pozostaje zaakceptowany warning `Ursus1934.i3d contains non-binary indexed triangle sets` związany z tekstową geometrią `FS25MirrorExact`; nie ma zaobserwowanego wpływu na działanie ani wygląd.
+
 ## Dalszy rozwój
 Od **1.0.1.0** używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`. Numeracji V26/V27 nie stosujemy do nowych buildów.

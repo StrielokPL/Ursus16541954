@@ -1,6 +1,6 @@
-# Project state — 1.0.3.0
+# Project state — 1.0.4.1
 
-Current stable baseline is **1.0.3.0**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
+Current stable baseline is **1.0.4.1**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
 
 ## Closed / confirmed areas
 
@@ -66,9 +66,20 @@ Version 1.0.3.0 removes one rejected `defaultLight` mapping and five rejected da
 
 This is 6 cm lower than V25. Cameras, seat geometry and IK targets were not moved.
 
+## Realism / ADS compatibility
+
+Stable 1.0.4.1 adds optional integration without making Advanced Damage System a hard dependency:
+- Vehicle Years receives store year `2009`,
+- diesel capacity is `355 l`,
+- automatic L/H changes respect ADS gear-shift failure and powershift lag effects,
+- while ADS is active the automatic load guard reads `spec.dynamicMotorLoad`,
+- at >80% load it downshifts below 65% max RPM and blocks upshifts below 83% max RPM,
+- protective downshifts are one virtual step at a time with a 1.8 s post-downshift upshift hold,
+- without ADS and in manual mode the approved transmission behavior is unchanged.
+
 ## Package identity
 
-Current version: **1.0.3.0**.
+Current version: **1.0.4.1**.
 
 Stable downloadable ZIP name from this version onward:
 
@@ -84,6 +95,6 @@ The historical exact V25 SHA manifest remains under `reference/v25/` as a regres
 
 ## Runtime note
 
-Version 1.0.3.0 was verified in Farming Simulator 25. Refuelling works, the 2500 kg weight provides a valid AI attachment outline, and lights plus dashboards remain visually and functionally unchanged. The final runtime log contains no Ursus-related errors.
+Version 1.0.4.1 was verified in Farming Simulator 25. Refuelling, the 2500 kg weight AI outline, lights and dashboards retain their approved behavior. The optional Advanced Damage System bridge and load-aware automatic transmission were runtime-tested through T1–T4, including an extreme high-load plowing test in rain at 100% soil wetness. The final test log contains no Ursus-related Lua errors.
 
 Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary indexed triangle sets` for the inline `FS25MirrorExact` geometry. This non-fatal storage/performance-format warning has no observed gameplay or visual effect. Converting it to binary `.i3d.shapes` is deferred because that asset change requires a new regression test of the approved mirrors.
