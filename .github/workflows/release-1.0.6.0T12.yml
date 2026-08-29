@@ -1,0 +1,115 @@
+name: Publish 1.0.6.0T12
+
+on:
+  push:
+    paths:
+      - '.github/workflows/release-1.0.6.0T12.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply T12 whole-family dynamic suspension
+        run: python3 tools/apply_1_0_6_0T12.py
+
+      - name: Ensure tractor and wheel XML are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- Ursus1934.xml wheels
+
+      - name: Validate source tree
+        run: python3 tools/validate_current.py
+
+      - name: Build test ZIP
+        run: ./build.sh
+
+      - name: Verify T12 ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+
+          with zipfile.ZipFile('dist/FS25_Ursus_1654_1954_Pack.zip') as z:
+              moddesc = z.read('modDesc.xml').decode('utf-8')
+              lua = z.read('UrsusTransmissionFix.lua').decode('utf-8')
+              xml = z.read('Ursus1934.xml').decode('utf-8')
+
+          assert '<version>1.0.6.0T12</version>' in moddesc
+          assert 'URSUS_REAR_HOP_MAX_LOAD_FACTOR = 1.60' in lua
+          assert 'URSUS_REAR_HOP_SPRING_MULTIPLIER = 1.15' in lua
+          assert 'URSUS_REAR_HOP_DAMPING_MULTIPLIER = 0.60' in lua
+          assert 'URSUS_FRONT_HOP_MAX_LOAD_FACTOR = 1.50' in lua
+          assert 'URSUS_FRONT_HOP_SPRING_MULTIPLIER = 1.10' in lua
+          assert 'URSUS_FRONT_HOP_DAMPING_MULTIPLIER = 0.75' in lua
+          assert 'updateUrsusAxleDynamicSuspension' in lua
+          assert 'wheelIndex == 2' in lua and 'wheelIndex == 4' in lua
+          assert 'getSelectedMotorConfigurationName(vehicle, vehicle.xmlFile) ~= "1934 Widmo"' not in lua[lua.index('-- T12: load-dependent'):lua.index('-- In AUTOMATIC mode only')]
+          assert 'self.maxLongStiffness = (self.maxLongStiffness or 30.0) * 1.20' in lua
+          assert 'self.maxLatStiffness = (self.maxLatStiffness or 30.0) * 0.85' in lua
+          assert 'removeAllDifferentials(spec.motorizedNode)' in lua
+          assert 'local URSUS_FRONT_BALLAST' in lua
+
+          start = xml.index('<motorConfiguration name="1934 Widmo"')
+          end = xml.index('</motorConfiguration>', start)
+          widmo = xml[start:end]
+          assert 'hp="290"' in widmo
+          assert 'torqueScale="1.100"' in widmo
+          assert 'centerOfMassActive="0 1.10 -1.80"' in widmo
+          assert 'name="8/4"' in widmo
+
+          print('ZIP T12 whole-family dynamic suspension check: OK')
+          PY
+
+      - name: Commit 1.0.6.0T12
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION modDesc.xml UrsusTransmissionFix.lua UrsusColorFix.lua CHANGELOG.md PROJECT_STATE.md
+          git commit -m 'Release 1.0.6.0T12 whole-family dynamic suspension test'
+          git push origin HEAD:main
+
+      - name: Publish GitHub prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TARGET_SHA=$(git rev-parse HEAD)
+          cat > /tmp/release-notes.md <<'EOF'
+          Whole-family native dynamic suspension / tire-hop test.
+
+          Changes:
+          - T11 rear load-dependent suspension response now applies to every Ursus motor and wheel configuration,
+          - rear axle: full effect around 1.60x rest load, spring x1.15, damping x0.60, 500 ms interpolation,
+          - front axle gets a milder equivalent: full effect around 1.50x rest load, spring x1.10, damping x0.75, 450 ms interpolation,
+          - no addForce/addTorque hop assist is used,
+          - Widmo-only rear longitudinal/lateral grip tuning remains unchanged,
+          - T9 front ballast physics and T8 manual Widmo RWD/4x4 remain unchanged,
+          - Ursus1934.xml and all wheel XML files are unchanged.
+          EOF
+          gh release create v1.0.6.0T12 dist/FS25_Ursus_1654_1954_Pack.zip \
+            --target "$TARGET_SHA" \
+            --title '1.0.6.0T12 — Whole-family dynamic suspension test' \
+            --prerelease \
+            --notes-file /tmp/release-notes.md
+
+      - name: Remove one-shot release helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          git rm .github/workflows/release-1.0.6.0T12.yml tools/apply_1_0_6_0T12.py
+          git commit -m 'Remove one-shot 1.0.6.0T12 release helpers'
+          git push origin HEAD:main
