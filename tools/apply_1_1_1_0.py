@@ -40,6 +40,18 @@ p = Path("UrsusTransmissionFix.lua")
 s = p.read_text(encoding="utf-8")
 s = s.replace(OLD, NEW)
 
+# Remove label helpers that existed only for store/mass diagnostics.
+s = re.sub(
+    r'\n    local function getUrsusTransmissionLabel\(vehicle\)\n.*?\n    end\n\n    local function getUrsusDrivetrainLabel\(vehicle\)\n.*?\n    end\n',
+    '\n', s, flags=re.S
+)
+
+# Remove T14 mass-layout diagnostic log.
+s = re.sub(
+    r'\n\s*if not vehicle\.ursusT14MassLayoutLogged then\n\s*vehicle\.ursusT14MassLayoutLogged = true\n\s*Logging\.info\("%s", string\.format\(\n\s*"\[UrsusTransmissionFix\] 1\.1\.1\.0 mass layout motor=%s: C1base=%d kg C2=%d kg COMbase=%.3f %.3f %.3f",\n.*?\n\s*\)\)\n\s*end\n',
+    '\n', s, flags=re.S
+)
+
 # Remove front-ballast informational test log.
 s = re.sub(
     r'\n\s*if ballast ~= nil then\n\s*Logging\.info\("%s", string\.format\(\n\s*"\[UrsusTransmissionFix\] 1\.1\.1\.0 front ballast %s: \+%d kg, body component=%d kg, COM=%.3f %.3f %.3f",\n.*?\n\s*\)\)\n\s*end\n',
@@ -81,8 +93,20 @@ s = s[:start] + s[end:]
 # Remove diagnostic call from Wheel:update while keeping rear dynamic suspension.
 s = s.replace('            updateUrsusMassDiagnostic(self.vehicle, dt)\n', '')
 
-if '[UrsusMassDiag]' in s or 'updateUrsusMassDiagnostic' in s or 'logUrsusMassDiagnostic' in s:
-    raise SystemExit("mass diagnostic remnants remain")
+for forbidden in (
+    '[UrsusMassDiag]',
+    'updateUrsusMassDiagnostic',
+    'logUrsusMassDiagnostic',
+    'safeNodeMass',
+    'safeNodeCenterOfMass',
+    'ursusMassDiagnosticLogged',
+    'ursusT14MassLayoutLogged',
+    'mass layout motor=',
+    'store transmission: %s',
+    'store drivetrain: %s',
+):
+    if forbidden in s:
+        raise SystemExit(f"diagnostic remnant remains: {forbidden}")
 
 p.write_text(s, encoding="utf-8")
 
