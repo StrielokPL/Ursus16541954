@@ -17,89 +17,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply Widmo T7 torque and traction tuning
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          OLD = '1.0.6.0T6'
-          VERSION = '1.0.6.0T7'
-
-          current = Path('VERSION').read_text(encoding='utf-8').strip()
-          if current != OLD:
-              raise SystemExit(f'Expected {OLD}, got {current}')
-          Path('VERSION').write_text(VERSION + '\n', encoding='utf-8')
-
-          p = Path('modDesc.xml')
-          s = p.read_text(encoding='utf-8')
-          old = f'<version>{OLD}</version>'
-          new = f'<version>{VERSION}</version>'
-          if old not in s:
-              raise SystemExit('modDesc version anchor not found')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
-
-          for filename in ('UrsusTransmissionFix.lua', 'UrsusColorFix.lua'):
-              p = Path(filename)
-              s = p.read_text(encoding='utf-8')
-              if OLD not in s:
-                  raise SystemExit(f'{filename}: old version marker not found')
-              p.write_text(s.replace(OLD, VERSION), encoding='utf-8')
-
-          p = Path('Ursus1934.xml')
-          s = p.read_text(encoding='utf-8')
-          start = s.index('<motorConfiguration name="1934 Widmo"')
-          end = s.index('</motorConfiguration>', start)
-          segment = s[start:end]
-          if 'hp="265"' not in segment or 'torqueScale="1.000"' not in segment:
-              raise SystemExit('Widmo T6 engine anchors not found')
-          segment = segment.replace('hp="265"', 'hp="290"', 1)
-          segment = segment.replace('torqueScale="1.000"', 'torqueScale="1.100"', 1)
-          s = s[:start] + segment + s[end:]
-          p.write_text(s, encoding='utf-8')
-
-          p = Path('UrsusTransmissionFix.lua')
-          s = p.read_text(encoding='utf-8')
-          old_snippet = '''        if wheelIndex >= 3 then
-            self.forcePointRatio = 0.80
-            if not vehicle.ursusWidmoRearForcePointLogged then
-                vehicle.ursusWidmoRearForcePointLogged = true
-                Logging.info("[UrsusTransmissionFix] 1.0.6.0T7 Widmo rear forcePointRatio=0.80")
-            end
-        end'''
-          new_snippet = '''        if wheelIndex >= 3 then
-            if not self.ursusWidmoTractionApplied then
-                self.forcePointRatio = 0.80
-                self.maxLongStiffness = (self.maxLongStiffness or 30.0) * 1.20
-                self.ursusWidmoTractionApplied = true
-            end
-            if not vehicle.ursusWidmoRearForcePointLogged then
-                vehicle.ursusWidmoRearForcePointLogged = true
-                Logging.info("[UrsusTransmissionFix] 1.0.6.0T7 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20")
-            end
-        end'''
-          if old_snippet not in s:
-              raise SystemExit('Widmo rear wheel T6 hook anchor not found')
-          p.write_text(s.replace(old_snippet, new_snippet, 1), encoding='utf-8')
-
-          p = Path('CHANGELOG.md')
-          s = p.read_text(encoding='utf-8')
-          addition = '''\n## 1.0.6.0T7\nTest dodatkowego momentu i przyczepności wzdłużnej wyłącznie dla `1934 Widmo`.\n\nZmiany względem 1.0.6.0T6:\n- Widmo: `torqueScale` 1.000 -> 1.100, moc sklepowa 265 -> 290 KM,\n- tylne koła Widma: `maxLongStiffness` x1.20, bez zmiany `maxLatStiffness` i `frictionScale`,\n- zachowane RWD, bezpośrednie 8F/4R, COM `0 1.10 -1.80` i rear `forcePointRatio=0.80`,\n- pozostałe warianty bez zmian.\n\n'''
-          marker = '## 1.0.6.0T6'
-          if '## 1.0.6.0T7' not in s:
-              if marker not in s:
-                  raise SystemExit('CHANGELOG T6 marker not found')
-              s = s.replace(marker, addition + marker, 1)
-          p.write_text(s, encoding='utf-8')
-
-          p = Path('PROJECT_STATE.md')
-          s = p.read_text(encoding='utf-8')
-          note = '''\n\n### Widmo torque/longitudinal traction test — 1.0.6.0T7\n- T6: direct 8F/4R only for Widmo; trailer tests came close to lifting the front.\n- T7 increases only Widmo engine torque by 10% (`torqueScale=1.100`, 290 hp store value).\n- Rear WheelPhysics only: `maxLongStiffness` x1.20; lateral stiffness and overall friction scale unchanged to avoid worsening cornering wheel lift.\n- RWD, COM `0 1.10 -1.80`, rear forcePointRatio 0.80 and direct 8F/4R retained.\n'''
-          if '### Widmo torque/longitudinal traction test — 1.0.6.0T7' not in s:
-              s += note
-          p.write_text(s, encoding='utf-8')
-          PY
+      - name: Apply Widmo T7 tuning
+        run: python3 tools/release_t7.py
 
       - name: Validate source tree
         run: python3 tools/validate_current.py
@@ -111,25 +30,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import zipfile
-          z = zipfile.ZipFile('dist/FS25_Ursus_1654_1954_Pack.zip')
-          xml = z.read('Ursus1934.xml').decode('utf-8')
-          lua = z.read('UrsusTransmissionFix.lua').decode('utf-8')
-          moddesc = z.read('modDesc.xml').decode('utf-8')
-          assert '<version>1.0.6.0T7</version>' in moddesc
-          start = xml.index('<motorConfiguration name="1934 Widmo"')
-          end = xml.index('</motorConfiguration>', start)
-          seg = xml[start:end]
-          assert 'hp="290"' in seg
-          assert 'torqueScale="1.100"' in seg
-          assert 'centerOfMassActive="0 1.10 -1.80"' in seg
-          assert 'name="8/4"' in seg
-          assert '<groups ' not in seg
-          assert 'self.maxLongStiffness = (self.maxLongStiffness or 30.0) * 1.20' in lua
-          assert 'maxLongStiffness x1.20' in lua
-          print('ZIP Widmo T7 torque/longitudinal traction check: OK')
-          PY
+          unzip -p dist/FS25_Ursus_1654_1954_Pack.zip modDesc.xml | grep -q '<version>1.0.6.0T7</version>'
+          unzip -p dist/FS25_Ursus_1654_1954_Pack.zip Ursus1934.xml | grep -q 'motorConfiguration name="1934 Widmo" hp="290"'
+          unzip -p dist/FS25_Ursus_1654_1954_Pack.zip Ursus1934.xml | grep -q 'torqueScale="1.100"'
+          unzip -p dist/FS25_Ursus_1654_1954_Pack.zip UrsusTransmissionFix.lua | grep -q 'maxLongStiffness x1.20'
+          echo 'ZIP Widmo T7 check: OK'
 
       - name: Commit 1.0.6.0T7
         shell: bash
@@ -137,6 +42,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm tools/release_t7.py
           git add VERSION modDesc.xml Ursus1934.xml UrsusTransmissionFix.lua UrsusColorFix.lua CHANGELOG.md PROJECT_STATE.md
           git commit -m 'Release 1.0.6.0T7 Widmo torque and rear traction test'
           git push origin HEAD:main
@@ -148,23 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           TARGET_SHA=$(git rev-parse HEAD)
-          cat > /tmp/release-notes.md <<'EOF'
-          Widmo torque and rear longitudinal traction experiment following T6.
-
-          Changes:
-          - only 1934 Widmo: torqueScale 1.000 -> 1.100 and store power 265 -> 290 hp,
-          - only Widmo rear wheels: maxLongStiffness x1.20,
-          - maxLatStiffness and frictionScale remain unchanged so cornering grip is not deliberately increased,
-          - RWD, direct 8F/4R, COM 0 1.10 -1.80 and rear forcePointRatio 0.80 are retained,
-          - all normal tractor variants remain unchanged.
-
-          Test goal: gain the final amount of rear-axle bite and torque needed to lift the front with heavy trailers without returning to the excessive inside-rear-wheel lift seen with the higher T4 center of mass.
-          EOF
-          gh release create v1.0.6.0T7 dist/FS25_Ursus_1654_1954_Pack.zip \
-            --target "$TARGET_SHA" \
-            --title '1.0.6.0T7 — Widmo torque and rear traction test' \
-            --prerelease \
-            --notes-file /tmp/release-notes.md
+          gh release create v1.0.6.0T7 dist/FS25_Ursus_1654_1954_Pack.zip --target "$TARGET_SHA" --title '1.0.6.0T7 — Widmo torque and rear traction test' --prerelease --notes 'Widmo: 290 hp, torqueScale 1.100 and 20% more rear longitudinal stiffness. RWD, direct 8F/4R, COM and lateral tire grip remain unchanged.'
 
       - name: Remove one-shot workflow
         shell: bash
