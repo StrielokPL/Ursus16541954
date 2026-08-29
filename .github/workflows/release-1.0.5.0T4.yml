@@ -1,0 +1,123 @@
+name: Build and publish 1.0.5.0T4
+
+on:
+  push:
+    paths:
+      - '.github/workflows/release-1.0.5.0T4.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply packaging hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          VERSION = '1.0.5.0T4'
+
+          Path('VERSION').write_text(VERSION + '\n', encoding='utf-8')
+
+          p = Path('modDesc.xml')
+          s = p.read_text(encoding='utf-8').replace('<version>1.0.5.0T3</version>', f'<version>{VERSION}</version>')
+          p.write_text(s, encoding='utf-8')
+
+          for fn in ('UrsusTransmissionFix.lua', 'UrsusColorFix.lua'):
+              p = Path(fn)
+              s = p.read_text(encoding='utf-8').replace('1.0.5.0T3', VERSION)
+              p.write_text(s, encoding='utf-8')
+
+          p = Path('reference/v25/files.txt')
+          lines = p.read_text(encoding='utf-8').splitlines()
+          if 'UrsusColorFix.lua' not in lines:
+              idx = lines.index('UrsusTransmissionFix.lua') + 1
+              lines.insert(idx, 'UrsusColorFix.lua')
+          p.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+
+          p = Path('tools/validate_current.py')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('if len(files) != 67:\n        fail(f"allowlista powinna zawierać 67 plików, ma {len(files)}")',
+                        'if len(files) != 68:\n        fail(f"allowlista powinna zawierać 68 plików, ma {len(files)}")')
+          old = '''    if "UrsusTransmissionFix.lua" not in source_files:\n        fail("modDesc.xml nie ładuje UrsusTransmissionFix.lua")\n'''
+          new = '''    if "UrsusTransmissionFix.lua" not in source_files:\n        fail("modDesc.xml nie ładuje UrsusTransmissionFix.lua")\n\n    # Every extraSourceFile must actually be packaged. This catches the T3 regression\n    # where UrsusColorFix.lua existed in the repository but was missing from the ZIP allowlist.\n    for source_file in source_files:\n        if source_file not in files:\n            fail(f"extraSourceFile nie znajduje się na allowliście ZIP: {source_file}")\n        if not (ROOT / source_file).is_file():\n            fail(f"brakuje extraSourceFile: {source_file}")\n'''
+          if old not in s:
+              raise SystemExit('validator sourceFiles anchor not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('CHANGELOG.md')
+          s = p.read_text(encoding='utf-8')
+          addition = '''\n## 1.0.5.0T4\nHotfix pakowania po 1.0.5.0T3.\n\nZmiany względem 1.0.5.0T3:\n- naprawiono paczkę ZIP: `UrsusColorFix.lua` jest teraz jawnie dołączany do listy plików moda,\n- brak skryptu w ZIP-ie był bezpośrednią przyczyną błędu `Can't load resource .../UrsusColorFix.lua` i braku faktycznej zmiany kolorów w T3,\n- mechanizm pełnej palety GIANTS i koloru niestandardowego pozostaje bez zmian względem T3, aby T4 izolował wyłącznie błąd pakowania,\n- walidator sprawdza teraz, czy każdy plik z `modDesc.xml/extraSourceFiles` istnieje i znajduje się na allowliście buildera; podobna regresja ma od tej wersji przerwać build.\n\n'''
+          marker = '## 1.0.5.0T3'
+          if '## 1.0.5.0T4' not in s:
+              s = s.replace(marker, addition + marker, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('PROJECT_STATE.md')
+          s = p.read_text(encoding='utf-8').replace('1.0.5.0T3', VERSION)
+          if 'T4 packaging hotfix' not in s:
+              s += '''\n\n### T4 packaging hotfix — 1.0.5.0T4\n- `UrsusColorFix.lua` jest częścią ZIP allowlisty.\n- Walidator wymusza obecność wszystkich `extraSourceFiles` w paczce.\n- Log T3 potwierdził, że brak tego pliku w ZIP powodował `Can't load resource` i wyłączał runtime bridge kolorów.\n'''
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate source tree
+        run: python3 tools/validate_current.py
+
+      - name: Build test ZIP
+        run: ./build.sh
+
+      - name: Verify color bridge is in ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+          z = zipfile.ZipFile('dist/FS25_Ursus_1654_1954_Pack.zip')
+          names = set(z.namelist())
+          assert 'UrsusColorFix.lua' in names, 'UrsusColorFix.lua missing from ZIP'
+          assert 'UrsusTransmissionFix.lua' in names, 'UrsusTransmissionFix.lua missing from ZIP'
+          print('ZIP extraSourceFiles check: OK')
+          PY
+
+      - name: Commit 1.0.5.0T4
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION modDesc.xml UrsusTransmissionFix.lua UrsusColorFix.lua reference/v25/files.txt tools/validate_current.py CHANGELOG.md PROJECT_STATE.md
+          git commit -m 'Release 1.0.5.0T4 packaging hotfix'
+          git push origin HEAD:main
+
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_SHA=$(git rev-parse HEAD)
+          gh release create v1.0.5.0T4 dist/FS25_Ursus_1654_1954_Pack.zip \
+            --target "$TARGET_SHA" \
+            --title '1.0.5.0T4 — color bridge packaging hotfix' \
+            --prerelease \
+            --notes 'Fixes the T3 regression where UrsusColorFix.lua existed in source but was omitted from the built mod ZIP, causing GIANTS to log Can't load resource and leaving body/rim selections with no runtime color application. T4 keeps the T3 full GIANTS palette and custom RGB mechanism unchanged, explicitly packages UrsusColorFix.lua, and strengthens validation so every extraSourceFile must be present in the ZIP allowlist. Transmission, ADS behavior, physics and visual target whitelists are unchanged.'
+
+      - name: Remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          git rm .github/workflows/release-1.0.5.0T4.yml
+          git commit -m 'Remove one-shot 1.0.5.0T4 release workflow'
+          git push origin HEAD:main
