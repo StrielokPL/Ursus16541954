@@ -211,3 +211,12 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Zakres: axleLoad rest -> 1.60x rest; spring 1.00 -> 1.15; damping 1.00 -> 0.60; interpolacja 500 ms.
 - Cel: sprawdzić, czy pod dużym obciążeniem i dużym momentem Widmo zacznie naturalnie odbijać/power-hopować na tylnych oponach.
 - T10/T9/T8 zachowane bez zmian; `wheels/` i `Ursus1934.xml` bez zmian.
+
+
+### Whole-family dynamic tire/suspension response — 1.0.6.0T12
+- T11 rear load-driven suspension response expanded from Widmo to every Ursus motor/wheel configuration.
+- Rear: max-load factor 1.60, spring 1.15, damping 0.60, interpolation 500 ms.
+- Front: milder max-load factor 1.50, spring 1.10, damping 0.75, interpolation 450 ms.
+- Uses native WheelPhysics suspension multipliers only; no impulse/force simulation.
+- Widmo-specific traction tuning remains separate and unchanged.
+- Wheel XML and Ursus1934.xml unchanged in T12.

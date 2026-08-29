@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.6.0T11: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.6.0T12: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -181,7 +181,7 @@ if not UrsusTransmissionFix.installed then
 
         if ballast ~= nil then
             Logging.info("%s", string.format(
-                "[UrsusTransmissionFix] 1.0.6.0T11 front ballast %s: +%d kg, body component=%d kg, COM=%.3f %.3f %.3f",
+                "[UrsusTransmissionFix] 1.0.6.0T12 front ballast %s: +%d kg, body component=%d kg, COM=%.3f %.3f %.3f",
                 configName,
                 addedMassKg,
                 targetMassKg,
@@ -460,7 +460,7 @@ if not UrsusTransmissionFix.installed then
             vehicle:updateMotorProperties()
         end
 
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T11 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T12 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
         return true
     end
 
@@ -514,7 +514,7 @@ if not UrsusTransmissionFix.installed then
 
         self.ursusWidmoUse4wd = false
         spec.differentials = {self.ursusWidmoAllDifferentials[2]}
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T11 Widmo drivetrain initial state: RWD; manual RWD/4x4 toggle enabled")
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T12 Widmo drivetrain initial state: RWD; manual RWD/4x4 toggle enabled")
     end
 
     function Motorized:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)
@@ -581,35 +581,40 @@ if not UrsusTransmissionFix.installed then
             end
             if not vehicle.ursusWidmoRearForcePointLogged then
                 vehicle.ursusWidmoRearForcePointLogged = true
-                Logging.info("[UrsusTransmissionFix] 1.0.6.0T11 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20, maxLatStiffness x0.85")
+                Logging.info("[UrsusTransmissionFix] 1.0.6.0T12 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20, maxLatStiffness x0.85")
             end
         end
 
         return result
     end
 
-    -- T11: Widmo-only rear dynamic suspension experiment. This follows the
-    -- same load-driven multiplier idea used by GIANTS WheelAxle.dynamicSuspension:
-    -- no artificial force is added; only native wheel spring/damping multipliers
-    -- are changed according to the measured rear axle tire load.
-    local WIDMO_REAR_HOP_MAX_LOAD_FACTOR = 1.60
-    local WIDMO_REAR_HOP_SPRING_MULTIPLIER = 1.15
-    local WIDMO_REAR_HOP_DAMPING_MULTIPLIER = 0.60
-    local WIDMO_REAR_HOP_INTERPOLATION_MS = 500
+    -- T12: load-dependent native suspension response for the whole Ursus family.
+    -- Rear axle keeps the stronger T11 power-hop tuning. The front axle gets a
+    -- milder version so the tractor can heave on its front tires without making
+    -- steering excessively nervous. No artificial force or torque is added.
+    local URSUS_REAR_HOP_MAX_LOAD_FACTOR = 1.60
+    local URSUS_REAR_HOP_SPRING_MULTIPLIER = 1.15
+    local URSUS_REAR_HOP_DAMPING_MULTIPLIER = 0.60
+    local URSUS_REAR_HOP_INTERPOLATION_MS = 500
 
-    local function updateWidmoRearDynamicSuspension(vehicle, dt)
+    local URSUS_FRONT_HOP_MAX_LOAD_FACTOR = 1.50
+    local URSUS_FRONT_HOP_SPRING_MULTIPLIER = 1.10
+    local URSUS_FRONT_HOP_DAMPING_MULTIPLIER = 0.75
+    local URSUS_FRONT_HOP_INTERPOLATION_MS = 450
+
+    local function updateUrsusAxleDynamicSuspension(vehicle, dt, axleName, leftIndex, rightIndex,
+            maxLoadFactor, maxSpringMultiplier, minDampingMultiplier, interpolationMs)
         if vehicle == nil
             or not vehicle.isServer
             or not vehicle.isAddedToPhysics
-            or not isUrsusVehicle(vehicle)
-            or getSelectedMotorConfigurationName(vehicle, vehicle.xmlFile) ~= "1934 Widmo" then
+            or not isUrsusVehicle(vehicle) then
             return
         end
 
-        local rearLeft = vehicle:getWheelFromWheelIndex(3)
-        local rearRight = vehicle:getWheelFromWheelIndex(4)
-        local physicsLeft = rearLeft ~= nil and rearLeft.physics or nil
-        local physicsRight = rearRight ~= nil and rearRight.physics or nil
+        local leftWheel = vehicle:getWheelFromWheelIndex(leftIndex)
+        local rightWheel = vehicle:getWheelFromWheelIndex(rightIndex)
+        local physicsLeft = leftWheel ~= nil and leftWheel.physics or nil
+        local physicsRight = rightWheel ~= nil and rightWheel.physics or nil
         if physicsLeft == nil or physicsRight == nil
             or physicsLeft.getTireLoad == nil or physicsRight.getTireLoad == nil
             or physicsLeft.setSuspensionMultipliers == nil or physicsRight.setSuspensionMultipliers == nil then
@@ -617,51 +622,73 @@ if not UrsusTransmissionFix.installed then
         end
 
         local axleLoad = (physicsLeft:getTireLoad() or 0) + (physicsRight:getTireLoad() or 0)
-        if axleLoad <= 0 then
-            return
-        end
-
         local restLoad = (physicsLeft.restLoad or 0) + (physicsRight.restLoad or 0)
-        if restLoad <= 0 then
+        if axleLoad <= 0 or restLoad <= 0 then
             return
         end
 
-        local maxLoad = restLoad * WIDMO_REAR_HOP_MAX_LOAD_FACTOR
+        local maxLoad = restLoad * maxLoadFactor
         local targetAlpha = MathUtil.inverseLerp(restLoad, maxLoad, axleLoad)
         targetAlpha = math.clamp(targetAlpha, 0, 1)
 
-        local alpha = vehicle.ursusWidmoRearHopAlpha or 0
+        vehicle.ursusDynamicSuspension = vehicle.ursusDynamicSuspension or {}
+        local state = vehicle.ursusDynamicSuspension[axleName]
+        if state == nil then
+            state = {alpha=0, appliedAlpha=nil, logged=false}
+            vehicle.ursusDynamicSuspension[axleName] = state
+        end
+
+        local alpha = state.alpha or 0
         local direction = math.sign(targetAlpha - alpha)
-        alpha = math.clamp(alpha + direction * dt / WIDMO_REAR_HOP_INTERPOLATION_MS, 0, 1)
+        alpha = math.clamp(alpha + direction * dt / interpolationMs, 0, 1)
         if direction > 0 then
             alpha = math.min(alpha, targetAlpha)
         elseif direction < 0 then
             alpha = math.max(alpha, targetAlpha)
         end
-        vehicle.ursusWidmoRearHopAlpha = alpha
+        state.alpha = alpha
 
-        local applied = vehicle.ursusWidmoRearHopAppliedAlpha
-        if applied == nil or math.abs(alpha - applied) > 0.05 or alpha == 0 or alpha == 1 then
-            vehicle.ursusWidmoRearHopAppliedAlpha = alpha
-            local springMultiplier = MathUtil.lerp(1, WIDMO_REAR_HOP_SPRING_MULTIPLIER, alpha)
-            local dampingMultiplier = MathUtil.lerp(1, WIDMO_REAR_HOP_DAMPING_MULTIPLIER, alpha)
+        if state.appliedAlpha == nil or math.abs(alpha - state.appliedAlpha) > 0.04 or alpha == 0 or alpha == 1 then
+            state.appliedAlpha = alpha
+            local springMultiplier = MathUtil.lerp(1, maxSpringMultiplier, alpha)
+            local dampingMultiplier = MathUtil.lerp(1, minDampingMultiplier, alpha)
             physicsLeft:setSuspensionMultipliers(springMultiplier, dampingMultiplier)
             physicsRight:setSuspensionMultipliers(springMultiplier, dampingMultiplier)
         end
 
-        if not vehicle.ursusWidmoRearHopLogged then
-            vehicle.ursusWidmoRearHopLogged = true
-            Logging.info("[UrsusTransmissionFix] 1.0.6.0T11 Widmo rear dynamic suspension: maxLoad x1.60, spring x1.15, damping x0.60, interpolation 500ms")
+        if not state.logged then
+            state.logged = true
+            Logging.info("%s", string.format(
+                "[UrsusTransmissionFix] 1.0.6.0T12 %s dynamic suspension: maxLoad x%.2f, spring x%.2f, damping x%.2f, interpolation %dms",
+                axleName,
+                maxLoadFactor,
+                maxSpringMultiplier,
+                minDampingMultiplier,
+                interpolationMs
+            ))
         end
     end
 
     function Wheel:update(dt, currentUpdateIndex, groundWetness, force)
         originalWheelUpdate(self, dt, currentUpdateIndex, groundWetness, force)
 
-        -- Wheel #4 is updated once per rear axle pass, so use it as the trigger
-        -- to sample both rear tire loads and update the pair for the next step.
-        if (self.wheelIndex or 0) == 4 then
-            updateWidmoRearDynamicSuspension(self.vehicle, dt)
+        local wheelIndex = self.wheelIndex or 0
+        if wheelIndex == 2 then
+            updateUrsusAxleDynamicSuspension(
+                self.vehicle, dt, "front axle", 1, 2,
+                URSUS_FRONT_HOP_MAX_LOAD_FACTOR,
+                URSUS_FRONT_HOP_SPRING_MULTIPLIER,
+                URSUS_FRONT_HOP_DAMPING_MULTIPLIER,
+                URSUS_FRONT_HOP_INTERPOLATION_MS
+            )
+        elseif wheelIndex == 4 then
+            updateUrsusAxleDynamicSuspension(
+                self.vehicle, dt, "rear axle", 3, 4,
+                URSUS_REAR_HOP_MAX_LOAD_FACTOR,
+                URSUS_REAR_HOP_SPRING_MULTIPLIER,
+                URSUS_REAR_HOP_DAMPING_MULTIPLIER,
+                URSUS_REAR_HOP_INTERPOLATION_MS
+            )
         end
     end
 
@@ -855,5 +882,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.6.0T11 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.6.0T12 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end

@@ -112,6 +112,19 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T12
+Rozszerzenie natywnej dynamicznej pracy zawieszenia/opon na cały Ursus.
+
+Zmiany względem 1.0.6.0T11:
+- tylny efekt T11 nie jest już ograniczony do `1934 Widmo`; działa dla wszystkich wersji silnikowych i wszystkich konfiguracji kół Ursusa,
+- tył zachowuje: pełny efekt przy ok. 1.60x spoczynkowego obciążenia osi, spring x1.15, damping x0.60, interpolacja 500 ms,
+- przednia oś otrzymała łagodniejszą wersję: pełny efekt przy ok. 1.50x obciążenia spoczynkowego, spring x1.10, damping x0.75, interpolacja 450 ms,
+- oba efekty korzystają wyłącznie z natywnego `WheelPhysics:setSuspensionMultipliers()` i rzeczywistego obciążenia opon; brak `addForce`/`addTorque`,
+- T10 strojenie przyczepności tylnych kół pozostaje wyłącznie dla Widma,
+- T9 fizyka przednich balastów oraz T8 ręczne RWD/4x4 Widma pozostają bez zmian,
+- brak zmian w plikach XML kół oraz w `Ursus1934.xml`.
+
 ## 1.0.6.0T11
 Test natywnej, zależnej od obciążenia pracy tylnego zawieszenia `1934 Widmo`.
 
