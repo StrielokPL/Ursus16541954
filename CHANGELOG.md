@@ -100,6 +100,22 @@ Testy runtime:
 
 
 
+
+## 1.0.5.1
+Stabilne wydanie systemu kolorowania testowanego w serii 1.0.5.0T1–T5.
+
+Zmiany względem 1.0.4.1:
+- nadwozie i felgi otrzymały niezależne konfiguracje kolorów,
+- `baseColor` i `rimColor` korzystają z pełnej natywnej palety GIANTS (`useDefaultColors=true`) oraz pickera koloru niestandardowego RGB,
+- `UrsusColorFix.lua` przenosi rzeczywisty kolor wybranej konfiguracji na zatwierdzoną whitelistę legacy meshów nadwozia i felg,
+- sygnatura konfiguracji uwzględnia RGB, dzięki czemu wykrywana jest również zmiana koloru niestandardowego przy tym samym indeksie konfiguracji,
+- obciążniki kół, lampy, szyby, hydraulika, złącza i kalkomanie pozostają poza kolorowaniem,
+- naprawiono pakowanie `UrsusColorFix.lua`; walidator sprawdza teraz wszystkie `extraSourceFiles` wymagane przez `modDesc.xml`,
+- dodano klapę dachową `SzyberDach/szyber` do elementów malowanych kolorem nadwozia, bez zmiany jej animacji, ramy, uszczelek ani mechanizmu,
+- skrzynia, ADS, silniki, fizyka, koła, kolizje i pozostałe wcześniej zatwierdzone funkcje nie zostały zmienione.
+
+Test runtime T5 potwierdził poprawne kolorowanie klapy dachowej. Log `20260829-110303` nie zawiera nowych błędów Lua ani błędów związanych z Ursusem. Pozostaje wyłącznie zaakceptowany warning `Ursus1934.i3d contains non-binary indexed triangle sets` związany z geometrią `FS25MirrorExact`.
+
 ## 1.0.5.0T5
 Poprawka koloru klapy dachowej.
 

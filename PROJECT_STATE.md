@@ -1,6 +1,6 @@
-# Project state — 1.0.4.1
+# Project state — 1.0.5.1
 
-Current stable baseline is **1.0.4.1**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
+Current stable baseline is **1.0.5.1**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.
 
 ## Closed / confirmed areas
 
@@ -79,7 +79,7 @@ Stable 1.0.4.1 adds optional integration without making Advanced Damage System a
 
 ## Package identity
 
-Current version: **1.0.4.1**.
+Current version: **1.0.5.1**.
 
 Stable downloadable ZIP name from this version onward:
 
@@ -118,3 +118,11 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - `SzyberDach/szyber` jest objęty kolorem nadwozia.
 - Pozostałe części grupy `SzyberDach` pozostają bez zmian.
 - T5 jest izolowaną poprawką whitelisty `UrsusColorFix`; brak zmian w fizyce i skrzyni.
+
+
+## Color configuration — stable 1.0.5.1
+- Nadwozie i felgi mają niezależne konfiguracje kolorów z pełną paletą GIANTS i własnym RGB.
+- Runtime bridge `UrsusColorFix.lua` obsługuje legacy materiały I3D bez ingerencji w fizykę pojazdu.
+- Klapa dachowa `SzyberDach/szyber` jest objęta kolorem nadwozia; rama, uszczelki i mechanizm pozostają bez zmian.
+- `UrsusColorFix.lua` jest obowiązkowo walidowany jako `extraSourceFile` i pakowany do ZIP.
+- T5 został potwierdzony wizualnie i logowo; brak nowych błędów związanych z Ursusem.
