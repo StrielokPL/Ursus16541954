@@ -100,9 +100,15 @@ Version 1.0.4.1 was verified in Farming Simulator 25. Refuelling, the 2500 kg we
 Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary indexed triangle sets` for the inline `FS25MirrorExact` geometry. This non-fatal storage/performance-format warning has no observed gameplay or visual effect. Converting it to binary `.i3d.shapes` is deferred because that asset change requires a new regression test of the approved mirrors.
 
 
-### Full color palette / custom RGB — 1.0.5.0T3
+### Full color palette / custom RGB — 1.0.5.0T4
 - Nadwozie i felgi: niezależne konfiguracje z `useDefaultColors=true`.
 - Pełna paleta GIANTS i picker RGB są obsługiwane przez `VehicleConfigurationItemColor`.
 - `UrsusColorFix.lua` nakłada faktyczny RGB na whitelistę kształtów legacy I3D.
 - Obciążniki kół, lampy, hydraulika i kalkomanie pozostają poza kolorowaniem.
 - F5 to globalny debug-renderer GIANTS, nie funkcja Ursusa; wyłączenie per-mod wymagałoby usunięcia aktywnych kolizji.
+
+
+### T4 packaging hotfix — 1.0.5.0T4
+- `UrsusColorFix.lua` jest częścią ZIP allowlisty.
+- Walidator wymusza obecność wszystkich `extraSourceFiles` w paczce.
+- Log T3 potwierdził, że brak tego pliku w ZIP powodował `Can't load resource` i wyłączał runtime bridge kolorów.

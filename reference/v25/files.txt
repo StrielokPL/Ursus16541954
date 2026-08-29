@@ -2,6 +2,7 @@ Ursus1934.i3d
 Ursus1934.i3d.shapes
 Ursus1934.xml
 UrsusTransmissionFix.lua
+UrsusColorFix.lua
 Weight2500kg.i3d
 Weight2500kg.i3d.shapes
 Weight2500kg.xml

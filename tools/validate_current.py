@@ -21,8 +21,8 @@ def main() -> int:
         if line.strip() and not line.lstrip().startswith("#")
     ]
 
-    if len(files) != 67:
-        fail(f"allowlista powinna zawierać 67 plików, ma {len(files)}")
+    if len(files) != 68:
+        fail(f"allowlista powinna zawierać 68 plików, ma {len(files)}")
 
     missing = [rel for rel in files if not (ROOT / rel).is_file()]
     if missing:
@@ -59,6 +59,14 @@ def main() -> int:
     ]
     if "UrsusTransmissionFix.lua" not in source_files:
         fail("modDesc.xml nie ładuje UrsusTransmissionFix.lua")
+
+    # Every extraSourceFile must actually be packaged. This catches the T3 regression
+    # where UrsusColorFix.lua existed in the repository but was missing from the ZIP allowlist.
+    for source_file in source_files:
+        if source_file not in files:
+            fail(f"extraSourceFile nie znajduje się na allowliście ZIP: {source_file}")
+        if not (ROOT / source_file).is_file():
+            fail(f"brakuje extraSourceFile: {source_file}")
 
     vehicle = ET.parse(ROOT / "Ursus1934.xml").getroot()
     base_filename = vehicle.findtext("./base/filename")

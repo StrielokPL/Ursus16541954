@@ -98,6 +98,16 @@ Testy runtime:
 - Warningi generowane przez grę, zapis lub inne mody nie należą do tego wydania.
 
 
+
+## 1.0.5.0T4
+Hotfix pakowania po 1.0.5.0T3.
+
+Zmiany względem 1.0.5.0T3:
+- naprawiono paczkę ZIP: `UrsusColorFix.lua` jest teraz jawnie dołączany do listy plików moda,
+- brak skryptu w ZIP-ie był bezpośrednią przyczyną błędu `Can't load resource .../UrsusColorFix.lua` i braku faktycznej zmiany kolorów w T3,
+- mechanizm pełnej palety GIANTS i koloru niestandardowego pozostaje bez zmian względem T3, aby T4 izolował wyłącznie błąd pakowania,
+- walidator sprawdza teraz, czy każdy plik z `modDesc.xml/extraSourceFiles` istnieje i znajduje się na allowliście buildera; podobna regresja ma od tej wersji przerwać build.
+
 ## 1.0.5.0T3
 Test pełnej palety kolorów i koloru niestandardowego.
 
