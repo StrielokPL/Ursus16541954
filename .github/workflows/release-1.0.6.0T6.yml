@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply Widmo 8x4 gearbox
+      - name: Apply Widmo direct 8x4 gearbox
         shell: bash
         run: |
           set -euo pipefail
@@ -35,11 +35,9 @@ jobs:
 
           p = Path('modDesc.xml')
           s = p.read_text(encoding='utf-8')
-          old = f'<version>{OLD}</version>'
-          new = f'<version>{VERSION}</version>'
-          if old not in s:
+          if f'<version>{OLD}</version>' not in s:
               raise SystemExit('modDesc version anchor not found')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          p.write_text(s.replace(f'<version>{OLD}</version>', f'<version>{VERSION}</version>', 1), encoding='utf-8')
 
           for filename in ('UrsusTransmissionFix.lua', 'UrsusColorFix.lua'):
               p = Path(filename)
@@ -50,31 +48,31 @@ jobs:
 
           p = Path('Ursus1934.xml')
           s = p.read_text(encoding='utf-8')
+
+          base_motor_start = s.index('<motorConfiguration name="1674M"')
+          base_trans_start = s.index('<transmission', base_motor_start)
+          base_trans_end = s.index('</transmission>', base_trans_start) + len('</transmission>')
+          transmission = s[base_trans_start:base_trans_end]
+          transmission = re.sub(r'\n\s*<groups\b.*?</groups>', '', transmission, flags=re.S)
+          transmission = transmission.replace('name="$l10n_info_transmission_manualWithPowerShiftGroups"', 'name="8/4"', 1)
+          if '<groups ' in transmission:
+              raise SystemExit('Failed to remove L/H groups from Widmo transmission copy')
+
           start = s.index('<motorConfiguration name="1934 Widmo"')
           end = s.index('</motorConfiguration>', start)
           segment = s[start:end]
-
-          transmission_match = re.search(r'<transmission\b.*?</transmission>', segment, flags=re.S)
-          if transmission_match is None:
-              raise SystemExit('Widmo transmission block not found')
-          transmission = transmission_match.group(0)
-          groups_match = re.search(r'\n\s*<groups\b.*?</groups>', transmission, flags=re.S)
-          if groups_match is None:
-              raise SystemExit('Widmo L/H groups block not found')
-          transmission = transmission[:groups_match.start()] + transmission[groups_match.end():]
-          transmission = re.sub(
-              r'name="\$l10n_info_transmission_manualWithPowerShiftGroups"',
-              'name="8/4"',
-              transmission,
-              count=1,
-          )
-          segment = segment[:transmission_match.start()] + transmission + segment[transmission_match.end():]
+          if '<transmission' in segment:
+              raise SystemExit('Widmo unexpectedly already has a transmission block')
+          motor_end = segment.index('</motor>') + len('</motor>')
+          indent = '        '
+          transmission_indented = transmission
+          segment = segment[:motor_end] + '\n' + indent + transmission_indented + segment[motor_end:]
           s = s[:start] + segment + s[end:]
           p.write_text(s, encoding='utf-8')
 
           p = Path('CHANGELOG.md')
           s = p.read_text(encoding='utf-8')
-          addition = '''\n## 1.0.6.0T6\nTest uproszczonej skrzyni wyłącznie dla `1934 Widmo`.\n\nZmiany względem 1.0.6.0T5:\n- Widmo przechodzi z 8F/4R × L/H na bezpośrednią skrzynię 8F/4R,\n- usunięto wyłącznie grupy L/H z konfiguracji Widma; osiem biegów do przodu i cztery wsteczne pozostają,\n- Widmo zachowuje 265 KM, torqueScale 1.000, RWD, COM `0 1.10 -1.80` i tylne forcePointRatio 0.80,\n- pozostałe warianty zachowują dotychczasowe 8F/4R × L/H oraz pełną logikę powershift/ADS.\n\n'''
+          addition = '''\n## 1.0.6.0T6\nTest uproszczonej skrzyni wyłącznie dla `1934 Widmo`.\n\nZmiany względem 1.0.6.0T5:\n- Widmo przechodzi z 8F/4R × L/H na bezpośrednią skrzynię 8F/4R,\n- osiem biegów do przodu i cztery wsteczne pozostają; grupy L/H nie są używane przez Widmo,\n- Widmo zachowuje 265 KM, torqueScale 1.000, RWD, COM `0 1.10 -1.80` i tylne forcePointRatio 0.80,\n- pozostałe warianty zachowują 8F/4R × L/H i dotychczasową logikę powershift/ADS.\n\n'''
           marker = '## 1.0.6.0T5'
           if '## 1.0.6.0T6' not in s:
               if marker not in s:
@@ -84,7 +82,7 @@ jobs:
 
           p = Path('PROJECT_STATE.md')
           s = p.read_text(encoding='utf-8')
-          note = '''\n\n### Widmo direct 8/4 gearbox test — 1.0.6.0T6\n- T5 poprawił stabilność w zakrętach przy zachowaniu skłonności do wheelie.\n- Wyłącznie `1934 Widmo`: skrzynia bez grup L/H, bezpośrednie 8F/4R.\n- Parametry Widma z T5 pozostają: 265 KM, torqueScale 1.000, RWD, COM `0 1.10 -1.80`, rear forcePointRatio 0.80.\n- Pozostałe silniki nadal używają 8F/4R × L/H i istniejącego bridge ADS.\n'''
+          note = '''\n\n### Widmo direct 8/4 gearbox test — 1.0.6.0T6\n- Wyłącznie `1934 Widmo`: własna bezpośrednia skrzynia 8F/4R bez grup L/H.\n- Parametry T5 pozostają: 265 KM, torqueScale 1.000, RWD, COM `0 1.10 -1.80`, rear forcePointRatio 0.80.\n- Pozostałe warianty nadal używają 8F/4R × L/H oraz istniejącego bridge ADS.\n'''
           if '### Widmo direct 8/4 gearbox test — 1.0.6.0T6' not in s:
               s += note
           p.write_text(s, encoding='utf-8')
@@ -96,7 +94,7 @@ jobs:
       - name: Build test ZIP
         run: ./build.sh
 
-      - name: Verify Widmo T6 changes in ZIP
+      - name: Verify Widmo T6 ZIP
         shell: bash
         run: |
           set -euo pipefail
@@ -109,6 +107,7 @@ jobs:
           start = xml.index('<motorConfiguration name="1934 Widmo"')
           end = xml.index('</motorConfiguration>', start)
           seg = xml[start:end]
+          assert '<transmission ' in seg
           assert 'name="8/4"' in seg
           assert '<groups ' not in seg
           assert seg.count('<forwardGear ') == 8
@@ -116,10 +115,9 @@ jobs:
           assert 'hp="265"' in seg
           assert 'torqueScale="1.000"' in seg
           assert 'centerOfMassActive="0 1.10 -1.80"' in seg
-          chip_start = xml.index('<motorConfiguration name="1934 Chip"')
-          chip_end = xml.index('</motorConfiguration>', chip_start)
-          chip_seg = xml[chip_start:chip_end]
-          assert '<groups type="POWERSHIFT"' in chip_seg
+          base_start = xml.index('<motorConfiguration name="1674M"')
+          base_end = xml.index('</motorConfiguration>', base_start)
+          assert '<groups type="POWERSHIFT"' in xml[base_start:base_end]
           print('ZIP Widmo T6 direct 8x4 check: OK')
           PY
 
@@ -143,13 +141,9 @@ jobs:
           cat > /tmp/release-notes.md <<'EOF'
           Widmo direct gearbox experiment following T5.
 
-          Changes:
-          - only 1934 Widmo changes from 8F/4R x L/H to direct 8F/4R,
-          - eight forward and four reverse gears remain; the L/H powershift groups are removed only from Widmo,
+          - only 1934 Widmo gets its own direct 8F/4R transmission without L/H groups,
           - Widmo keeps 265 hp, torqueScale 1.000, RWD, COM 0 1.10 -1.80 and rear forcePointRatio 0.80,
-          - all other engine variants retain the existing 8F/4R x L/H transmission and ADS bridge.
-
-          Test goal: check whether the more direct 8/4 drivetrain gives Widmo the intended character and torque delivery without disturbing the established gearbox behavior of the normal tractor variants.
+          - all normal variants retain the existing 8F/4R x L/H powershift transmission and ADS bridge.
           EOF
           gh release create v1.0.6.0T6 dist/FS25_Ursus_1654_1954_Pack.zip \
             --target "$TARGET_SHA" \
