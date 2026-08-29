@@ -184,3 +184,13 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Default/load state is RWD. 4x4 restores the original front, rear and centre differential definitions; RWD keeps only the rear differential.
 - The authoritative differential rebuild happens server-side and the selected state is broadcast to clients.
 - T7 tuning remains unchanged: 290 hp, torqueScale 1.100, direct 8F/4R, COM `0 1.10 -1.80`, rear forcePointRatio 0.80 and rear maxLongStiffness x1.20.
+
+
+### Front ballast physics fix — 1.0.6.0T9
+- Koła i ich konfiguracje pozostają nietknięte.
+- Legacy mass/COM objectChanges 600/1200/1500/2000 kg zostały usunięte z attacherJointConfigurations.
+- Front ballast jest dodawany do komponentu #1: bazowo 3700 kg + nominalna masa balastu.
+- Bazowy COM: standard `0 0.80 -0.88`; Widmo `0 1.10 -1.80`.
+- Punkty masy balastu: 600/1200 kg `0 0.65 2.45`; 1500/2000 kg `0 0.70 2.65`. Wynikowy COM jest liczony jako średnia ważona.
+- FrameWeight-only oraz FrontHydraulic nie dostają dodatkowej masy w T9; poprawka dotyczy nominalnych pakietów 600/1200/1500/2000 kg.
+- T8 drivetrain toggle i całe strojenie Widma pozostają bez zmian.

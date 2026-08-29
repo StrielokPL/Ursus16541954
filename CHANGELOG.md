@@ -109,6 +109,19 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T9
+Naprawa fizyki przedniego balastu; konfiguracje kół pozostają nietknięte.
+
+Zmiany względem 1.0.6.0T8:
+- usunięto legacy `massActive` ustawiane na compound child `0>11|1`; nie zwiększało ono prawidłowo masy głównego komponentu ciągnika,
+- usunięto stałe `centerOfMassActive` z konfiguracji 600/1200/1500/2000 kg, które nadpisywały COM zamiast wyliczać wpływ dodatkowej masy,
+- 600/1200/1500/2000 kg są teraz rzeczywistą dodatkową masą głównego komponentu 3700 kg, więc całkowita masa ciągnika rośnie odpowiednio do wybranej wartości,
+- COM jest liczony jako średnia ważona pomiędzy bazowym COM ciągnika i fizycznym położeniem przedniego balastu; 1500/2000 kg mają punkt masy nieco dalej z przodu zgodnie z dłuższą geometrią,
+- Widmo liczy balast od swojego bazowego COM `0 1.10 -1.80`; pozostałe wersje od `0 0.80 -0.88`,
+- T8: ręczne RWD/4x4, 290 KM, direct 8F/4R i parametry tylnych opon Widma pozostają bez zmian,
+- pliki i parametry konfiguracji kół nie zostały zmienione.
+
 ## 1.0.6.0T8
 Ręczne przełączanie napędu wyłącznie dla `1934 Widmo`.
 

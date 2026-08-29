@@ -282,7 +282,6 @@
     </attacherJoint>
     <attacherJointConfigurations title="$l10n_configuration_weights">
       <attacherJointConfiguration name="$l10n_configuration_valueNo" price="0" powerTakeOffConfigId="1" connectionHoseConfigId="1">
-        <objectChange node="0&gt;11|1" mass="0" />
         <objectChange node="0&gt;10|7|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|0|0" visibilityActive="false" />
         <objectChange node="0&gt;10|7|0|1" visibilityActive="false" />
@@ -317,8 +316,6 @@
         <objectChange node="0&gt;11|4" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="1200kg" price="1000" powerTakeOffConfigId="1" connectionHoseConfigId="1">
-        <objectChange node="0&gt;11|1" massActive="1200" />
-        <objectChange node="0&gt;" centerOfMassActive="0 0.65 -0.4" />
         <objectChange node="0&gt;10|7|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|0|0" visibilityActive="true" />
         <objectChange node="0&gt;10|7|0|1" visibilityActive="true" />
@@ -336,8 +333,6 @@
         <objectChange node="0&gt;11|4" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="2000kg" price="1500" powerTakeOffConfigId="1" connectionHoseConfigId="1">
-        <objectChange node="0&gt;11|1" massActive="1985" />
-        <objectChange node="0&gt;" centerOfMassActive="0 0.8 -0.4" />
         <objectChange node="0&gt;10|7|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|0|0" visibilityActive="true" />
         <objectChange node="0&gt;10|7|0|1" visibilityActive="true" />
@@ -372,8 +367,6 @@
         <objectChange node="0&gt;11|4" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="600kg" price="500" powerTakeOffConfigId="1" connectionHoseConfigId="1">
-        <objectChange node="0&gt;11|1" massActive="600" />
-        <objectChange node="0&gt;" centerOfMassActive="0 0.65 -0.4" />
         <objectChange node="0&gt;10|7|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|0|0" visibilityActive="false" />
         <objectChange node="0&gt;10|7|0|1" visibilityActive="false" />
@@ -391,8 +384,6 @@
         <objectChange node="0&gt;11|4" compoundChildActive="false" />
       </attacherJointConfiguration>
       <attacherJointConfiguration name="1500kg" price="1250" powerTakeOffConfigId="1" connectionHoseConfigId="1">
-        <objectChange node="0&gt;11|1" massActive="1500" />
-        <objectChange node="0&gt;" centerOfMassActive="0 0.65 -0.4" />
         <objectChange node="0&gt;10|7|1" visibilityActive="false" />
         <objectChange node="0&gt;10|7|0|0" visibilityActive="false" />
         <objectChange node="0&gt;10|7|0|1" visibilityActive="false" />

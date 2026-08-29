@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.6.0T8: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.6.0T9: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -102,6 +102,93 @@ if not UrsusTransmissionFix.installed then
         end
 
         return xmlFile:getValue(key .. "#name")
+    end
+
+    local function getSelectedAttacherJointConfigurationName(vehicle, xmlFile)
+        if vehicle == nil or vehicle.configurations == nil or vehicle.configurations["attacherJoint"] == nil then
+            return nil
+        end
+
+        xmlFile = xmlFile or vehicle.xmlFile
+        if xmlFile == nil then
+            return nil
+        end
+
+        local key = ConfigurationUtil.getXMLConfigurationKey(
+            xmlFile,
+            vehicle.configurations["attacherJoint"],
+            "vehicle.attacherJoints.attacherJointConfigurations.attacherJointConfiguration",
+            "vehicle.attacherJoints",
+            "attacherJoint"
+        )
+        if key == nil then
+            return nil
+        end
+
+        return xmlFile:getValue(key .. "#name")
+    end
+
+    -- Component #1 is the 3700 kg tractor body. The optional front ballast is
+    -- modeled as an added point mass at the approximate physical centre of the
+    -- visible weight pack. Lighter/short packs sit slightly closer to the tractor;
+    -- 1500/2000 kg packs extend farther forward.
+    local URSUS_BODY_MASS_KG = 3700
+    local URSUS_FRONT_BALLAST = {
+        ["600kg"]  = {massKg=600,  y=0.65, z=2.45},
+        ["1200kg"] = {massKg=1200, y=0.65, z=2.45},
+        ["1500kg"] = {massKg=1500, y=0.70, z=2.65},
+        ["2000kg"] = {massKg=2000, y=0.70, z=2.65}
+    }
+
+    local function applyFrontBallastPhysics(vehicle, xmlFile)
+        if not isUrsusVehicle(vehicle) or vehicle.components == nil or vehicle.components[1] == nil then
+            return
+        end
+
+        local component = vehicle.components[1]
+        local node = component.node
+        if node == nil then
+            return
+        end
+
+        local motorName = getSelectedMotorConfigurationName(vehicle, xmlFile)
+        local baseX, baseY, baseZ = 0, 0.80, -0.88
+        if motorName == "1934 Widmo" then
+            baseY, baseZ = 1.10, -1.80
+        end
+
+        local configName = getSelectedAttacherJointConfigurationName(vehicle, xmlFile)
+        local ballast = URSUS_FRONT_BALLAST[configName]
+        local addedMassKg = ballast ~= nil and ballast.massKg or 0
+        local targetMassKg = URSUS_BODY_MASS_KG + addedMassKg
+        local comX, comY, comZ = baseX, baseY, baseZ
+
+        if ballast ~= nil and addedMassKg > 0 then
+            comX = (URSUS_BODY_MASS_KG * baseX) / targetMassKg
+            comY = (URSUS_BODY_MASS_KG * baseY + addedMassKg * ballast.y) / targetMassKg
+            comZ = (URSUS_BODY_MASS_KG * baseZ + addedMassKg * ballast.z) / targetMassKg
+        end
+
+        -- GIANTS setMass() uses tons. Keep defaultMass in sync so total-mass
+        -- queries and any later physics rebuild see the same component mass.
+        setMass(node, targetMassKg / 1000)
+        component.defaultMass = targetMassKg / 1000
+        if vehicle.setMassDirty ~= nil then
+            vehicle:setMassDirty()
+        end
+        setCenterOfMass(node, comX, comY, comZ)
+
+        if ballast ~= nil then
+            Logging.info("%s", string.format(
+                "[UrsusTransmissionFix] 1.0.6.0T9 front ballast %s: +%d kg, body component=%d kg, COM=%.3f %.3f %.3f",
+                configName,
+                addedMassKg,
+                targetMassKg,
+                comX,
+                comY,
+                comZ
+            ))
+        end
     end
 
     local function isUrsusMotor(motor)
@@ -372,7 +459,7 @@ if not UrsusTransmissionFix.installed then
             vehicle:updateMotorProperties()
         end
 
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T8 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T9 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
         return true
     end
 
@@ -401,6 +488,10 @@ if not UrsusTransmissionFix.installed then
     function Motorized:loadDifferentials(xmlFile, configDifferentialIndex)
         originalLoadDifferentials(self, xmlFile, configDifferentialIndex)
 
+        if isUrsusVehicle(self) then
+            applyFrontBallastPhysics(self, xmlFile)
+        end
+
         if not isUrsusVehicle(self) then
             return
         end
@@ -422,7 +513,7 @@ if not UrsusTransmissionFix.installed then
 
         self.ursusWidmoUse4wd = false
         spec.differentials = {self.ursusWidmoAllDifferentials[2]}
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T8 Widmo drivetrain initial state: RWD; manual RWD/4x4 toggle enabled")
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T9 Widmo drivetrain initial state: RWD; manual RWD/4x4 toggle enabled")
     end
 
     function Motorized:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)
@@ -488,7 +579,7 @@ if not UrsusTransmissionFix.installed then
             end
             if not vehicle.ursusWidmoRearForcePointLogged then
                 vehicle.ursusWidmoRearForcePointLogged = true
-                Logging.info("[UrsusTransmissionFix] 1.0.6.0T8 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20")
+                Logging.info("[UrsusTransmissionFix] 1.0.6.0T9 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20")
             end
         end
 
@@ -685,5 +776,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.6.0T8 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.6.0T9 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end
