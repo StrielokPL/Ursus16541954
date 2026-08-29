@@ -1,0 +1,126 @@
+name: Publish 1.0.6.0T14
+
+on:
+  push:
+    paths:
+      - '.github/workflows/release-1.0.6.0T14.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply T14 mass rebalance
+        run: python3 tools/apply_1_0_6_0T14.py
+
+      - name: Ensure wheel files are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- wheels
+
+      - name: Validate source tree
+        run: python3 tools/validate_current.py
+
+      - name: Build test ZIP
+        run: ./build.sh
+
+      - name: Verify T14 ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+
+          with zipfile.ZipFile('dist/FS25_Ursus_1654_1954_Pack.zip') as z:
+              moddesc = z.read('modDesc.xml').decode('utf-8')
+              xml = z.read('Ursus1934.xml').decode('utf-8')
+              lua = z.read('UrsusTransmissionFix.lua').decode('utf-8')
+
+          assert '<version>1.0.6.0T14</version>' in moddesc
+
+          # Normal-family baseline mass in XML.
+          assert '<component centerOfMass="0 0.8 -0.88" solverIterationCount="10" mass="3720" />' in xml
+          assert '<component centerOfMass="0 0 0" solverIterationCount="10" mass="1340" />' in xml
+
+          # Widmo geometry/COM is not changed by this release.
+          start = xml.index('<motorConfiguration name="1934 Widmo"')
+          end = xml.index('</motorConfiguration>', start)
+          widmo = xml[start:end]
+          assert 'hp="290"' in widmo
+          assert 'torqueScale="1.100"' in widmo
+          assert 'centerOfMassActive="0 1.10 -1.80"' in widmo
+
+          # Runtime mass split keeps Widmo on the T13 layout while normal
+          # variants use the new baseline.
+          assert 'local URSUS_STANDARD_BODY_MASS_KG = 3720' in lua
+          assert 'local URSUS_STANDARD_SECOND_COMPONENT_MASS_KG = 1340' in lua
+          assert 'local URSUS_WIDMO_BODY_MASS_KG = 3700' in lua
+          assert 'local URSUS_WIDMO_SECOND_COMPONENT_MASS_KG = 2500' in lua
+          assert 'baseBodyMassKg = isWidmo and URSUS_WIDMO_BODY_MASS_KG or URSUS_STANDARD_BODY_MASS_KG' in lua
+          assert 'secondComponentMassKg = isWidmo and URSUS_WIDMO_SECOND_COMPONENT_MASS_KG or URSUS_STANDARD_SECOND_COMPONENT_MASS_KG' in lua
+          assert 'setMass(secondComponent.node, secondComponentMassKg / 1000)' in lua
+          assert '[UrsusMassDiag] T14' in lua
+
+          # T13 store options and earlier physics must still be present.
+          assert 'local URSUS_TRANSMISSION_CONFIG = "design2"' in lua
+          assert 'local URSUS_DRIVETRAIN_CONFIG = "design3"' in lua
+          assert 'InputAction.URSUS_WIDMO_TOGGLE_4WD' in lua
+          assert 'maxLongStiffness = (self.maxLongStiffness or 30.0) * 1.20' in lua
+          assert 'maxLatStiffness = (self.maxLatStiffness or 30.0) * 0.85' in lua
+          assert 'URSUS_REAR_HOP_DAMPING_MULTIPLIER = 0.60' in lua
+          assert 'URSUS_FRONT_HOP_DAMPING_MULTIPLIER = 0.75' in lua
+
+          print('ZIP T14 mass rebalance check: OK')
+          PY
+
+      - name: Commit 1.0.6.0T14
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION modDesc.xml Ursus1934.xml UrsusTransmissionFix.lua UrsusColorFix.lua CHANGELOG.md PROJECT_STATE.md
+          git commit -m 'Release 1.0.6.0T14 mass rebalance'
+          git push origin HEAD:main
+
+      - name: Publish GitHub prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TARGET_SHA=$(git rev-parse HEAD)
+          cat > /tmp/release-notes.md <<'EOF'
+          Normal-family mass rebalance based on T13 axle-load diagnostics.
+
+          Changes:
+          - normal variants now use component masses 3720 kg + 1340 kg,
+          - normal COM remains unchanged at 0 0.80 -0.88,
+          - target with standard wheels and a full 355 L tank is about 6.18 t operating mass and approximately 40/60 front/rear static axle load,
+          - Widmo explicitly keeps its proven 3700 kg + 2500 kg runtime layout and COM 0 1.10 -1.80,
+          - front ballast weighted-COM calculation uses the correct 3720 kg base for normal variants and 3700 kg for Widmo,
+          - [UrsusMassDiag] T14 remains active for post-change verification,
+          - T13 transmission/drivetrain selectors, T12 dynamic suspension, T10 Widmo tire tuning and runtime Ctrl+4 toggle remain unchanged.
+          EOF
+          gh release create v1.0.6.0T14 dist/FS25_Ursus_1654_1954_Pack.zip \
+            --target "$TARGET_SHA" \
+            --title '1.0.6.0T14 — Mass rebalance verification' \
+            --prerelease \
+            --notes-file /tmp/release-notes.md
+
+      - name: Remove one-shot release helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          git rm .github/workflows/release-1.0.6.0T14.yml tools/apply_1_0_6_0T14.py
+          git commit -m 'Remove one-shot 1.0.6.0T14 release helpers'
+          git push origin HEAD:main
