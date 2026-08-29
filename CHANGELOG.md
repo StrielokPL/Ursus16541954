@@ -113,6 +113,21 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T13
+Niezależny wybór skrzyni i układu napędowego w sklepie oraz diagnostyka rozkładu masy.
+
+Zmiany względem 1.0.6.0T12:
+- nowa konfiguracja sklepu `Skrzynia biegów`: `Fabryczna` / `Bez wzmacniacza`,
+- `Fabryczna` zachowuje 8/4 + L/H (16/8); dla Widma przywraca L/H na bazowych ośmiu biegach,
+- `Bez wzmacniacza` usuwa grupy L/H i pozostawia bezpośrednie 8F/4R dla dowolnej wersji silnikowej,
+- nowa konfiguracja sklepu `Układ napędowy`: `Fabryczny` / `Odłączenie przedniej osi`,
+- `Fabryczny` = oryginalny przód + tył + centralny dyferencjał; `Odłączenie przedniej osi` = tylko tylny dyferencjał,
+- Widmo startuje zgodnie z konfiguracją sklepu, ale zachowuje ręczne Ctrl+4 RWD/4x4 podczas gry,
+- diagnostyka po 2.5 s postoju zapisuje wybraną konfigurację, naciski czterech kół, procent przód/tył, masy kół, masy i COM obu komponentów,
+- T13 nie zmienia bazowej masy ani COM; szczególnie `1934 Widmo` pozostaje na dotychczasowym układzie masy,
+- T12 dynamic suspension i wcześniejsze poprawki balastu/koloru/kolizji pozostają bez zmian.
+
 ## 1.0.6.0T12
 Rozszerzenie natywnej dynamicznej pracy zawieszenia/opon na cały Ursus.
 

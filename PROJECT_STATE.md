@@ -220,3 +220,12 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Uses native WheelPhysics suspension multipliers only; no impulse/force simulation.
 - Widmo-specific traction tuning remains separate and unchanged.
 - Wheel XML and Ursus1934.xml unchanged in T12.
+
+
+### Store transmission/drivetrain + mass diagnostic — 1.0.6.0T13
+- Native unused `design2` selector is used as `Skrzynia biegów`: factory 8/4×L/H or no-booster direct 8/4.
+- Native unused `design3` selector is used as `Układ napędowy`: factory 4x4 or front axle disconnected (RWD).
+- Widmo Ctrl+4 remains available; store drivetrain choice determines its initial state.
+- Mass diagnostic emits `[UrsusMassDiag]` lines after ~2.5 s stationary: four tire loads, front/rear percentage, total/raw axle load, component mass/COM and wheel mass.
+- Purpose: collect real in-game axle split before changing standard tractor component masses/COM.
+- No T13 mass/COM change. Widmo mass layout is explicitly frozen for this diagnostic stage.

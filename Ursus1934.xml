@@ -36,6 +36,14 @@
     <schemaOverlay name="VEHICLE" attacherJointPosition="0.5 0" />
     <mapHotspot type="TRACTOR" />
   </base>
+  <design2Configurations title="$l10n_ursus_transmission_title">
+    <design2Configuration name="$l10n_ursus_transmission_factory" price="0" isDefault="true" />
+    <design2Configuration name="$l10n_ursus_transmission_no_booster" price="0" />
+  </design2Configurations>
+  <design3Configurations title="$l10n_ursus_drivetrain_title">
+    <design3Configuration name="$l10n_ursus_drivetrain_factory" price="0" isDefault="true" />
+    <design3Configuration name="$l10n_ursus_drivetrain_rwd" price="0" />
+  </design3Configurations>
   <wheels>
     <wheelConfigurations>
       <wheelConfiguration name="$l10n_configuration_valueWheel" price="0" brand="TRELLEBORG">

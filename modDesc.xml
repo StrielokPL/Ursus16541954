@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="108" xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
     <author>M8E, StrielokPL</author>
-    <version>1.0.6.0T12</version>
+    <version>1.0.6.0T13</version>
     <iconFilename>icon_ursus1934.dds</iconFilename>
     <multiplayer supported="true"/>
     <extraSourceFiles>
@@ -147,6 +147,42 @@ Mod ma:
             <de>Widmo Antrieb: 4x4</de>
             <fr>Transmission Widmo : 4x4</fr>
             <pl>Napęd Widma: 4x4</pl>
+        </text>
+        <text name="ursus_transmission_title">
+            <en>Transmission</en>
+            <de>Getriebe</de>
+            <fr>Boîte de vitesses</fr>
+            <pl>Skrzynia biegów</pl>
+        </text>
+        <text name="ursus_transmission_factory">
+            <en>Factory</en>
+            <de>Werk</de>
+            <fr>D'origine</fr>
+            <pl>Fabryczna</pl>
+        </text>
+        <text name="ursus_transmission_no_booster">
+            <en>Without torque amplifier</en>
+            <de>Ohne Drehmomentverstärker</de>
+            <fr>Sans amplificateur de couple</fr>
+            <pl>Bez wzmacniacza</pl>
+        </text>
+        <text name="ursus_drivetrain_title">
+            <en>Drivetrain</en>
+            <de>Antrieb</de>
+            <fr>Transmission</fr>
+            <pl>Układ napędowy</pl>
+        </text>
+        <text name="ursus_drivetrain_factory">
+            <en>Factory</en>
+            <de>Werk</de>
+            <fr>D'origine</fr>
+            <pl>Fabryczny</pl>
+        </text>
+        <text name="ursus_drivetrain_rwd">
+            <en>Front axle disconnected</en>
+            <de>Vorderachsantrieb getrennt</de>
+            <fr>Pont avant désaccouplé</fr>
+            <pl>Odłączenie przedniej osi</pl>
         </text>
     </l10n>
     <actions>
