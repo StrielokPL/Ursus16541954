@@ -49,41 +49,32 @@ jobs:
 
           p = Path('Ursus1934.xml')
           s = p.read_text(encoding='utf-8')
-          start = s.index('<motorConfiguration name="1934 Widmo"')
-          end = s.index('</motorConfiguration>', start)
-          segment = s[start:end]
 
-          segment = segment.replace('name="1934 Widmo" hp="190" price="20000"', 'name="1934 Widmo" hp="225" price="20000"', 1)
-          old_motor = '''<motor torqueScale="0.722" minRpm="850" maxRpm="2200" maxForwardSpeed="40" maxBackwardSpeed="15" brakeForce="6" lowBrakeForceScale="0.22" lowBrakeForceSpeedLimit="1" dampingRateScale="0.85">
-          <torque rpm="850" torque="0.78" />
-          <torque rpm="1150" torque="0.91" />
-          <torque rpm="1480" torque="1" />
-          <torque rpm="1700" torque="0.99" />
-          <torque rpm="1900" torque="0.95" />
-          <torque rpm="2050" torque="0.91" />
-          <torque rpm="2200" torque="0.851783401" />
-        </motor>'''
-          new_motor = '''<motor torqueScale="0.850" minRpm="850" maxRpm="2200" maxForwardSpeed="40" maxBackwardSpeed="15" brakeForce="6" lowBrakeForceScale="0.22" lowBrakeForceSpeedLimit="1" dampingRateScale="0.85">
-          <torque rpm="850" torque="0.75" />
-          <torque rpm="1150" torque="0.9" />
-          <torque rpm="1500" torque="1" />
-          <torque rpm="1700" torque="0.99" />
-          <torque rpm="1900" torque="0.95" />
-          <torque rpm="2050" torque="0.91" />
-          <torque rpm="2200" torque="0.856793892" />
-        </motor>'''
-          if old_motor not in segment:
-              raise SystemExit('Widmo T1 motor block not found')
-          segment = segment.replace(old_motor, new_motor, 1)
-          if 'centerOfMassActive="0 1.05 -1.25"' not in segment:
+          chip_start = s.index('<motorConfiguration name="1934 Chip"')
+          chip_end = s.index('</motorConfiguration>', chip_start)
+          chip_segment = s[chip_start:chip_end]
+          chip_motor_start = chip_segment.index('<motor ')
+          chip_motor_end = chip_segment.index('</motor>', chip_motor_start) + len('</motor>')
+          chip_motor = chip_segment[chip_motor_start:chip_motor_end]
+
+          widmo_start = s.index('<motorConfiguration name="1934 Widmo"')
+          widmo_end = s.index('</motorConfiguration>', widmo_start)
+          widmo = s[widmo_start:widmo_end]
+          if 'hp="190"' not in widmo:
+              raise SystemExit('Widmo T1 hp anchor not found')
+          widmo = widmo.replace('hp="190"', 'hp="225"', 1)
+          widmo_motor_start = widmo.index('<motor ')
+          widmo_motor_end = widmo.index('</motor>', widmo_motor_start) + len('</motor>')
+          widmo = widmo[:widmo_motor_start] + chip_motor + widmo[widmo_motor_end:]
+          if 'centerOfMassActive="0 1.05 -1.25"' not in widmo:
               raise SystemExit('Widmo T1 center of mass not found')
-          segment = segment.replace('centerOfMassActive="0 1.05 -1.25"', 'centerOfMassActive="0 1.05 -1.65"', 1)
-          s = s[:start] + segment + s[end:]
+          widmo = widmo.replace('centerOfMassActive="0 1.05 -1.25"', 'centerOfMassActive="0 1.05 -1.65"', 1)
+          s = s[:widmo_start] + widmo + s[widmo_end:]
           p.write_text(s, encoding='utf-8')
 
           p = Path('CHANGELOG.md')
           s = p.read_text(encoding='utf-8')
-          addition = '''\n## 1.0.6.0T2\nDrugi test fizycznej skłonności Widma do podnoszenia przedniej osi.\n\nZmiany względem 1.0.6.0T1:\n- `1934 Widmo` otrzymuje pełną charakterystykę silnika `1934 Chip`: 225 KM, `torqueScale=0.850` i tę samą krzywą momentu,\n- środek masy Widma cofnięto o kolejne 40 cm: z `0 1.05 -1.25` do `0 1.05 -1.65`,\n- wysokość środka masy pozostaje bez zmian względem T1,\n- nadal brak `addTorque`, `addForce` i innych skryptowych impulsów; T2 nadal testuje wyłącznie naturalną fizykę gry,\n- pozostałe warianty silnika i fizyka stabilnego 1.0.5.1 pozostają bez zmian.\n\n'''
+          addition = '\n## 1.0.6.0T2\nDrugi test fizycznej skłonności Widma do podnoszenia przedniej osi.\n\nZmiany względem 1.0.6.0T1:\n- `1934 Widmo` otrzymuje pełną charakterystykę silnika `1934 Chip`: 225 KM, `torqueScale=0.850` i tę samą krzywą momentu,\n- środek masy Widma cofnięto o kolejne 40 cm: z `0 1.05 -1.25` do `0 1.05 -1.65`,\n- wysokość środka masy pozostaje bez zmian względem T1,\n- nadal brak `addTorque`, `addForce` i innych skryptowych impulsów; T2 nadal testuje wyłącznie naturalną fizykę gry,\n- pozostałe warianty silnika i fizyka stabilnego 1.0.5.1 pozostają bez zmian.\n\n'
           marker = '## 1.0.6.0T1'
           if '## 1.0.6.0T2' not in s:
               if marker not in s:
@@ -93,7 +84,7 @@ jobs:
 
           p = Path('PROJECT_STATE.md')
           s = p.read_text(encoding='utf-8')
-          note = '''\n\n### Widmo wheelie physics test — 1.0.6.0T2\n- T1 nie podnosił przodu nawet z dużą masą z tyłu.\n- Widmo korzysta teraz z pełnej charakterystyki `1934 Chip` (225 KM, torqueScale 0.850).\n- Wyłącznie Widmo: `centerOfMassActive="0 1.05 -1.65"`.\n- T2 nadal nie używa skryptowego momentu ani siły.\n'''
+          note = '\n\n### Widmo wheelie physics test — 1.0.6.0T2\n- T1 nie podnosił przodu nawet z dużą masą z tyłu.\n- Widmo korzysta teraz z pełnej charakterystyki `1934 Chip` (225 KM, torqueScale 0.850).\n- Wyłącznie Widmo: `centerOfMassActive="0 1.05 -1.65"`.\n- T2 nadal nie używa skryptowego momentu ani siły.\n'
           if '### Widmo wheelie physics test — 1.0.6.0T2' not in s:
               s += note
           p.write_text(s, encoding='utf-8')
@@ -120,7 +111,9 @@ jobs:
           seg = xml[start:end]
           assert 'hp="225"' in seg
           assert 'torqueScale="0.850"' in seg
+          assert '<torque rpm="850" torque="0.75" />' in seg
           assert '<torque rpm="1500" torque="1" />' in seg
+          assert '<torque rpm="2200" torque="0.856793892" />' in seg
           assert 'centerOfMassActive="0 1.05 -1.65"' in seg
           assert 'centerOfMassActive="0 1.05 -1.25"' not in seg
           print('ZIP Widmo T2 check: OK')
@@ -147,7 +140,7 @@ jobs:
           Second Widmo wheelie-physics experiment based on T1.
 
           Changes:
-          - Widmo now uses the full 1934 Chip engine characteristics: 225 hp and torqueScale 0.850,
+          - Widmo now uses the exact 1934 Chip motor block: 225 hp and torqueScale 0.850,
           - Widmo center of mass moves from 0 1.05 -1.25 to 0 1.05 -1.65,
           - no scripted torque/force assist yet,
           - all other engine variants remain unchanged.
