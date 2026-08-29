@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.4.0T2: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.4.0T3: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -110,7 +110,7 @@ if not UrsusTransmissionFix.installed then
         end
 
         motor.ursusAdsLoadLogUntil = g_time + ADS_LOAD_LOG_COOLDOWN
-        Logging.info(string.format(
+        Logging.info("%s", string.format(
             "[UrsusTransmissionFix] ADS load guard: %s %d%s -> %d%s | load=%d%% rpm=%d",
             action,
             fromGear or 0,
@@ -398,5 +398,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.4.0T2 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.4.0T3 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end

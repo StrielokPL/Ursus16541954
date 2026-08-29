@@ -116,5 +116,15 @@ Zmiany względem 1.0.4.0T1:
 - log zapisuje tylko faktyczne ingerencje load guarda (`DOWNSHIFT` / `BLOCK UPSHIFT`) wraz z biegiem, obciążeniem i RPM,
 - bez ADS oraz w trybie manualnym zachowanie pozostaje takie jak w T1.
 
+
+## 1.0.4.0T3
+Hotfix testowy mechanizmu ADS load guard.
+
+Zmiany względem 1.0.4.0T2:
+- naprawiono błąd diagnostyki `Logging.info`, który pojawiał się dokładnie przy pierwszej ingerencji load guarda (`missing argument #2`),
+- przyczyną był znak `%` w już sformatowanym komunikacie przekazywanym ponownie do formattera GIANTS Logging,
+- błąd przerywał metodę `update` przed zakończeniem decyzji skrzyni, przez co ochronna redukcja lub blokada upshiftu nie mogła działać prawidłowo,
+- progi ADS, sekwencja biegów i czasy histerezy pozostają bez zmian względem T2, aby T3 izolował wyłącznie ten błąd.
+
 ## Dalszy rozwój
 Od **1.0.1.0** używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`. Numeracji V26/V27 nie stosujemy do nowych buildów.
