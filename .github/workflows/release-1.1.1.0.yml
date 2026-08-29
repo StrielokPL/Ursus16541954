@@ -1,0 +1,148 @@
+name: Publish 1.1.1.0
+
+on:
+  push:
+    paths:
+      - '.github/workflows/release-1.1.1.0.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply stable release cleanup
+        run: python3 tools/apply_1_1_1_0.py
+
+      - name: Ensure wheel files are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- wheels
+
+      - name: Validate source tree
+        run: python3 tools/validate_current.py
+
+      - name: Build release ZIP
+        run: ./build.sh
+
+      - name: Verify 1.1.1.0 ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+
+          with zipfile.ZipFile('dist/FS25_Ursus_1654_1954_Pack.zip') as z:
+              moddesc = z.read('modDesc.xml').decode('utf-8')
+              xml = z.read('Ursus1934.xml').decode('utf-8')
+              lua = z.read('UrsusTransmissionFix.lua').decode('utf-8')
+              changelog = z.read('CHANGELOG.md').decode('utf-8') if 'CHANGELOG.md' in z.namelist() else ''
+
+          assert '<version>1.1.1.0</version>' in moddesc
+
+          # Stable normal-family mass model.
+          assert '<component centerOfMass="0 0.8 -0.88" solverIterationCount="10" mass="3720" />' in xml
+          assert '<component centerOfMass="0 0 0" solverIterationCount="10" mass="1340" />' in xml
+
+          # Store options and prices.
+          assert '<design2Configuration name="$l10n_ursus_transmission_factory" price="0" isDefault="true" />' in xml
+          assert '<design2Configuration name="$l10n_ursus_transmission_no_booster" price="5000" />' in xml
+          assert '<design3Configuration name="$l10n_ursus_drivetrain_factory" price="0" isDefault="true" />' in xml
+          assert '<design3Configuration name="$l10n_ursus_drivetrain_rwd" price="2500" />' in xml
+          assert '<motorConfiguration name="1934 Widmo" hp="290" price="40000">' in xml
+
+          # Widmo physics must remain isolated from normal mass rebalance.
+          assert 'local URSUS_NORMAL_BODY_MASS_KG = 3720' in lua
+          assert 'local URSUS_NORMAL_SECOND_COMPONENT_MASS_KG = 1340' in lua
+          assert 'local URSUS_WIDMO_BODY_MASS_KG = 3700' in lua
+          assert 'local URSUS_WIDMO_SECOND_COMPONENT_MASS_KG = 2500' in lua
+          assert 'baseY, baseZ = 1.10, -1.80' in lua
+          assert 'maxLongStiffness = (self.maxLongStiffness or 30.0) * 1.20' in lua
+          assert 'maxLatStiffness = (self.maxLatStiffness or 30.0) * 0.85' in lua
+          assert 'self.forcePointRatio = 0.80' in lua
+          assert 'InputAction.URSUS_WIDMO_TOGGLE_4WD' in lua
+          assert 'removeAllDifferentials(spec.motorizedNode)' in lua
+
+          # Dynamic suspension remains active for both axles.
+          assert 'URSUS_FRONT_HOP_MAX_LOAD_FACTOR = 1.50' in lua
+          assert 'URSUS_REAR_HOP_MAX_LOAD_FACTOR = 1.60' in lua
+          assert 'setSuspensionMultipliers' in lua
+
+          # Test diagnostics/log spam removed.
+          forbidden = [
+              '[UrsusMassDiag]',
+              'safeNodeMass',
+              'safeNodeCenterOfMass',
+              'logUrsusMassDiagnostic',
+              'updateUrsusMassDiagnostic',
+              'ursusMassDiagnosticLogged',
+              'tireLoadRaw FL=',
+              'store transmission: %s',
+              'store drivetrain: %s',
+              'dynamic suspension: maxLoad',
+              'front ballast %s: +%d kg'
+          ]
+          for text in forbidden:
+              assert text not in lua, text
+
+          print('1.1.1.0 stable ZIP verification: OK')
+          PY
+
+      - name: Commit stable 1.1.1.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION modDesc.xml Ursus1934.xml UrsusTransmissionFix.lua UrsusColorFix.lua CHANGELOG.md PROJECT_STATE.md
+          git commit -m 'Release 1.1.1.0 stable'
+          git push origin HEAD:main
+
+      - name: Publish GitHub stable release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TARGET_SHA=$(git rev-parse HEAD)
+          cat > /tmp/release-notes.md <<'EOF'
+          Full stable release after the 1.0.6.0T1-T14 test series.
+
+          This release is intentionally versioned 1.1.1.0 because the new mass, drivetrain and transmission behavior is not fully compatible with the previous 1.0.x line.
+
+          Highlights:
+          - normal variants use the verified 3720/1340 kg component layout, giving about 6.18 t operating mass on standard wheels and approximately 40/60 front/rear static axle load,
+          - 1934 Widmo keeps its separate 3700/2500 kg layout, COM 0 1.10 -1.80, 290 hp and approximately 30/70 character,
+          - front ballast 600/1200/1500/2000 kg now adds real mass and uses weighted COM,
+          - store transmission selector: Factory 16/8 or Without booster 8/4,
+          - store drivetrain selector: Factory 4x4 or Front axle disconnected (RWD),
+          - Widmo keeps the runtime RWD/4x4 toggle (default Ctrl+4),
+          - native load-dependent dynamic suspension for both axles across the whole Ursus family,
+          - Widmo-specific rear tire tuning retained,
+          - new option prices: Without booster +5,000; Front axle disconnected +2,500; 1934 Widmo +40,000,
+          - T13/T14 mass diagnostics and temporary test logging removed.
+
+          Known issues:
+          - accepted Ursus1934.i3d non-binary indexed triangle-set warning remains; it is non-fatal,
+          - Widmo's runtime Ctrl+4 state is not separately persisted; after reload it starts from the store-selected drivetrain configuration.
+          EOF
+          gh release create v1.1.1.0 dist/FS25_Ursus_1654_1954_Pack.zip \
+            --target "$TARGET_SHA" \
+            --title '1.1.1.0 — Stable physics and drivetrain release' \
+            --notes-file /tmp/release-notes.md
+
+      - name: Remove one-shot release helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          git rm .github/workflows/release-1.1.1.0.yml tools/apply_1_1_1_0.py
+          git commit -m 'Remove one-shot 1.1.1.0 release helpers'
+          git push origin HEAD:main
