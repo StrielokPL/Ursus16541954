@@ -1,0 +1,153 @@
+name: Publish 1.0.6.0T13
+
+on:
+  push:
+    paths:
+      - '.github/workflows/release-1.0.6.0T13.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply T13 store selectors and diagnostics
+        run: |
+          python3 tools/apply_1_0_6_0T13.py
+          python3 tools/fix_1_0_6_0T13_server_guard.py
+
+      - name: Ensure wheel files are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- wheels
+
+      - name: Validate source tree
+        run: python3 tools/validate_current.py
+
+      - name: Build test ZIP
+        run: ./build.sh
+
+      - name: Verify T13 ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import zipfile
+
+          with zipfile.ZipFile('dist/FS25_Ursus_1654_1954_Pack.zip') as z:
+              moddesc = z.read('modDesc.xml').decode('utf-8')
+              xml = z.read('Ursus1934.xml').decode('utf-8')
+              lua = z.read('UrsusTransmissionFix.lua').decode('utf-8')
+
+          assert '<version>1.0.6.0T13</version>' in moddesc
+          for key in (
+              'ursus_transmission_title',
+              'ursus_transmission_factory',
+              'ursus_transmission_no_booster',
+              'ursus_drivetrain_title',
+              'ursus_drivetrain_factory',
+              'ursus_drivetrain_rwd',
+          ):
+              assert f'name="{key}"' in moddesc, key
+
+          assert '<design2Configurations title="$l10n_ursus_transmission_title">' in xml
+          assert '<design2Configuration name="$l10n_ursus_transmission_factory" price="0" isDefault="true" />' in xml
+          assert '<design2Configuration name="$l10n_ursus_transmission_no_booster" price="0" />' in xml
+          assert '<design3Configurations title="$l10n_ursus_drivetrain_title">' in xml
+          assert '<design3Configuration name="$l10n_ursus_drivetrain_factory" price="0" isDefault="true" />' in xml
+          assert '<design3Configuration name="$l10n_ursus_drivetrain_rwd" price="0" />' in xml
+
+          # T13 is diagnostic only for mass distribution: base masses must not move.
+          assert '<component centerOfMass="0 0.8 -0.88" solverIterationCount="10" mass="3700" />' in xml
+          assert '<component centerOfMass="0 0 0" solverIterationCount="10" mass="2500" />' in xml
+          widmo_start = xml.index('<motorConfiguration name="1934 Widmo"')
+          widmo_end = xml.index('</motorConfiguration>', widmo_start)
+          widmo = xml[widmo_start:widmo_end]
+          assert 'hp="290"' in widmo
+          assert 'torqueScale="1.100"' in widmo
+          assert 'centerOfMassActive="0 1.10 -1.80"' in widmo
+          assert 'name="8/4"' in widmo
+
+          # Independent store transmission selector.
+          assert 'local originalLoadMotor = Motorized.loadMotor' in lua
+          assert 'function Motorized:loadMotor(xmlFile, motorId)' in lua
+          assert 'motor:setGearGroups(nil, "DEFAULT", 0)' in lua
+          assert '{ratio=1.25, name="L", dashboardName="L", isDefault=true}' in lua
+          assert '{ratio=1.00, name="H", dashboardName="H", isDefault=false}' in lua
+          assert 'store transmission: %s' in lua
+
+          # Independent store drivetrain selector + server-only physical graph.
+          assert 'local URSUS_DRIVETRAIN_CONFIG = "design3"' in lua
+          assert 'if not self.isServer then' in lua
+          assert 'spec.differentials = {differentials[2]}' in lua
+          assert 'store drivetrain: %s' in lua
+          assert 'removeAllDifferentials(spec.motorizedNode)' in lua
+          assert 'InputAction.URSUS_WIDMO_TOGGLE_4WD' in lua
+
+          # Diagnostic and inherited physics.
+          assert '[UrsusMassDiag] T13 cfg' in lua
+          assert '[UrsusMassDiag] T13 tireLoadRaw' in lua
+          assert '[UrsusMassDiag] T13 masses' in lua
+          assert 'updateUrsusMassDiagnostic(self.vehicle, dt)' in lua
+          assert 'URSUS_REAR_HOP_MAX_LOAD_FACTOR = 1.60' in lua
+          assert 'URSUS_FRONT_HOP_MAX_LOAD_FACTOR = 1.50' in lua
+          assert 'self.forcePointRatio = 0.80' in lua
+          assert 'self.maxLongStiffness = (self.maxLongStiffness or 30.0) * 1.20' in lua
+          assert 'self.maxLatStiffness = (self.maxLatStiffness or 30.0) * 0.85' in lua
+          assert 'local URSUS_FRONT_BALLAST' in lua
+
+          print('ZIP T13 store transmission/drivetrain + mass diagnostic check: OK')
+          PY
+
+      - name: Commit 1.0.6.0T13
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION modDesc.xml Ursus1934.xml UrsusTransmissionFix.lua UrsusColorFix.lua CHANGELOG.md PROJECT_STATE.md
+          git commit -m 'Release 1.0.6.0T13 store transmission drivetrain and mass diagnostics'
+          git push origin HEAD:main
+
+      - name: Publish GitHub prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TARGET_SHA=$(git rev-parse HEAD)
+          cat > /tmp/release-notes.md <<'EOF'
+          Independent store transmission/drivetrain selectors and axle-load diagnostics.
+
+          Changes:
+          - new Transmission selector: Factory / Without torque amplifier,
+          - Factory uses 8F/4R with L/H powershift (16F/8R); Without torque amplifier uses direct 8F/4R,
+          - new Drivetrain selector: Factory / Front axle disconnected,
+          - Factory uses the original front + rear + centre differential graph; Front axle disconnected uses rear drive only,
+          - 1934 Widmo keeps the Ctrl+4 runtime RWD/4x4 toggle; the store choice now determines its initial state,
+          - one-shot [UrsusMassDiag] logging after the tractor has stood still for about 2.5 seconds: four tire loads, front/rear percentage, wheel masses, component masses and COM values,
+          - no component mass or COM tuning is performed in T13; Widmo mass layout remains unchanged,
+          - T12 dynamic suspension, T10 Widmo tire tuning and T9 front ballast physics remain unchanged.
+          EOF
+          gh release create v1.0.6.0T13 dist/FS25_Ursus_1654_1954_Pack.zip \
+            --target "$TARGET_SHA" \
+            --title '1.0.6.0T13 — Store transmission/drivetrain and mass diagnostics' \
+            --prerelease \
+            --notes-file /tmp/release-notes.md
+
+      - name: Remove one-shot release helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          git rm .github/workflows/release-1.0.6.0T13.yml tools/apply_1_0_6_0T13.py tools/fix_1_0_6_0T13_server_guard.py
+          git commit -m 'Remove one-shot 1.0.6.0T13 release helpers'
+          git push origin HEAD:main
