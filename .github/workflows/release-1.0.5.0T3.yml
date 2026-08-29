@@ -1,8 +1,8 @@
 name: Build and publish 1.0.5.0T3
 
 on:
-  workflow_dispatch:
   push:
+    branches: [ main ]
     paths:
       - '.github/workflows/release-1.0.5.0T3.yml'
 
@@ -25,6 +25,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
+          import xml.etree.ElementTree as ET
 
           VERSION = '1.0.5.0T3'
           Path('VERSION').write_text(VERSION + '\n', encoding='utf-8')
@@ -35,238 +36,253 @@ jobs:
           p.write_text(s, encoding='utf-8')
 
           p = Path('UrsusTransmissionFix.lua')
-          s = p.read_text(encoding='utf-8')
-          s = s.replace('1.0.5.0T2', VERSION)
+          s = p.read_text(encoding='utf-8').replace('1.0.5.0T2', VERSION)
           p.write_text(s, encoding='utf-8')
 
           p = Path('Ursus1934.xml')
           s = p.read_text(encoding='utf-8')
           pattern = re.compile(r'\n\s*<!-- 1\.0\.5\.0T2:.*?</rimColorConfigurations>\s*', re.S)
-          replacement = '''
-
-  <!-- 1.0.5.0T3: native full GIANTS palette + custom RGB picker.
-       Legacy I3D coloring is applied by UrsusColorFix.lua. -->
-  <baseColorConfigurations title="Kolor nadwozia" useDefaultColors="true" defaultColorMaterialTemplateName="calibratedPaint" price="0">
-    <baseColorConfiguration name="Fabryczny czerwony" color="0.4 0.03 0" isDefault="true" price="0"/>
-  </baseColorConfigurations>
-
-  <rimColorConfigurations title="Kolor felg" useDefaultColors="true" defaultColorMaterialTemplateName="calibratedMetallicPaint" price="0">
-    <rimColorConfiguration name="Fabryczny szary" color="0.30 0.30 0.30" isDefault="true" price="0"/>
-  </rimColorConfigurations>
-'''
-          s2, n = pattern.subn(replacement, s, count=1)
+          replacement = (
+              '\n\n  <!-- 1.0.5.0T3: native full GIANTS palette + custom RGB picker. '
+              'Legacy I3D coloring is applied by UrsusColorFix.lua. -->\n'
+              '  <baseColorConfigurations title="Kolor nadwozia" useDefaultColors="true" defaultColorMaterialTemplateName="calibratedPaint" price="0">\n'
+              '    <baseColorConfiguration name="Fabryczny czerwony" color="0.4 0.03 0" isDefault="true" price="0"/>\n'
+              '  </baseColorConfigurations>\n\n'
+              '  <rimColorConfigurations title="Kolor felg" useDefaultColors="true" defaultColorMaterialTemplateName="calibratedMetallicPaint" price="0">\n'
+              '    <rimColorConfiguration name="Fabryczny szary" color="0.30 0.30 0.30" isDefault="true" price="0"/>\n'
+              '  </rimColorConfigurations>\n'
+          )
+          s, n = pattern.subn(replacement, s, count=1)
           if n != 1:
               raise SystemExit(f'Could not replace T2 color configuration block, matches={n}')
-          p.write_text(s2, encoding='utf-8')
+          p.write_text(s, encoding='utf-8')
 
-          color_fix = r'''-- Ursus 1654-1954 FS25 body/rim color runtime bridge
--- 1.0.5.0T3: native VehicleConfigurationItemColor provides the full GIANTS
--- palette and the custom RGB picker. Legacy I3Ds do not expose usable material
--- slot names at runtime, so this bridge applies the selected RGB only to an
--- explicit whitelist of body/rim shapes.
+          for fn in ('modDesc.xml', 'Ursus1934.xml'):
+              ET.parse(fn)
+          PY
 
-UrsusColorFix = UrsusColorFix or {}
+          cat > UrsusColorFix.lua <<'LUA'
+          -- Ursus 1654-1954 FS25 body/rim color runtime bridge
+          -- 1.0.5.0T3: native VehicleConfigurationItemColor provides the full GIANTS
+          -- palette and custom RGB picker. Legacy I3Ds do not expose usable material
+          -- slot names at runtime, so this bridge applies RGB to explicit shapes only.
 
-if not UrsusColorFix.installed then
-    UrsusColorFix.installed = true
+          UrsusColorFix = UrsusColorFix or {}
 
-    local modDirectory = g_currentModDirectory
-    local APPLY_RETRY_MS = 100
+          if not UrsusColorFix.installed then
+              UrsusColorFix.installed = true
 
-    -- Main body material 21 is used only by these two shapes.
-    local BODY_SHAPES = {
-        Object118 = true,
-        kadlubmetal = true,
-    }
+              local modDirectory = g_currentModDirectory
+              local APPLY_RETRY_MS = 100
 
-    -- rims.i3d standard, Robert and dual-rim surfaces.
-    -- Wheel weights are Object112/Cylinder327 and deliberately excluded.
-    local RIM_SHAPES = {
-        przod = true,
-        Tube023 = true,
-        Tube019 = true,
-        Tube034 = true,
-    }
+              local BODY_SHAPES = {
+                  Object118 = true,
+                  kadlubmetal = true,
+              }
 
-    local function isUrsus(vehicle)
-        if vehicle == nil or vehicle.configFileName == nil then
-            return false
-        end
+              -- Standard, Robert and dual-rim surfaces. Wheel weights are excluded.
+              local RIM_SHAPES = {
+                  przod = true,
+                  Tube023 = true,
+                  Tube019 = true,
+                  Tube034 = true,
+              }
 
-        local configFileName = vehicle.configFileName
-        if modDirectory ~= nil
-            and string.sub(configFileName, 1, string.len(modDirectory)) ~= modDirectory then
-            return false
-        end
+              local function isUrsus(vehicle)
+                  if vehicle == nil or vehicle.configFileName == nil then
+                      return false
+                  end
 
-        return string.sub(configFileName, -13) == "Ursus1934.xml"
-    end
+                  local configFileName = vehicle.configFileName
+                  if modDirectory ~= nil
+                      and string.sub(configFileName, 1, string.len(modDirectory)) ~= modDirectory then
+                      return false
+                  end
 
-    local function getConfigurationIndex(vehicle, key)
-        if vehicle.configurations == nil then
-            return nil
-        end
+                  return string.sub(configFileName, -13) == "Ursus1934.xml"
+              end
 
-        local value = vehicle.configurations[key]
-        if type(value) == "table" then
-            value = value.id or value.index or value.configId
-        end
+              local function getConfigurationIndex(vehicle, key)
+                  if vehicle.configurations == nil then
+                      return nil
+                  end
 
-        return tonumber(value)
-    end
+                  local value = vehicle.configurations[key]
+                  if type(value) == "table" then
+                      value = value.id or value.index or value.configId
+                  end
 
-    local function getSelectedColor(vehicle, key, fallback)
-        local configId = getConfigurationIndex(vehicle, key)
-        if configId == nil or g_storeManager == nil then
-            return fallback, configId or 0
-        end
+                  return tonumber(value)
+              end
 
-        local item = g_storeManager:getItemByXMLFilename(vehicle.configFileName)
-        local configs = item ~= nil and item.configurations or nil
-        local configItems = configs ~= nil and configs[key] or nil
-        local config = configItems ~= nil and configItems[configId] or nil
+              local function getSelectedColor(vehicle, key, fallback)
+                  local configId = getConfigurationIndex(vehicle, key)
+                  if configId == nil or g_storeManager == nil then
+                      return fallback, configId or 0
+                  end
 
-        if config ~= nil and VehicleConfigurationItemColor ~= nil
-            and config.isa ~= nil and config:isa(VehicleConfigurationItemColor) then
-            local color = nil
-            if config.getColorAndMaterialFromVehicle ~= nil then
-                color = config:getColorAndMaterialFromVehicle(vehicle)
-            elseif config.getColor ~= nil then
-                color = config:getColor()
-            end
+                  local item = g_storeManager:getItemByXMLFilename(vehicle.configFileName)
+                  local configs = item ~= nil and item.configurations or nil
+                  local configItems = configs ~= nil and configs[key] or nil
+                  local config = configItems ~= nil and configItems[configId] or nil
 
-            if color ~= nil and color[1] ~= nil and color[2] ~= nil and color[3] ~= nil then
-                return {color[1], color[2], color[3]}, configId
-            end
-        end
+                  if config ~= nil and VehicleConfigurationItemColor ~= nil
+                      and config.isa ~= nil and config:isa(VehicleConfigurationItemColor) then
+                      local color = nil
+                      if config.getColorAndMaterialFromVehicle ~= nil then
+                          color = config:getColorAndMaterialFromVehicle(vehicle)
+                      elseif config.getColor ~= nil then
+                          color = config:getColor()
+                      end
 
-        return fallback, configId
-    end
+                      if color ~= nil and color[1] ~= nil and color[2] ~= nil and color[3] ~= nil then
+                          return {color[1], color[2], color[3]}, configId
+                      end
+                  end
 
-    local function colorSignature(configId, color)
-        return string.format(
-            "%s:%.6f:%.6f:%.6f",
-            tostring(configId or 0),
-            color[1] or 0,
-            color[2] or 0,
-            color[3] or 0
-        )
-    end
+                  return fallback, configId
+              end
 
-    local function setColor(node, color, materialType)
-        setShaderParameter(
-            node,
-            "colorMat0",
-            color[1], color[2], color[3], materialType,
-            false
-        )
-    end
+              local function colorSignature(configId, color)
+                  return string.format(
+                      "%s:%.6f:%.6f:%.6f",
+                      tostring(configId or 0),
+                      color[1] or 0,
+                      color[2] or 0,
+                      color[3] or 0
+                  )
+              end
 
-    local function scanNode(node, bodyColor, rimColor, visited)
-        if node == nil or node == 0 or visited[node] then
-            return 0, 0
-        end
-        visited[node] = true
+              local function setColor(node, color, materialType)
+                  setShaderParameter(
+                      node,
+                      "colorMat0",
+                      color[1], color[2], color[3], materialType,
+                      false
+                  )
+              end
 
-        local bodyCount = 0
-        local rimCount = 0
-        local nodeName = getName(node)
+              local function scanNode(node, bodyColor, rimColor, visited)
+                  if node == nil or node == 0 or visited[node] then
+                      return 0, 0
+                  end
+                  visited[node] = true
 
-        if bodyColor ~= nil and BODY_SHAPES[nodeName] then
-            setColor(node, bodyColor, 16)
-            bodyCount = bodyCount + 1
-        end
+                  local bodyCount = 0
+                  local rimCount = 0
+                  local nodeName = getName(node)
 
-        if rimColor ~= nil and RIM_SHAPES[nodeName] then
-            setColor(node, rimColor, 6)
-            rimCount = rimCount + 1
-        end
+                  if bodyColor ~= nil and BODY_SHAPES[nodeName] then
+                      setColor(node, bodyColor, 16)
+                      bodyCount = bodyCount + 1
+                  end
 
-        local numChildren = getNumOfChildren(node)
-        for i = 0, numChildren - 1 do
-            local childBody, childRim = scanNode(
-                getChildAt(node, i), bodyColor, rimColor, visited
-            )
-            bodyCount = bodyCount + childBody
-            rimCount = rimCount + childRim
-        end
+                  if rimColor ~= nil and RIM_SHAPES[nodeName] then
+                      setColor(node, rimColor, 6)
+                      rimCount = rimCount + 1
+                  end
 
-        return bodyCount, rimCount
-    end
+                  local numChildren = getNumOfChildren(node)
+                  for i = 0, numChildren - 1 do
+                      local childBody, childRim = scanNode(
+                          getChildAt(node, i), bodyColor, rimColor, visited
+                      )
+                      bodyCount = bodyCount + childBody
+                      rimCount = rimCount + childRim
+                  end
 
-    local function applyColors(vehicle, bodyColor, rimColor)
-        local visited = {}
-        local bodyCount = 0
-        local rimCount = 0
+                  return bodyCount, rimCount
+              end
 
-        if vehicle.components ~= nil then
-            for _, component in ipairs(vehicle.components) do
-                if component.node ~= nil then
-                    local b, r = scanNode(component.node, bodyColor, rimColor, visited)
-                    bodyCount = bodyCount + b
-                    rimCount = rimCount + r
-                end
-            end
-        elseif vehicle.rootNode ~= nil then
-            bodyCount, rimCount = scanNode(vehicle.rootNode, bodyColor, rimColor, visited)
-        end
+              local function applyColors(vehicle, bodyColor, rimColor)
+                  local visited = {}
+                  local bodyCount = 0
+                  local rimCount = 0
 
-        return bodyCount, rimCount
-    end
+                  if vehicle.components ~= nil then
+                      for _, component in ipairs(vehicle.components) do
+                          if component.node ~= nil then
+                              local b, r = scanNode(component.node, bodyColor, rimColor, visited)
+                              bodyCount = bodyCount + b
+                              rimCount = rimCount + r
+                          end
+                      end
+                  elseif vehicle.rootNode ~= nil then
+                      bodyCount, rimCount = scanNode(vehicle.rootNode, bodyColor, rimColor, visited)
+                  end
 
-    function UrsusColorFix.update(vehicle, dt)
-        if not isUrsus(vehicle) then
-            return
-        end
+                  return bodyCount, rimCount
+              end
 
-        if vehicle.ursusColorNextApplyTime ~= nil
-            and g_time < vehicle.ursusColorNextApplyTime then
-            return
-        end
+              function UrsusColorFix.update(vehicle, dt)
+                  if not isUrsus(vehicle) then
+                      return
+                  end
 
-        local bodyColor, bodyId = getSelectedColor(vehicle, "baseColor", {0.40, 0.03, 0.00})
-        local rimColor, rimId = getSelectedColor(vehicle, "rimColor", {0.30, 0.30, 0.30})
-        local bodySignature = colorSignature(bodyId, bodyColor)
-        local rimSignature = colorSignature(rimId, rimColor)
+                  if vehicle.ursusColorNextApplyTime ~= nil
+                      and g_time < vehicle.ursusColorNextApplyTime then
+                      return
+                  end
 
-        if vehicle.ursusLastBodyColorSignature == bodySignature
-            and vehicle.ursusLastRimColorSignature == rimSignature then
-            return
-        end
+                  local bodyColor, bodyId = getSelectedColor(vehicle, "baseColor", {0.40, 0.03, 0.00})
+                  local rimColor, rimId = getSelectedColor(vehicle, "rimColor", {0.30, 0.30, 0.30})
+                  local bodySignature = colorSignature(bodyId, bodyColor)
+                  local rimSignature = colorSignature(rimId, rimColor)
 
-        vehicle.ursusColorNextApplyTime = g_time + APPLY_RETRY_MS
-        local bodyCount, rimCount = applyColors(vehicle, bodyColor, rimColor)
+                  if vehicle.ursusLastBodyColorSignature == bodySignature
+                      and vehicle.ursusLastRimColorSignature == rimSignature then
+                      return
+                  end
 
-        if bodyCount > 0 then
-            vehicle.ursusLastBodyColorSignature = bodySignature
-        end
-        if rimCount > 0 then
-            vehicle.ursusLastRimColorSignature = rimSignature
-        end
-    end
+                  vehicle.ursusColorNextApplyTime = g_time + APPLY_RETRY_MS
+                  local bodyCount, rimCount = applyColors(vehicle, bodyColor, rimColor)
 
-    Vehicle.update = Utils.appendedFunction(Vehicle.update, UrsusColorFix.update)
-    Logging.info("[UrsusColorFix] 1.0.5.0T3 full palette/custom RGB bridge enabled")
-end
-'''
-          Path('UrsusColorFix.lua').write_text(color_fix, encoding='utf-8')
+                  if bodyCount > 0 then
+                      vehicle.ursusLastBodyColorSignature = bodySignature
+                  end
+                  if rimCount > 0 then
+                      vehicle.ursusLastRimColorSignature = rimSignature
+                  end
+              end
+
+              Vehicle.update = Utils.appendedFunction(Vehicle.update, UrsusColorFix.update)
+              Logging.info("[UrsusColorFix] 1.0.5.0T3 full palette/custom RGB bridge enabled")
+          end
+          LUA
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
 
           p = Path('CHANGELOG.md')
           s = p.read_text(encoding='utf-8')
-          addition = '''\n## 1.0.5.0T3\nTest pełnej palety kolorów i koloru niestandardowego.\n\nZmiany względem 1.0.5.0T2:\n- potwierdzony w grze bridge kolorowania nadwozia/felg pozostaje bazą,\n- `baseColor` i `rimColor` używają teraz `useDefaultColors=true`, co dodaje pełną natywną paletę GIANTS oraz picker koloru niestandardowego,\n- usunięto diagnostyczny wściekły róż/magentę z ręcznie zdefiniowanej palety,\n- runtime bridge pobiera rzeczywisty kolor z `VehicleConfigurationItemColor`, w tym RGB zapisany w `vehicle.configurationData` dla koloru niestandardowego, zamiast korzystać z własnych tablic kolorów,\n- sygnatura koloru uwzględnia RGB, dzięki czemu ponowne wybranie innego koloru niestandardowego w tym samym indeksie jest wykrywane,\n- usunięto diagnostyczne logowanie liczby przemalowanych elementów z T2; pozostawiono pojedynczy wpis startowy bridge,\n- F5 nie jest funkcją moda: to globalny debug-renderer GIANTS pokazujący prawdziwe kolizje; nie wyłączano go kosztem działania kolizji.\n\n'''
-          marker = '## 1.0.4.0T1'
+          addition = (
+              '\n## 1.0.5.0T3\nTest pełnej palety kolorów i koloru niestandardowego.\n\n'
+              'Zmiany względem 1.0.5.0T2:\n'
+              '- potwierdzony w grze bridge kolorowania nadwozia/felg pozostaje bazą,\n'
+              '- `baseColor` i `rimColor` używają `useDefaultColors=true`: pełna natywna paleta GIANTS i picker koloru niestandardowego,\n'
+              '- usunięto diagnostyczny wściekły róż/magentę z ręcznie zdefiniowanej palety,\n'
+              '- bridge pobiera rzeczywisty RGB z `VehicleConfigurationItemColor`, również z `vehicle.configurationData` dla koloru niestandardowego,\n'
+              '- sygnatura uwzględnia RGB, więc zmiana własnego koloru przy tym samym indeksie jest wykrywana,\n'
+              '- usunięto diagnostyczne logowanie liczby przemalowanych elementów z T2,\n'
+              '- F5 jest globalnym debug-rendererem GIANTS pokazującym prawdziwe kolizje; nie wyłączano go kosztem kolizji.\n\n'
+          )
           if '## 1.0.5.0T3' not in s:
-              if marker in s:
-                  s = s.replace(marker, addition + marker, 1)
-              else:
-                  s += addition
+              marker = '## 1.0.4.0T1'
+              s = s.replace(marker, addition + marker, 1) if marker in s else s + addition
           p.write_text(s, encoding='utf-8')
 
           p = Path('PROJECT_STATE.md')
-          s = p.read_text(encoding='utf-8')
-          s = re.sub(r'1\.0\.5\.0T2', VERSION, s)
+          s = p.read_text(encoding='utf-8').replace('1.0.5.0T2', '1.0.5.0T3')
           if 'Full color palette / custom RGB' not in s:
-              s += '''\n\n### Full color palette / custom RGB — 1.0.5.0T3\n- Nadwozie i felgi mają niezależne natywne konfiguracje kolorów z `useDefaultColors=true`.\n- Pełna paleta GIANTS i picker niestandardowego RGB są obsługiwane przez `VehicleConfigurationItemColor`.\n- `UrsusColorFix.lua` nakłada faktycznie wybrany RGB na whitelistę kształtów legacy I3D.\n- Obciążniki kół, lampy, hydraulika i kalkomanie pozostają poza kolorowaniem.\n- F5 jest globalnym debug-rendererem GIANTS, nie funkcją Ursusa; jego wyłączenie per-mod wymagałoby usunięcia aktywnych kolizji i nie jest wykonywane.\n'''
+              s += (
+                  '\n\n### Full color palette / custom RGB — 1.0.5.0T3\n'
+                  '- Nadwozie i felgi: niezależne konfiguracje z `useDefaultColors=true`.\n'
+                  '- Pełna paleta GIANTS i picker RGB są obsługiwane przez `VehicleConfigurationItemColor`.\n'
+                  '- `UrsusColorFix.lua` nakłada faktyczny RGB na whitelistę kształtów legacy I3D.\n'
+                  '- Obciążniki kół, lampy, hydraulika i kalkomanie pozostają poza kolorowaniem.\n'
+                  '- F5 to globalny debug-renderer GIANTS, nie funkcja Ursusa; wyłączenie per-mod wymagałoby usunięcia aktywnych kolizji.\n'
+              )
           p.write_text(s, encoding='utf-8')
           PY
 
@@ -297,7 +313,7 @@ end
             --target "$TARGET_SHA" \
             --title '1.0.5.0T3 — full color palette and custom RGB' \
             --prerelease \
-            --notes 'Expands the confirmed T2 body/rim coloring to the full native GIANTS color palette plus the custom RGB picker for both body and rims. The diagnostic hot-magenta preset is removed. UrsusColorFix now reads the actual VehicleConfigurationItemColor value, including custom RGB data, instead of using hard-coded color tables. Wheel weights, lights, hydraulics and decals remain excluded. Per-change color debug logging from T2 is removed. F5 is the global GIANTS physics/debug renderer rather than an Ursus feature, so it is not disabled at the cost of collision functionality. Transmission, ADS behavior and physics are otherwise unchanged.'
+            --notes 'Full native GIANTS color palette plus custom RGB picker for body and rims. The diagnostic hot-magenta preset is removed. UrsusColorFix now reads the actual VehicleConfigurationItemColor RGB, including custom color data. Wheel weights, lights, hydraulics and decals remain excluded. T2 per-change color debug logging is removed. F5 is the global GIANTS physics/debug renderer, not an Ursus feature, and is left untouched to preserve collision functionality.'
 
       - name: Remove one-shot workflow
         shell: bash
