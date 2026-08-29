@@ -238,3 +238,14 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Front ballast weighted-COM calculation now uses 3720 kg base C1 for normal variants and 3700 kg for Widmo.
 - `[UrsusMassDiag] T14` remains enabled for one more verification pass.
 - Do not tune normal COM or Widmo mass/COM further until T14 log confirms runtime axle loads.
+
+
+### Stable release 1.1.1.0
+- Full stable release after T14 verification.
+- Normal-family component masses: 3720/1340 kg; normal COM remains `0 0.80 -0.88`.
+- Widmo remains 3700/2500 kg with COM `0 1.10 -1.80`, 290 hp and its separate tire tuning.
+- Store transmission prices: factory 0; without booster 5000.
+- Store drivetrain prices: factory 0; front axle disconnected 2500.
+- Widmo motor configuration price: 40000.
+- T13/T14 mass diagnostics and temporary test logs removed.
+- Known accepted I3D non-binary indexed triangle-set warning remains.

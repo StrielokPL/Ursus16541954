@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.6.0T14: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.1.1.0: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -118,19 +118,6 @@ if not UrsusTransmissionFix.installed then
         return vehicle.configurations[configName] or URSUS_CONFIG_FACTORY
     end
 
-    local function getUrsusTransmissionLabel(vehicle)
-        if getUrsusConfigurationIndex(vehicle, URSUS_TRANSMISSION_CONFIG) == URSUS_CONFIG_NO_BOOSTER_OR_RWD then
-            return "without-booster 8/4"
-        end
-        return "factory 8/4 x L/H (16/8)"
-    end
-
-    local function getUrsusDrivetrainLabel(vehicle)
-        if getUrsusConfigurationIndex(vehicle, URSUS_DRIVETRAIN_CONFIG) == URSUS_CONFIG_NO_BOOSTER_OR_RWD then
-            return "front-axle-disconnected RWD"
-        end
-        return "factory 4x4"
-    end
 
     local function getSelectedAttacherJointConfigurationName(vehicle, xmlFile)
         if vehicle == nil or vehicle.configurations == nil or vehicle.configurations["attacherJoint"] == nil then
@@ -220,26 +207,6 @@ if not UrsusTransmissionFix.installed then
             vehicle:setMassDirty()
         end
         setCenterOfMass(node, comX, comY, comZ)
-
-        if not vehicle.ursusT14MassLayoutLogged then
-            vehicle.ursusT14MassLayoutLogged = true
-            Logging.info("%s", string.format(
-                "[UrsusTransmissionFix] 1.0.6.0T14 mass layout motor=%s: C1base=%d kg C2=%d kg COMbase=%.3f %.3f %.3f",
-                tostring(motorName or "?"), baseBodyMassKg, secondComponentMassKg, baseX, baseY, baseZ
-            ))
-        end
-
-        if ballast ~= nil then
-            Logging.info("%s", string.format(
-                "[UrsusTransmissionFix] 1.0.6.0T14 front ballast %s: +%d kg, body component=%d kg, COM=%.3f %.3f %.3f",
-                configName,
-                addedMassKg,
-                targetMassKg,
-                comX,
-                comY,
-                comZ
-            ))
-        end
     end
 
     local function isUrsusMotor(motor)
@@ -510,7 +477,7 @@ if not UrsusTransmissionFix.installed then
             vehicle:updateMotorProperties()
         end
 
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T14 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
+        Logging.info("[UrsusTransmissionFix] 1.1.1.0 Widmo drivetrain switched to %s", use4wd and "4x4" or "RWD")
         return true
     end
 
@@ -566,12 +533,6 @@ if not UrsusTransmissionFix.installed then
                 motor:setGearGroups(makeFactoryHighLowGroups(), "POWERSHIFT", 200)
             end
         end
-
-        Logging.info(
-            "[UrsusTransmissionFix] 1.0.6.0T14 store transmission: %s | motor=%s",
-            getUrsusTransmissionLabel(self),
-            tostring(getSelectedMotorConfigurationName(self, xmlFile) or "?")
-        )
     end
 
     function Motorized:loadDifferentials(xmlFile, configDifferentialIndex)
@@ -613,13 +574,6 @@ if not UrsusTransmissionFix.installed then
         if not use4wd then
             spec.differentials = {differentials[2]}
         end
-
-        Logging.info(
-            "[UrsusTransmissionFix] 1.0.6.0T14 store drivetrain: %s | motor=%s%s",
-            getUrsusDrivetrainLabel(self),
-            tostring(motorName or "?"),
-            motorName == "1934 Widmo" and "; Ctrl+4 runtime toggle enabled" or ""
-        )
     end
 
     function Motorized:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)
@@ -684,10 +638,6 @@ if not UrsusTransmissionFix.installed then
                 self.maxLatStiffness = (self.maxLatStiffness or 30.0) * 0.85
                 self.ursusWidmoTractionApplied = true
             end
-            if not vehicle.ursusWidmoRearForcePointLogged then
-                vehicle.ursusWidmoRearForcePointLogged = true
-                Logging.info("[UrsusTransmissionFix] 1.0.6.0T14 Widmo rear forcePointRatio=0.80, maxLongStiffness x1.20, maxLatStiffness x0.85")
-            end
         end
 
         return result
@@ -739,7 +689,7 @@ if not UrsusTransmissionFix.installed then
         vehicle.ursusDynamicSuspension = vehicle.ursusDynamicSuspension or {}
         local state = vehicle.ursusDynamicSuspension[axleName]
         if state == nil then
-            state = {alpha=0, appliedAlpha=nil, logged=false}
+            state = {alpha=0, appliedAlpha=nil}
             vehicle.ursusDynamicSuspension[axleName] = state
         end
 
@@ -759,138 +709,6 @@ if not UrsusTransmissionFix.installed then
             local dampingMultiplier = MathUtil.lerp(1, minDampingMultiplier, alpha)
             physicsLeft:setSuspensionMultipliers(springMultiplier, dampingMultiplier)
             physicsRight:setSuspensionMultipliers(springMultiplier, dampingMultiplier)
-        end
-
-        if not state.logged then
-            state.logged = true
-            Logging.info("%s", string.format(
-                "[UrsusTransmissionFix] 1.0.6.0T14 %s dynamic suspension: maxLoad x%.2f, spring x%.2f, damping x%.2f, interpolation %dms",
-                axleName,
-                maxLoadFactor,
-                maxSpringMultiplier,
-                minDampingMultiplier,
-                interpolationMs
-            ))
-        end
-    end
-
-    local function safeNodeMass(node, fallback)
-        if node ~= nil and getMass ~= nil then
-            local ok, value = pcall(getMass, node)
-            if ok and value ~= nil then
-                return value
-            end
-        end
-        return fallback or 0
-    end
-
-    local function safeNodeCenterOfMass(node)
-        if node ~= nil and getCenterOfMass ~= nil then
-            local ok, x, y, z = pcall(getCenterOfMass, node)
-            if ok and x ~= nil then
-                return x, y, z
-            end
-        end
-        return 0, 0, 0
-    end
-
-    local function logUrsusMassDiagnostic(vehicle)
-        if vehicle == nil or not isUrsusVehicle(vehicle) or vehicle.ursusMassDiagnosticLogged then
-            return false
-        end
-
-        local wheels = {}
-        local loads = {}
-        local wheelMasses = {}
-        for i=1,4 do
-            wheels[i] = vehicle:getWheelFromWheelIndex(i)
-            local physics = wheels[i] ~= nil and wheels[i].physics or nil
-            if physics == nil or physics.getTireLoad == nil then
-                return false
-            end
-            loads[i] = physics:getTireLoad() or 0
-            if loads[i] <= 0 then
-                return false
-            end
-            wheelMasses[i] = wheels[i].getMass ~= nil and (wheels[i]:getMass() or 0) or 0
-        end
-
-        local frontLoad = loads[1] + loads[2]
-        local rearLoad = loads[3] + loads[4]
-        local totalLoad = frontLoad + rearLoad
-        if totalLoad <= 0 then
-            return false
-        end
-
-        local frontPct = frontLoad / totalLoad * 100
-        local rearPct = rearLoad / totalLoad * 100
-        local c1 = vehicle.components ~= nil and vehicle.components[1] or nil
-        local c2 = vehicle.components ~= nil and vehicle.components[2] or nil
-        local c1Mass = c1 ~= nil and safeNodeMass(c1.node, c1.defaultMass) or 0
-        local c2Mass = c2 ~= nil and safeNodeMass(c2.node, c2.defaultMass) or 0
-        local c1x, c1y, c1z = c1 ~= nil and safeNodeCenterOfMass(c1.node) or 0, 0, 0
-        local c2x, c2y, c2z = c2 ~= nil and safeNodeCenterOfMass(c2.node) or 0, 0, 0
-
-        -- Lua multiple-return expressions need explicit assignment to preserve all axes.
-        if c1 ~= nil then
-            c1x, c1y, c1z = safeNodeCenterOfMass(c1.node)
-        end
-        if c2 ~= nil then
-            c2x, c2y, c2z = safeNodeCenterOfMass(c2.node)
-        end
-
-        local totalMass = c1Mass + c2Mass
-        if vehicle.getTotalMass ~= nil then
-            local ok, value = pcall(vehicle.getTotalMass, vehicle)
-            if ok and value ~= nil then
-                totalMass = value
-            end
-        end
-
-        local motorName = getSelectedMotorConfigurationName(vehicle, vehicle.xmlFile) or "?"
-        local ballastName = getSelectedAttacherJointConfigurationName(vehicle, vehicle.xmlFile) or "none"
-        local wheelConfig = vehicle.configurations ~= nil and (vehicle.configurations["wheel"] or 0) or 0
-
-        Logging.info(
-            "[UrsusMassDiag] T14 cfg motor=%s | gearbox=%s | drivetrain=%s | wheelConfig=%d | frontBallast=%s",
-            tostring(motorName), getUrsusTransmissionLabel(vehicle), getUrsusDrivetrainLabel(vehicle), wheelConfig, tostring(ballastName)
-        )
-        Logging.info(
-            "[UrsusMassDiag] T14 tireLoadRaw FL=%.4f FR=%.4f RL=%.4f RR=%.4f | front=%.4f (%.2f%%) rear=%.4f (%.2f%%) total=%.4f",
-            loads[1], loads[2], loads[3], loads[4], frontLoad, frontPct, rearLoad, rearPct, totalLoad
-        )
-        Logging.info(
-            "[UrsusMassDiag] T14 masses total=%.3ft | C1=%.3ft COM1=%.3f %.3f %.3f | C2=%.3ft COM2=%.3f %.3f %.3f | wheelMass=%.3f %.3f %.3f %.3f t",
-            totalMass, c1Mass, c1x, c1y, c1z, c2Mass, c2x, c2y, c2z,
-            wheelMasses[1], wheelMasses[2], wheelMasses[3], wheelMasses[4]
-        )
-
-        vehicle.ursusMassDiagnosticLogged = true
-        return true
-    end
-
-    local function updateUrsusMassDiagnostic(vehicle, dt)
-        if vehicle == nil
-            or vehicle.ursusMassDiagnosticLogged
-            or not vehicle.isServer
-            or not vehicle.isAddedToPhysics
-            or not isUrsusVehicle(vehicle) then
-            return
-        end
-
-        local speed = 0
-        if vehicle.getLastSpeed ~= nil then
-            speed = math.abs(tonumber(vehicle:getLastSpeed()) or 0)
-        end
-
-        if speed <= 0.15 then
-            vehicle.ursusMassDiagnosticStableMs = (vehicle.ursusMassDiagnosticStableMs or 0) + dt
-        else
-            vehicle.ursusMassDiagnosticStableMs = 0
-        end
-
-        if (vehicle.ursusMassDiagnosticStableMs or 0) >= 2500 then
-            logUrsusMassDiagnostic(vehicle)
         end
     end
 
@@ -914,7 +732,6 @@ if not UrsusTransmissionFix.installed then
                 URSUS_REAR_HOP_DAMPING_MULTIPLIER,
                 URSUS_REAR_HOP_INTERPOLATION_MS
             )
-            updateUrsusMassDiagnostic(self.vehicle, dt)
         end
     end
 
@@ -1108,5 +925,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.6.0T14 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.1.1.0 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end

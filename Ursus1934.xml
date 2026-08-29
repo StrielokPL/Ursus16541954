@@ -38,11 +38,11 @@
   </base>
   <design2Configurations title="$l10n_ursus_transmission_title">
     <design2Configuration name="$l10n_ursus_transmission_factory" price="0" isDefault="true" />
-    <design2Configuration name="$l10n_ursus_transmission_no_booster" price="0" />
+    <design2Configuration name="$l10n_ursus_transmission_no_booster" price="5000" />
   </design2Configurations>
   <design3Configurations title="$l10n_ursus_drivetrain_title">
     <design3Configuration name="$l10n_ursus_drivetrain_factory" price="0" isDefault="true" />
-    <design3Configuration name="$l10n_ursus_drivetrain_rwd" price="0" />
+    <design3Configuration name="$l10n_ursus_drivetrain_rwd" price="2500" />
   </design3Configurations>
   <wheels>
     <wheelConfigurations>
@@ -652,7 +652,7 @@
         <objectChange node="0&gt;10|7|5" visibilityActive="false" />
         <objectChange node="0&gt;10|7|6" visibilityActive="false" />
       </motorConfiguration>
-      <motorConfiguration name="1934 Widmo" hp="290" price="20000">
+      <motorConfiguration name="1934 Widmo" hp="290" price="40000">
         <motor torqueScale="1.100" minRpm="850" maxRpm="2200" maxForwardSpeed="40" maxBackwardSpeed="15" brakeForce="6" lowBrakeForceScale="0.22" lowBrakeForceSpeedLimit="1" dampingRateScale="0.85">
           <torque rpm="850" torque="0.75" />
           <torque rpm="1150" torque="0.9" />

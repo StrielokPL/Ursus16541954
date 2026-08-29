@@ -1,3 +1,22 @@
+## 1.1.1.0
+Pełne wydanie po serii testowej 1.0.6.0T1-T14. Wersja nie jest traktowana jako w pełni kompatybilna z linią 1.0.x ze względu na zmianę fizyki masy, napędu i skrzyni.
+
+Najważniejsze zmiany:
+- realistyczny układ masy zwykłych wariantów: 3720 kg + 1340 kg komponentów, około 6.18 t masy roboczej na podstawowych kołach i około 40/60 przód/tył,
+- 1934 Widmo zachowuje własny układ 3700/2500 kg, COM `0 1.10 -1.80`, 290 KM i charakter około 30/70 przód/tył,
+- poprawiona fizyka przednich balastów 600/1200/1500/2000 kg z rzeczywistą dodatkową masą i ważonym COM,
+- wybór skrzyni w sklepie: Fabryczna 16/8 (8/4 x L/H) lub Bez wzmacniacza 8/4,
+- wybór układu napędowego w sklepie: Fabryczny 4x4 lub Odłączenie przedniej osi (RWD),
+- Widmo zachowuje ręczne przełączanie RWD/4x4 przez konfigurowalną akcję (domyślnie Ctrl+4),
+- load-dependent dynamic suspension dla obu osi całej rodziny Ursusa; bez sztucznego `addForce`/`addTorque`,
+- Widmo: tylna trakcja wzdłużna x1.20, boczna x0.85 i forcePointRatio 0.80,
+- ceny nowych modyfikacji: Bez wzmacniacza +5000, Odłączenie przedniej osi +2500, 1934 Widmo +40000,
+- usunięta diagnostyka masy i testowe logowanie T13/T14.
+
+Znane problemy:
+- `Ursus1934.i3d` może zgłaszać zaakceptowany warning `non-binary indexed triangle sets`; geometria jest funkcjonalna i warning nie wpływa na grę,
+- tryb RWD/4x4 Widma po ponownym wczytaniu pojazdu wraca do stanu wynikającego z konfiguracji sklepowej; ręczny stan przełącznika nie jest zapisywany osobno w savegame.
+
 # Changelog konwersji FS22 → FS25
 
 ## Punkty bezpieczeństwa
