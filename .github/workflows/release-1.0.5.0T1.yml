@@ -1,0 +1,114 @@
+name: Build and publish 1.0.5.0T1
+on:
+  push:
+    paths:
+      - '.github/workflows/release-1.0.5.0T1.yml'
+permissions:
+  contents: write
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add independent body and rim color configurations
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          version = '1.0.5.0T1'
+
+          # VERSION
+          Path('VERSION').write_text(version + '\n', encoding='utf-8')
+
+          # modDesc version
+          p = Path('modDesc.xml')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('<version>1.0.4.1</version>', f'<version>{version}</version>', 1)
+          p.write_text(s, encoding='utf-8')
+
+          # transmission script banner/log version only; logic unchanged
+          p = Path('UrsusTransmissionFix.lua')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('-- 1.0.4.1:', f'-- {version}:', 1)
+          s = s.replace('[UrsusTransmissionFix] 1.0.4.1 ', f'[UrsusTransmissionFix] {version} ', 1)
+          p.write_text(s, encoding='utf-8')
+
+          # Body paint slot: only the main body material used by Object118 + kadlubmetal.
+          p = Path('Ursus1934.i3d')
+          s = p.read_text(encoding='utf-8')
+          old = '<Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="21" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="7" customShaderVariation="colorMask">'
+          new = '<Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="21" materialSlotName="ursusBodyPaint" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="7" customShaderVariation="colorMask">'
+          if old not in s:
+              raise SystemExit('Body material signature not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          # Rim paint slot: both normal and Robert rim groups; wheel weights remain on materials 7/8.
+          p = Path('wheels/rims.i3d')
+          s = p.read_text(encoding='iso-8859-1')
+          old4 = '<Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="4" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="3" customShaderVariation="colorMask">'
+          new4 = '<Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="4" materialSlotName="ursusRimPaint" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="3" customShaderVariation="colorMask">'
+          old6 = '<Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="6" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="3" customShaderVariation="colorMask">'
+          new6 = '<Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="6" materialSlotName="ursusRimPaint" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="3" customShaderVariation="colorMask">'
+          if old4 not in s or old6 not in s:
+              raise SystemExit('Rim material signature not found')
+          s = s.replace(old4, new4, 1).replace(old6, new6, 1)
+          p.write_text(s, encoding='iso-8859-1')
+
+          # Vehicle XML: explicit small test palettes, independently controlled.
+          p = Path('Ursus1934.xml')
+          s = p.read_text(encoding='utf-8')
+          marker = '</vehicle>'
+          if marker not in s:
+              raise SystemExit('vehicle closing tag not found')
+          block = '''\n  <!-- 1.0.5.0T1: isolated color configuration test -->\n  <baseColorConfigurations title="Kolor nadwozia" useDefaultColors="false" defaultColorMaterialTemplateName="calibratedPaint" price="0">\n    <baseColorConfiguration name="Fabryczny czerwony" color="0.4 0.03 0" isDefault="true" price="0"/>\n    <baseColorConfiguration name="Czarny" color="0.02 0.02 0.02" price="0"/>\n    <baseColorConfiguration name="Biały" color="0.82 0.82 0.82" price="0"/>\n    <baseColorConfiguration name="Niebieski test" color="0.03 0.12 0.45" price="0"/>\n    <baseColorConfiguration name="Zielony test" color="0.06 0.30 0.07" price="0"/>\n    <baseColorConfiguration name="Żółty test" color="0.72 0.42 0.02" price="0"/>\n    <material materialSlotName="ursusBodyPaint" shaderParameter="colorMat0" materialTemplateUseColorOnly="true"/>\n  </baseColorConfigurations>\n\n  <rimColorConfigurations title="Kolor felg" useDefaultColors="false" defaultColorMaterialTemplateName="calibratedMetallicPaint" price="0">\n    <rimColorConfiguration name="Fabryczny szary" color="0.30 0.30 0.30" isDefault="true" price="0"/>\n    <rimColorConfiguration name="Czarny" color="0.02 0.02 0.02" price="0"/>\n    <rimColorConfiguration name="Biały" color="0.82 0.82 0.82" price="0"/>\n    <rimColorConfiguration name="Czerwony" color="0.40 0.03 0" price="0"/>\n    <rimColorConfiguration name="Żółty test" color="0.72 0.42 0.02" price="0"/>\n    <material materialSlotName="ursusRimPaint" shaderParameter="colorMat0" materialTemplateUseColorOnly="true"/>\n  </rimColorConfigurations>\n'''
+          s = s.replace(marker, block + marker, 1)
+          p.write_text(s, encoding='utf-8')
+
+          # Changelog
+          p = Path('CHANGELOG.md')
+          s = p.read_text(encoding='utf-8')
+          entry = '''\n## 1.0.5.0T1\nPierwszy test niezależnej zmiany koloru nadwozia i felg.\n\nZmiany względem 1.0.4.1:\n- dodano natywną konfigurację `baseColorConfigurations` dla głównego materiału nadwozia (`Object118` + `kadlubmetal`),\n- dodano niezależną `rimColorConfigurations` dla właściwych materiałów obręczy w `wheels/rims.i3d`,\n- obciążniki kół, lampy, złącza, hydraulika, szyby i kalkomanie nie są objęte konfiguracją koloru,\n- T1 używa małej palety kontrolnej i zerowych cen; celem jest wyłącznie test zakresu malowanych powierzchni,\n- konfiguracje silnika, skrzyni, ADS, kół i fizyki pozostają bez zmian względem 1.0.4.1.\n\nUwaga testowa:\n- oba warianty materiału obręczy (standard oraz Robert) używają wspólnego slotu koloru, dlatego domyślny szary może ujednolicić dotychczasowy czerwony wariant felg Robert. To jest świadome w T1 i zostanie ocenione po teście wizualnym.\n'''
+          insert = s.find('## Dalszy rozwój')
+          if insert >= 0:
+              s = s[:insert] + entry + '\n' + s[insert:]
+          else:
+              s += entry
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate source tree
+        run: python3 tools/validate_current.py
+
+      - name: Build test ZIP
+        run: ./build.sh
+
+      - name: Commit 1.0.5.0T1
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION modDesc.xml UrsusTransmissionFix.lua Ursus1934.xml Ursus1934.i3d wheels/rims.i3d CHANGELOG.md
+          git commit -m 'Prepare 1.0.5.0T1 body and rim color test'
+          git push
+          echo "TARGET_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.0.5.0T1 dist/FS25_Ursus_1654_1954_Pack.zip \
+            --target "$TARGET_SHA" \
+            --title '1.0.5.0T1 — body and rim color test' \
+            --prerelease \
+            --notes 'First isolated test of independent body and rim color selection. Body paint targets only the main body material; rim paint targets standard and Robert rim materials while wheel weights remain unchanged. Test palette only; no transmission, ADS, wheel physics or gameplay changes from 1.0.4.1.'
+
+      - name: Remove one-shot workflow
+        run: |
+          git pull --rebase
+          git rm .github/workflows/release-1.0.5.0T1.yml
+          git commit -m 'Remove one-shot 1.0.5.0T1 release workflow'
+          git push
