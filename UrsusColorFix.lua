@@ -1,7 +1,7 @@
 -- Ursus 1654-1954 FS25 body/rim color runtime bridge
--- 1.0.5.0T2: legacy I3Ds do not expose usable material slot names at runtime,
--- so the native shop configuration selects the color while this tiny bridge
--- applies colorMat0 only to explicitly whitelisted body/rim shapes.
+-- 1.0.5.0T3: native VehicleConfigurationItemColor provides the full GIANTS
+-- palette and custom RGB picker. Legacy I3Ds do not expose usable material
+-- slot names at runtime, so this bridge applies RGB to explicit shapes only.
 
 UrsusColorFix = UrsusColorFix or {}
 
@@ -9,38 +9,14 @@ if not UrsusColorFix.installed then
     UrsusColorFix.installed = true
 
     local modDirectory = g_currentModDirectory
-    local APPLY_RETRY_MS = 250
+    local APPLY_RETRY_MS = 100
 
-    -- RGB values mirror Ursus1934.xml configuration order.
-    -- The fourth colorMat0 component is intentionally preserved per surface:
-    -- 16 for the main body material and 6 for rim metallic paint.
-    local BODY_COLORS = {
-        [1] = {0.40, 0.03, 0.00}, -- factory red
-        [2] = {0.02, 0.02, 0.02}, -- black
-        [3] = {0.82, 0.82, 0.82}, -- white
-        [4] = {0.03, 0.12, 0.45}, -- blue test
-        [5] = {0.06, 0.30, 0.07}, -- green test
-        [6] = {0.72, 0.42, 0.02}, -- yellow test
-        [7] = {1.00, 0.00, 1.00}, -- hot magenta diagnostic
-    }
-
-    local RIM_COLORS = {
-        [1] = {0.30, 0.30, 0.30}, -- factory gray
-        [2] = {0.02, 0.02, 0.02}, -- black
-        [3] = {0.82, 0.82, 0.82}, -- white
-        [4] = {0.40, 0.03, 0.00}, -- red
-        [5] = {0.72, 0.42, 0.02}, -- yellow test
-        [6] = {1.00, 0.00, 1.00}, -- hot magenta diagnostic
-    }
-
-    -- Main body material 21 is used only by these two shapes.
     local BODY_SHAPES = {
         Object118 = true,
         kadlubmetal = true,
     }
 
-    -- rims.i3d materials 4/6/10: standard, Robert and dual-rim surfaces.
-    -- Wheel weights are Object112/Cylinder327 and deliberately excluded.
+    -- Standard, Robert and dual-rim surfaces. Wheel weights are excluded.
     local RIM_SHAPES = {
         przod = true,
         Tube023 = true,
@@ -64,7 +40,7 @@ if not UrsusColorFix.installed then
 
     local function getConfigurationIndex(vehicle, key)
         if vehicle.configurations == nil then
-            return 1
+            return nil
         end
 
         local value = vehicle.configurations[key]
@@ -72,7 +48,45 @@ if not UrsusColorFix.installed then
             value = value.id or value.index or value.configId
         end
 
-        return tonumber(value) or 1
+        return tonumber(value)
+    end
+
+    local function getSelectedColor(vehicle, key, fallback)
+        local configId = getConfigurationIndex(vehicle, key)
+        if configId == nil or g_storeManager == nil then
+            return fallback, configId or 0
+        end
+
+        local item = g_storeManager:getItemByXMLFilename(vehicle.configFileName)
+        local configs = item ~= nil and item.configurations or nil
+        local configItems = configs ~= nil and configs[key] or nil
+        local config = configItems ~= nil and configItems[configId] or nil
+
+        if config ~= nil and VehicleConfigurationItemColor ~= nil
+            and config.isa ~= nil and config:isa(VehicleConfigurationItemColor) then
+            local color = nil
+            if config.getColorAndMaterialFromVehicle ~= nil then
+                color = config:getColorAndMaterialFromVehicle(vehicle)
+            elseif config.getColor ~= nil then
+                color = config:getColor()
+            end
+
+            if color ~= nil and color[1] ~= nil and color[2] ~= nil and color[3] ~= nil then
+                return {color[1], color[2], color[3]}, configId
+            end
+        end
+
+        return fallback, configId
+    end
+
+    local function colorSignature(configId, color)
+        return string.format(
+            "%s:%.6f:%.6f:%.6f",
+            tostring(configId or 0),
+            color[1] or 0,
+            color[2] or 0,
+            color[3] or 0
+        )
     end
 
     local function setColor(node, color, materialType)
@@ -116,9 +130,7 @@ if not UrsusColorFix.installed then
         return bodyCount, rimCount
     end
 
-    local function applyColors(vehicle, bodyColorId, rimColorId)
-        local bodyColor = BODY_COLORS[bodyColorId] or BODY_COLORS[1]
-        local rimColor = RIM_COLORS[rimColorId] or RIM_COLORS[1]
+    local function applyColors(vehicle, bodyColor, rimColor)
         local visited = {}
         local bodyCount = 0
         local rimCount = 0
@@ -132,9 +144,7 @@ if not UrsusColorFix.installed then
                 end
             end
         elseif vehicle.rootNode ~= nil then
-            bodyCount, rimCount = scanNode(
-                vehicle.rootNode, bodyColor, rimColor, visited
-            )
+            bodyCount, rimCount = scanNode(vehicle.rootNode, bodyColor, rimColor, visited)
         end
 
         return bodyCount, rimCount
@@ -150,32 +160,27 @@ if not UrsusColorFix.installed then
             return
         end
 
-        local bodyColorId = getConfigurationIndex(vehicle, "baseColor")
-        local rimColorId = getConfigurationIndex(vehicle, "rimColor")
-        local bodyNeedsApply = vehicle.ursusLastBodyColorId ~= bodyColorId
-        local rimNeedsApply = vehicle.ursusLastRimColorId ~= rimColorId
+        local bodyColor, bodyId = getSelectedColor(vehicle, "baseColor", {0.40, 0.03, 0.00})
+        local rimColor, rimId = getSelectedColor(vehicle, "rimColor", {0.30, 0.30, 0.30})
+        local bodySignature = colorSignature(bodyId, bodyColor)
+        local rimSignature = colorSignature(rimId, rimColor)
 
-        if not bodyNeedsApply and not rimNeedsApply then
+        if vehicle.ursusLastBodyColorSignature == bodySignature
+            and vehicle.ursusLastRimColorSignature == rimSignature then
             return
         end
 
         vehicle.ursusColorNextApplyTime = g_time + APPLY_RETRY_MS
-        local bodyCount, rimCount = applyColors(vehicle, bodyColorId, rimColorId)
+        local bodyCount, rimCount = applyColors(vehicle, bodyColor, rimColor)
 
         if bodyCount > 0 then
-            vehicle.ursusLastBodyColorId = bodyColorId
+            vehicle.ursusLastBodyColorSignature = bodySignature
         end
         if rimCount > 0 then
-            vehicle.ursusLastRimColorId = rimColorId
+            vehicle.ursusLastRimColorSignature = rimSignature
         end
-
-        -- Log successful/failed target counts once per retry/config change.
-        Logging.info("%s", string.format(
-            "[UrsusColorFix] 1.0.5.0T2 bodyColor=%d bodyShapes=%d rimColor=%d rimShapes=%d",
-            bodyColorId, bodyCount, rimColorId, rimCount
-        ))
     end
 
     Vehicle.update = Utils.appendedFunction(Vehicle.update, UrsusColorFix.update)
-    Logging.info("[UrsusColorFix] 1.0.5.0T2 runtime body/rim color bridge enabled")
+    Logging.info("[UrsusColorFix] 1.0.5.0T3 full palette/custom RGB bridge enabled")
 end

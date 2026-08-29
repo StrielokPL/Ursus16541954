@@ -97,6 +97,19 @@ Testy runtime:
 - Warning nie powoduje zaobserwowanych problemów z działaniem ani wyglądem moda. Konwersję tej geometrii do binarnego `.i3d.shapes` odłożono, ponieważ wymaga zmiany assetu modelu i ponownego testu zatwierdzonych lusterek.
 - Warningi generowane przez grę, zapis lub inne mody nie należą do tego wydania.
 
+
+## 1.0.5.0T3
+Test pełnej palety kolorów i koloru niestandardowego.
+
+Zmiany względem 1.0.5.0T2:
+- potwierdzony w grze bridge kolorowania nadwozia/felg pozostaje bazą,
+- `baseColor` i `rimColor` używają `useDefaultColors=true`: pełna natywna paleta GIANTS i picker koloru niestandardowego,
+- usunięto diagnostyczny wściekły róż/magentę z ręcznie zdefiniowanej palety,
+- bridge pobiera rzeczywisty RGB z `VehicleConfigurationItemColor`, również z `vehicle.configurationData` dla koloru niestandardowego,
+- sygnatura uwzględnia RGB, więc zmiana własnego koloru przy tym samym indeksie jest wykrywana,
+- usunięto diagnostyczne logowanie liczby przemalowanych elementów z T2,
+- F5 jest globalnym debug-rendererem GIANTS pokazującym prawdziwe kolizje; nie wyłączano go kosztem kolizji.
+
 ## 1.0.4.0T1
 Testowa iteracja kompatybilności z modami realizmu.
 

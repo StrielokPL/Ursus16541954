@@ -98,3 +98,11 @@ The historical exact V25 SHA manifest remains under `reference/v25/` as a regres
 Version 1.0.4.1 was verified in Farming Simulator 25. Refuelling, the 2500 kg weight AI outline, lights and dashboards retain their approved behavior. The optional Advanced Damage System bridge and load-aware automatic transmission were runtime-tested through T1–T4, including an extreme high-load plowing test in rain at 100% soil wetness. The final test log contains no Ursus-related Lua errors.
 
 Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary indexed triangle sets` for the inline `FS25MirrorExact` geometry. This non-fatal storage/performance-format warning has no observed gameplay or visual effect. Converting it to binary `.i3d.shapes` is deferred because that asset change requires a new regression test of the approved mirrors.
+
+
+### Full color palette / custom RGB — 1.0.5.0T3
+- Nadwozie i felgi: niezależne konfiguracje z `useDefaultColors=true`.
+- Pełna paleta GIANTS i picker RGB są obsługiwane przez `VehicleConfigurationItemColor`.
+- `UrsusColorFix.lua` nakłada faktyczny RGB na whitelistę kształtów legacy I3D.
+- Obciążniki kół, lampy, hydraulika i kalkomanie pozostają poza kolorowaniem.
+- F5 to globalny debug-renderer GIANTS, nie funkcja Ursusa; wyłączenie per-mod wymagałoby usunięcia aktywnych kolizji.
