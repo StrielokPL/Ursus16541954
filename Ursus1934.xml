@@ -663,6 +663,21 @@
           <torque rpm="2050" torque="0.91" />
           <torque rpm="2200" torque="0.856793892" />
         </motor>
+        <transmission autoGearChangeTime="0.35" gearChangeTime="0.35" name="8/4">
+          <directionChange useGear="false" useGroup="false" changeTime="0" />
+          <forwardGear maxSpeed="3.4" name="1" />
+          <forwardGear maxSpeed="5.4" name="2" />
+          <forwardGear maxSpeed="7.8" name="3" />
+          <forwardGear maxSpeed="10.4" name="4" />
+          <forwardGear maxSpeed="14.2" name="5" />
+          <forwardGear maxSpeed="19" name="6" />
+          <forwardGear maxSpeed="25.9" name="7" />
+          <forwardGear maxSpeed="40" name="8" />
+          <backwardGear maxSpeed="4.25" name="R1" />
+          <backwardGear maxSpeed="6.75" name="R2" />
+          <backwardGear maxSpeed="11" name="R3" />
+          <backwardGear maxSpeed="15" name="R4" />
+        </transmission>
         <objectChange node="0&gt;" centerOfMassActive="0 1.10 -1.80" />
         <objectChange node="0&gt;7|0" visibilityActive="true" />
         <objectChange node="0&gt;7|1" visibilityActive="false" />

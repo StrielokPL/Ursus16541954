@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 body/rim color runtime bridge
--- 1.0.6.0T5: native VehicleConfigurationItemColor provides the full GIANTS
+-- 1.0.6.0T6: native VehicleConfigurationItemColor provides the full GIANTS
 -- palette and custom RGB picker. Legacy I3Ds do not expose usable material
 -- slot names at runtime, so this bridge applies RGB to explicit shapes only.
 
@@ -183,5 +183,5 @@ if not UrsusColorFix.installed then
     end
 
     Vehicle.update = Utils.appendedFunction(Vehicle.update, UrsusColorFix.update)
-    Logging.info("[UrsusColorFix] 1.0.6.0T5 full palette/custom RGB bridge enabled")
+    Logging.info("[UrsusColorFix] 1.0.6.0T6 full palette/custom RGB bridge enabled")
 end

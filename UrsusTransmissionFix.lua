@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.6.0T5: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.6.0T6: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -272,7 +272,7 @@ if not UrsusTransmissionFix.installed then
 
         local rearDifferential = differentials[2]
         spec.differentials = {rearDifferential}
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T5 Widmo drivetrain: rear differential only (RWD test)")
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T6 Widmo drivetrain: rear differential only (RWD test)")
     end
 
     -- T4 final pure-physics experiment: raise the Widmo centre of mass and
@@ -299,7 +299,7 @@ if not UrsusTransmissionFix.installed then
             self.forcePointRatio = 0.80
             if not vehicle.ursusWidmoRearForcePointLogged then
                 vehicle.ursusWidmoRearForcePointLogged = true
-                Logging.info("[UrsusTransmissionFix] 1.0.6.0T5 Widmo rear forcePointRatio=0.80")
+                Logging.info("[UrsusTransmissionFix] 1.0.6.0T6 Widmo rear forcePointRatio=0.80")
             end
         end
 
@@ -496,5 +496,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.6.0T5 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.6.0T6 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end

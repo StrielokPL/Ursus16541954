@@ -106,6 +106,16 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T6
+Test uproszczonej skrzyni wyłącznie dla `1934 Widmo`.
+
+Zmiany względem 1.0.6.0T5:
+- Widmo przechodzi z 8F/4R × L/H na bezpośrednią skrzynię 8F/4R,
+- osiem biegów do przodu i cztery wsteczne pozostają; grupy L/H nie są używane przez Widmo,
+- Widmo zachowuje 265 KM, torqueScale 1.000, RWD, COM `0 1.10 -1.80` i tylne forcePointRatio 0.80,
+- pozostałe warianty zachowują 8F/4R × L/H i dotychczasową logikę powershift/ADS.
+
 ## 1.0.6.0T5
 Test kompromisu pomiędzy wheelie a stabilnością boczną Widma.
 

@@ -163,3 +163,9 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - T5: COM `0 1.10 -1.80`, RWD i rear forcePointRatio 0.80.
 - Widmo: 265 KM, torqueScale 1.000, ta sama krzywa momentu co T4/Chip.
 - Cel: zachować wheelie pod dużym obciążeniem przy wyraźnie lepszej stabilności bocznej.
+
+
+### Widmo direct 8/4 gearbox test — 1.0.6.0T6
+- Wyłącznie `1934 Widmo`: własna bezpośrednia skrzynia 8F/4R bez grup L/H.
+- Parametry T5 pozostają: 265 KM, torqueScale 1.000, RWD, COM `0 1.10 -1.80`, rear forcePointRatio 0.80.
+- Pozostałe warianty nadal używają 8F/4R × L/H oraz istniejącego bridge ADS.
