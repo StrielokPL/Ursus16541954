@@ -23,14 +23,20 @@ jobs:
       - name: Build test ZIP
         run: ./build.sh
 
+      - name: Reset failed prerelease tag
+        shell: bash
+        run: |
+          git push --delete origin v1.0.4.0T4 || true
+          git tag -d v1.0.4.0T4 || true
+
       - name: Publish GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
           TARGET_SHA: 7f5fd471c25ca264a752f5ab245fa5f994004047
         shell: bash
         run: |
-          gh release create "v1.0.4.0T4" \
-            "dist/FS25_Ursus_1654_1954_Pack.zip" \
+          gh release create v1.0.4.0T4 \
+            dist/FS25_Ursus_1654_1954_Pack.zip \
             --repo "$GITHUB_REPOSITORY" \
             --target "$TARGET_SHA" \
             --title "1.0.4.0T4 — ADS load-guard safety margin" \
