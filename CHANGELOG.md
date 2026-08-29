@@ -158,5 +158,19 @@ Testy runtime:
 ### Znane problemy
 - pozostaje zaakceptowany warning `Ursus1934.i3d contains non-binary indexed triangle sets` związany z tekstową geometrią `FS25MirrorExact`; nie ma zaobserwowanego wpływu na działanie ani wygląd.
 
+
+## 1.0.5.0T1
+Pierwszy test niezależnej zmiany koloru nadwozia i felg.
+
+Zmiany względem 1.0.4.1:
+- dodano natywną konfigurację `baseColorConfigurations` dla głównego materiału nadwozia (`Object118` + `kadlubmetal`),
+- dodano niezależną `rimColorConfigurations` dla właściwych materiałów obręczy w `wheels/rims.i3d`,
+- obciążniki kół, lampy, złącza, hydraulika, szyby i kalkomanie nie są objęte konfiguracją koloru,
+- T1 używa małej palety kontrolnej i zerowych cen; celem jest wyłącznie test zakresu malowanych powierzchni,
+- konfiguracje silnika, skrzyni, ADS, kół i fizyki pozostają bez zmian względem 1.0.4.1.
+
+Uwaga testowa:
+- oba warianty materiału obręczy (standard oraz Robert) używają wspólnego slotu koloru, dlatego domyślny szary może ujednolicić dotychczasowy czerwony wariant felg Robert. To jest świadome w T1 i zostanie ocenione po teście wizualnym.
+
 ## Dalszy rozwój
 Od **1.0.1.0** używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`. Numeracji V26/V27 nie stosujemy do nowych buildów.

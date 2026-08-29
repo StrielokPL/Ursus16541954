@@ -273,7 +273,7 @@
       <CustomParameter name="colorMat6" value="0.1 0.1 0.1 0" />
       <CustomParameter name="colorMat7" value="0.1 1 1 1" />
     </Material>
-    <Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="21" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="7" customShaderVariation="colorMask">
+    <Material name="FBXASC0482FBXASC032FBXASC045FBXASC032Default1" materialId="21" materialSlotName="ursusBodyPaint" diffuseColor="0.584314 0.584314 0.584314 1" customShaderId="7" customShaderVariation="colorMask">
       <Glossmap fileId="14" />
       <CustomParameter name="RDT" value="0 1 0 0" />
       <CustomParameter name="dirtColor" value="0.2 0.14 0.08 0" />
