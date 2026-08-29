@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.4.0T3: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.4.0T4: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -22,8 +22,8 @@ if not UrsusTransmissionFix.installed then
     -- Keep the transmission guard aligned with ADS instead of inventing
     -- a second, unrelated load model.
     local ADS_LUGGING_LOAD_THRESHOLD = 0.80
-    local ADS_LUGGING_RPM_THRESHOLD = 0.60
-    local ADS_UPSHIFT_RPM_GUARD = 0.75
+    local ADS_LUGGING_RPM_THRESHOLD = 0.65
+    local ADS_UPSHIFT_RPM_GUARD = 0.83
     local ADS_LOAD_DOWNSHIFT_COOLDOWN = 700
     local ADS_LOAD_UPSHIFT_HOLD = 1800
     local ADS_LOAD_LOG_COOLDOWN = 1200
@@ -261,8 +261,9 @@ if not UrsusTransmissionFix.installed then
             and adsRpmRatio < ADS_LUGGING_RPM_THRESHOLD
             and adsSpeed > 0.5
 
-        -- ADS itself treats >80% dynamic load below 60% max RPM as lugging.
-        -- If that state occurs, force exactly one step down in the virtual
+        -- ADS hard lugging starts below 60% max RPM. T4 intervenes at 65%
+        -- under >80% dynamic load to leave a small recovery margin.
+        -- If that protective state occurs, force exactly one step down in the virtual
         -- 1L -> 1H -> 2L -> 2H sequence, then give the engine time to recover.
         if adsIsLugging
             and (self.ursusAdsLoadDownshiftCooldownUntil == nil
@@ -320,9 +321,9 @@ if not UrsusTransmissionFix.installed then
         end
 
         -- At high ADS dynamic load, do not allow an upshift while the engine
-        -- is already below 75% max RPM. With the 1.25 -> 1.00 L/H splitter
-        -- this prevents a 20% RPM drop from pushing the engine straight into
-        -- ADS's <60% RPM lugging zone.
+        -- is already below 83% max RPM. With the 1.25 -> 1.00 L/H splitter
+        -- a typical 20% RPM drop now lands around 66% max RPM instead of
+        -- directly on the ADS lugging boundary.
         if targetGear > curGear
             and adsLoad ~= nil
             and adsLoad > ADS_LUGGING_LOAD_THRESHOLD
@@ -398,5 +399,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.4.0T3 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.4.0T4 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end
