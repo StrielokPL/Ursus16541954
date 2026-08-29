@@ -653,7 +653,7 @@
         <objectChange node="0&gt;10|7|5" visibilityActive="false" />
         <objectChange node="0&gt;10|7|6" visibilityActive="false" />
       </motorConfiguration>
-      <motorConfiguration name="1934 Robert" hp="190" price="20000">
+      <motorConfiguration name="1934 Widmo" hp="190" price="20000">
         <motor torqueScale="0.722" minRpm="850" maxRpm="2200" maxForwardSpeed="40" maxBackwardSpeed="15" brakeForce="6" lowBrakeForceScale="0.22" lowBrakeForceSpeedLimit="1" dampingRateScale="0.85">
           <torque rpm="850" torque="0.78" />
           <torque rpm="1150" torque="0.91" />
@@ -663,6 +663,7 @@
           <torque rpm="2050" torque="0.91" />
           <torque rpm="2200" torque="0.851783401" />
         </motor>
+        <objectChange node="0&gt;" centerOfMassActive="0 1.05 -1.25" />
         <objectChange node="0&gt;7|0" visibilityActive="true" />
         <objectChange node="0&gt;7|1" visibilityActive="false" />
         <objectChange node="0&gt;7|2" visibilityActive="false" />

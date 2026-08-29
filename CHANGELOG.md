@@ -101,6 +101,18 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T1
+Test fizycznej skłonności wersji Widmo do podnoszenia przedniej osi pod bardzo dużym obciążeniem.
+
+Zmiany względem stabilnego 1.0.5.1:
+- konfigurację silnika `1934 Robert` przemianowano na `1934 Widmo`,
+- tylko Widmo otrzymuje zmieniony środek masy głównego komponentu: `0 1.05 -1.25` zamiast bazowego `0 0.8 -0.88`,
+- środek masy jest około 25 cm wyżej i 37 cm bardziej z tyłu; celem jest umożliwienie naturalnego odciążenia lub uniesienia przodu przy dużym uciągu,
+- brak sztucznego `addTorque`, `addForce` i innych skryptowych impulsów; T1 testuje wyłącznie fizykę silnika gry,
+- techniczne nazwy plików kół Robert pozostają bez zmian,
+- pozostałe konfiguracje silnika, skrzynia, ADS, kolory, koła, kolizje i hydraulika pozostają bez zmian.
+
 ## 1.0.5.1
 Stabilne wydanie systemu kolorowania testowanego w serii 1.0.5.0T1–T5.
 

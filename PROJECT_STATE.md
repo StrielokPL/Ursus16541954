@@ -126,3 +126,11 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Klapa dachowa `SzyberDach/szyber` jest objęta kolorem nadwozia; rama, uszczelki i mechanizm pozostają bez zmian.
 - `UrsusColorFix.lua` jest obowiązkowo walidowany jako `extraSourceFile` i pakowany do ZIP.
 - T5 został potwierdzony wizualnie i logowo; brak nowych błędów związanych z Ursusem.
+
+
+### Widmo wheelie physics test — 1.0.6.0T1
+- Bazą pozostaje stabilne 1.0.5.1.
+- `1934 Robert` otrzymał nazwę sklepową `1934 Widmo`.
+- Wyłącznie Widmo: `centerOfMassActive="0 1.05 -1.25"` na głównym komponencie.
+- T1 nie używa skryptowego momentu ani siły; sprawdza tylko naturalną fizykę pod dużym obciążeniem.
+- Jeżeli efekt będzie zbyt mały, następny test może zwiększyć przesunięcie albo dodać warunkowy fizyczny assist.
