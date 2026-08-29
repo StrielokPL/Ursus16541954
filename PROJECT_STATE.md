@@ -134,3 +134,10 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Wyłącznie Widmo: `centerOfMassActive="0 1.05 -1.25"` na głównym komponencie.
 - T1 nie używa skryptowego momentu ani siły; sprawdza tylko naturalną fizykę pod dużym obciążeniem.
 - Jeżeli efekt będzie zbyt mały, następny test może zwiększyć przesunięcie albo dodać warunkowy fizyczny assist.
+
+
+### Widmo wheelie physics test — 1.0.6.0T2
+- T1 nie podnosił przodu nawet z dużą masą z tyłu.
+- Widmo korzysta teraz z pełnej charakterystyki `1934 Chip` (225 KM, torqueScale 0.850).
+- Wyłącznie Widmo: `centerOfMassActive="0 1.05 -1.65"`.
+- T2 nadal nie używa skryptowego momentu ani siły.

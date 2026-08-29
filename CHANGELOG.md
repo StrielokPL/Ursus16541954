@@ -102,6 +102,17 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T2
+Drugi test fizycznej skłonności Widma do podnoszenia przedniej osi.
+
+Zmiany względem 1.0.6.0T1:
+- `1934 Widmo` otrzymuje pełną charakterystykę silnika `1934 Chip`: 225 KM, `torqueScale=0.850` i tę samą krzywą momentu,
+- środek masy Widma cofnięto o kolejne 40 cm: z `0 1.05 -1.25` do `0 1.05 -1.65`,
+- wysokość środka masy pozostaje bez zmian względem T1,
+- nadal brak `addTorque`, `addForce` i innych skryptowych impulsów; T2 nadal testuje wyłącznie naturalną fizykę gry,
+- pozostałe warianty silnika i fizyka stabilnego 1.0.5.1 pozostają bez zmian.
+
 ## 1.0.6.0T1
 Test fizycznej skłonności wersji Widmo do podnoszenia przedniej osi pod bardzo dużym obciążeniem.
 
