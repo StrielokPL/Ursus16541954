@@ -103,6 +103,17 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T3
+Test napędu RWD dla konfiguracji `1934 Widmo`.
+
+Zmiany względem 1.0.6.0T2:
+- Widmo zachowuje silnik 1934 Chip 225 KM i środek masy `0 1.05 -1.65`,
+- tylko dla `1934 Widmo` skrypt przechwytuje `Motorized.loadDifferentials()` i przed `addToPhysics()` pozostawia wyłącznie tylny dyferencjał,
+- przednia oś Widma jest w T3 swobodnie tocząca, bez doprowadzanego momentu; pozostałe warianty silnika nadal korzystają z seryjnego 4x4,
+- celem T3 jest sprawdzenie, czy centralny rozdział 50/50 ogranicza moment dostępny na tylnej osi po odciążeniu lub uślizgu przodu,
+- nadal brak sztucznego `addTorque`/`addForce`; test pozostaje oparty na fizyce GIANTS.
+
 ## 1.0.6.0T2
 Drugi test fizycznej skłonności Widma do podnoszenia przedniej osi.
 

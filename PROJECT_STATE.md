@@ -141,3 +141,10 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Widmo korzysta teraz z pełnej charakterystyki `1934 Chip` (225 KM, torqueScale 0.850).
 - Wyłącznie Widmo: `centerOfMassActive="0 1.05 -1.65"`.
 - T2 nadal nie używa skryptowego momentu ani siły.
+
+
+### Widmo drivetrain test — 1.0.6.0T3
+- Widmo nadal: 225 KM z dokładnym blokiem silnika 1934 Chip i `centerOfMassActive="0 1.05 -1.65"`.
+- T3 przełącza wyłącznie Widmo na RWD przed zbudowaniem fizycznych dyferencjałów; pozostaje tylko tylny dyferencjał.
+- Pozostałe silniki zachowują 4x4.
+- Cel: odizolować wpływ centralnego dyferencjału 50/50 na możliwość odciążenia/podniesienia przedniej osi.

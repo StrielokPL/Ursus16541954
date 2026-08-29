@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.6.0T2: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.6.0T3: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -17,6 +17,7 @@ if not UrsusTransmissionFix.installed then
     local originalGetBestStartGear = VehicleMotor.getBestStartGear
     local originalFindGearChangeTargetGearPrediction = VehicleMotor.findGearChangeTargetGearPrediction
     local originalGetUseAutomaticGroupShifting = VehicleMotor.getUseAutomaticGroupShifting
+    local originalLoadDifferentials = Motorized.loadDifferentials
 
     -- ADS uses these thresholds internally to classify engine lugging.
     -- Keep the transmission guard aligned with ADS instead of inventing
@@ -27,6 +28,43 @@ if not UrsusTransmissionFix.installed then
     local ADS_LOAD_DOWNSHIFT_COOLDOWN = 700
     local ADS_LOAD_UPSHIFT_HOLD = 1800
     local ADS_LOAD_LOG_COOLDOWN = 1200
+
+    local function isUrsusVehicle(vehicle)
+        if vehicle == nil or vehicle.configFileName == nil then
+            return false
+        end
+
+        local configFileName = vehicle.configFileName
+        if modDirectory ~= nil and string.sub(configFileName, 1, string.len(modDirectory)) ~= modDirectory then
+            return false
+        end
+
+        return string.sub(configFileName, -13) == "Ursus1934.xml"
+    end
+
+    local function getSelectedMotorConfigurationName(vehicle, xmlFile)
+        if vehicle == nil or vehicle.configurations == nil or vehicle.configurations.motor == nil then
+            return nil
+        end
+
+        xmlFile = xmlFile or vehicle.xmlFile
+        if xmlFile == nil then
+            return nil
+        end
+
+        local key = ConfigurationUtil.getXMLConfigurationKey(
+            xmlFile,
+            vehicle.configurations.motor,
+            "vehicle.motorized.motorConfigurations.motorConfiguration",
+            "vehicle.motorized",
+            "motor"
+        )
+        if key == nil then
+            return nil
+        end
+
+        return xmlFile:getValue(key .. "#name")
+    end
 
     local function isUrsusMotor(motor)
         if motor == nil or motor.vehicle == nil then
@@ -207,6 +245,33 @@ if not UrsusTransmissionFix.installed then
 
         motor:setGearGroup(targetGroup)
         return true
+    end
+
+    -- T3 diagnostic drivetrain experiment: only the Widmo motor configuration
+    -- is converted to rear-wheel drive. loadDifferentials() populates the Lua
+    -- differential table before Motorized:addToPhysics() creates the physical
+    -- drivetrain, so keeping only differential #2 leaves the rear axle driven
+    -- while the front axle remains free-rolling. Other motor variants are unchanged.
+    function Motorized:loadDifferentials(xmlFile, configDifferentialIndex)
+        originalLoadDifferentials(self, xmlFile, configDifferentialIndex)
+
+        if not isUrsusVehicle(self) then
+            return
+        end
+        if getSelectedMotorConfigurationName(self, xmlFile) ~= "1934 Widmo" then
+            return
+        end
+
+        local spec = self.spec_motorized
+        local differentials = spec ~= nil and spec.differentials or nil
+        if differentials == nil or #differentials < 2 then
+            Logging.warning("[UrsusTransmissionFix] Widmo RWD test: expected front/rear/center differential set")
+            return
+        end
+
+        local rearDifferential = differentials[2]
+        spec.differentials = {rearDifferential}
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T3 Widmo drivetrain: rear differential only (RWD test)")
     end
 
     -- In AUTOMATIC mode only, stop the base game from optimizing the two
@@ -399,5 +464,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.6.0T2 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.6.0T3 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end
