@@ -105,6 +105,18 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T5
+Test kompromisu pomiędzy wheelie a stabilnością boczną Widma.
+
+Zmiany względem 1.0.6.0T4:
+- środek masy Widma obniżono z `Y=1.40` do `Y=1.10`, aby ograniczyć podnoszenie wewnętrznego tylnego koła w zakrętach,
+- środek masy cofnięto o dodatkowe 15 cm: `Z=-1.65` -> `Z=-1.80`,
+- Widmo otrzymuje `torqueScale=1.000` zamiast `0.850`, około 17,6% więcej momentu,
+- moc sklepowa Widma: 265 KM, przy zachowaniu tej samej krzywej momentu,
+- RWD oraz tylny `forcePointRatio=0.80` pozostają bez zmian,
+- nadal brak `addTorque` i `addForce`; efekt wheelie ma pozostać wynikiem fizyki napędu i masy.
+
 ## 1.0.6.0T4
 Ostatni test podnoszenia przodu oparty wyłącznie na fizyce kół i rozkładzie masy.
 

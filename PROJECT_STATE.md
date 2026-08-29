@@ -156,3 +156,10 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - COM Y podniesiono do 1.40.
 - Tylne koła Widma: forcePointRatio 0.80; pozostałe koła/wersje bez zmian.
 - T4 jest ostatnim testem czystej fizyki przed ewentualnym lekkim warunkowym addTorque.
+
+
+### Widmo balance/torque test — 1.0.6.0T5
+- T4 potrafi unieść przód z ciężkim pługiem, ale przy skręcie około 20 km/h odrywa wewnętrzne tylne koło.
+- T5: COM `0 1.10 -1.80`, RWD i rear forcePointRatio 0.80.
+- Widmo: 265 KM, torqueScale 1.000, ta sama krzywa momentu co T4/Chip.
+- Cel: zachować wheelie pod dużym obciążeniem przy wyraźnie lepszej stabilności bocznej.
