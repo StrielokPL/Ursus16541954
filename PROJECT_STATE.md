@@ -169,3 +169,10 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Wyłącznie `1934 Widmo`: własna bezpośrednia skrzynia 8F/4R bez grup L/H.
 - Parametry T5 pozostają: 265 KM, torqueScale 1.000, RWD, COM `0 1.10 -1.80`, rear forcePointRatio 0.80.
 - Pozostałe warianty nadal używają 8F/4R × L/H oraz istniejącego bridge ADS.
+
+
+### Widmo torque/longitudinal traction test — 1.0.6.0T7
+- T6: direct 8F/4R only for Widmo; trailer tests came close to lifting the front.
+- T7 increases only Widmo engine torque by 10% (`torqueScale=1.100`, 290 hp store value).
+- Rear WheelPhysics only: `maxLongStiffness` x1.20; lateral stiffness and overall friction scale unchanged to avoid worsening cornering wheel lift.
+- RWD, COM `0 1.10 -1.80`, rear forcePointRatio 0.80 and direct 8F/4R retained.

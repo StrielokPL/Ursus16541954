@@ -107,6 +107,16 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T7
+Test dodatkowego momentu i przyczepności wzdłużnej wyłącznie dla `1934 Widmo`.
+
+Zmiany względem 1.0.6.0T6:
+- Widmo: `torqueScale` 1.000 -> 1.100, moc sklepowa 265 -> 290 KM,
+- tylne koła Widma: `maxLongStiffness` x1.20, bez zmiany `maxLatStiffness` i `frictionScale`,
+- zachowane RWD, bezpośrednie 8F/4R, COM `0 1.10 -1.80` i rear `forcePointRatio=0.80`,
+- pozostałe warianty bez zmian.
+
 ## 1.0.6.0T6
 Test uproszczonej skrzyni wyłącznie dla `1934 Widmo`.
 

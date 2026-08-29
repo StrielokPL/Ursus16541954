@@ -653,8 +653,8 @@
         <objectChange node="0&gt;10|7|5" visibilityActive="false" />
         <objectChange node="0&gt;10|7|6" visibilityActive="false" />
       </motorConfiguration>
-      <motorConfiguration name="1934 Widmo" hp="265" price="20000">
-        <motor torqueScale="1.000" minRpm="850" maxRpm="2200" maxForwardSpeed="40" maxBackwardSpeed="15" brakeForce="6" lowBrakeForceScale="0.22" lowBrakeForceSpeedLimit="1" dampingRateScale="0.85">
+      <motorConfiguration name="1934 Widmo" hp="290" price="20000">
+        <motor torqueScale="1.100" minRpm="850" maxRpm="2200" maxForwardSpeed="40" maxBackwardSpeed="15" brakeForce="6" lowBrakeForceScale="0.22" lowBrakeForceSpeedLimit="1" dampingRateScale="0.85">
           <torque rpm="850" torque="0.75" />
           <torque rpm="1150" torque="0.9" />
           <torque rpm="1500" torque="1" />
