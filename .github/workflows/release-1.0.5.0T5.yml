@@ -1,0 +1,132 @@
+name: Build and publish 1.0.5.0T5
+
+on:
+  push:
+    paths:
+      - '.github/workflows/release-1.0.5.0T5.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply roof hatch color fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          OLD = '1.0.5.0T4'
+          VERSION = '1.0.5.0T5'
+
+          current = Path('VERSION').read_text(encoding='utf-8').strip()
+          if current != OLD:
+              raise SystemExit(f'Expected {OLD}, got {current}')
+          Path('VERSION').write_text(VERSION + '\n', encoding='utf-8')
+
+          p = Path('modDesc.xml')
+          s = p.read_text(encoding='utf-8')
+          old = f'<version>{OLD}</version>'
+          new = f'<version>{VERSION}</version>'
+          if old not in s:
+              raise SystemExit('modDesc version anchor not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          p = Path('UrsusColorFix.lua')
+          s = p.read_text(encoding='utf-8')
+          if '        szyber = true,' not in s:
+              anchor = '        kadlubmetal = true,\n'
+              if anchor not in s:
+                  raise SystemExit('BODY_SHAPES anchor not found')
+              s = s.replace(anchor, anchor + '        szyber = true,\n', 1)
+          s = s.replace(OLD, VERSION)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('UrsusTransmissionFix.lua')
+          s = p.read_text(encoding='utf-8').replace(OLD, VERSION)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('CHANGELOG.md')
+          s = p.read_text(encoding='utf-8')
+          addition = '''\n## 1.0.5.0T5\nPoprawka koloru klapy dachowej.\n\nZmiany względem 1.0.5.0T4:\n- dodano mesh `szyber` z grupy `SzyberDach` do listy elementów malowanych kolorem nadwozia,\n- klapa dachowa korzysta z materiału z `colorMat0` i typem materiału 16, więc otrzymuje ten sam wybrany kolor co karoseria,\n- ramy, uszczelki, mechanizm klapy, koła, skrzynia, ADS i pozostałe elementy nie zostały zmienione.\n\n'''
+          marker = '## 1.0.5.0T4'
+          if '## 1.0.5.0T5' not in s:
+              if marker not in s:
+                  raise SystemExit('CHANGELOG T4 marker not found')
+              s = s.replace(marker, addition + marker, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('PROJECT_STATE.md')
+          s = p.read_text(encoding='utf-8')
+          if '### T5 roof hatch color fix — 1.0.5.0T5' not in s:
+              s += '''\n\n### T5 roof hatch color fix — 1.0.5.0T5\n- `SzyberDach/szyber` jest objęty kolorem nadwozia.\n- Pozostałe części grupy `SzyberDach` pozostają bez zmian.\n- T5 jest izolowaną poprawką whitelisty `UrsusColorFix`; brak zmian w fizyce i skrzyni.\n'''
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate source tree
+        run: python3 tools/validate_current.py
+
+      - name: Build test ZIP
+        run: ./build.sh
+
+      - name: Verify roof hatch fix in ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+          z = zipfile.ZipFile('dist/FS25_Ursus_1654_1954_Pack.zip')
+          names = set(z.namelist())
+          assert 'UrsusColorFix.lua' in names
+          lua = z.read('UrsusColorFix.lua').decode('utf-8')
+          assert 'szyber = true' in lua, 'roof hatch mesh missing from BODY_SHAPES'
+          assert '1.0.5.0T5' in lua, 'wrong UrsusColorFix version marker'
+          print('ZIP roof hatch color check: OK')
+          PY
+
+      - name: Commit 1.0.5.0T5
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION modDesc.xml UrsusTransmissionFix.lua UrsusColorFix.lua CHANGELOG.md PROJECT_STATE.md
+          git commit -m 'Release 1.0.5.0T5 roof hatch color fix'
+          git push origin HEAD:main
+
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_SHA=$(git rev-parse HEAD)
+          cat > /tmp/release-notes.md <<'EOF'
+          Isolated color whitelist fix after 1.0.5.0T4.
+
+          The animated roof hatch is the `SzyberDach/szyber` mesh. It uses the same vehicle shader `colorMat0` body-color channel (material type 16), but it was not included in the runtime body-shape whitelist. T5 adds only `szyber` to that whitelist so the hatch follows the selected body color.
+
+          No changes to transmission, ADS integration, physics, wheels, hatch animation, frames, seals or mechanism.
+          EOF
+          gh release create v1.0.5.0T5 dist/FS25_Ursus_1654_1954_Pack.zip \
+            --target "$TARGET_SHA" \
+            --title '1.0.5.0T5 — roof hatch color fix' \
+            --prerelease \
+            --notes-file /tmp/release-notes.md
+
+      - name: Remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          git rm .github/workflows/release-1.0.5.0T5.yml
+          git commit -m 'Remove one-shot 1.0.5.0T5 release workflow'
+          git push origin HEAD:main
