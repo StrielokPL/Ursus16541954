@@ -43,7 +43,6 @@ jobs:
               moddesc = z.read('modDesc.xml').decode('utf-8')
               xml = z.read('Ursus1934.xml').decode('utf-8')
               lua = z.read('UrsusTransmissionFix.lua').decode('utf-8')
-              changelog = z.read('CHANGELOG.md').decode('utf-8') if 'CHANGELOG.md' in z.namelist() else ''
 
           assert '<version>1.1.1.0</version>' in moddesc
 
@@ -59,8 +58,8 @@ jobs:
           assert '<motorConfiguration name="1934 Widmo" hp="290" price="40000">' in xml
 
           # Widmo physics must remain isolated from normal mass rebalance.
-          assert 'local URSUS_NORMAL_BODY_MASS_KG = 3720' in lua
-          assert 'local URSUS_NORMAL_SECOND_COMPONENT_MASS_KG = 1340' in lua
+          assert 'local URSUS_STANDARD_BODY_MASS_KG = 3720' in lua
+          assert 'local URSUS_STANDARD_SECOND_COMPONENT_MASS_KG = 1340' in lua
           assert 'local URSUS_WIDMO_BODY_MASS_KG = 3700' in lua
           assert 'local URSUS_WIDMO_SECOND_COMPONENT_MASS_KG = 2500' in lua
           assert 'baseY, baseZ = 1.10, -1.80' in lua
@@ -83,7 +82,9 @@ jobs:
               'logUrsusMassDiagnostic',
               'updateUrsusMassDiagnostic',
               'ursusMassDiagnosticLogged',
+              'ursusT14MassLayoutLogged',
               'tireLoadRaw FL=',
+              'mass layout motor=',
               'store transmission: %s',
               'store drivetrain: %s',
               'dynamic suspension: maxLoad',
