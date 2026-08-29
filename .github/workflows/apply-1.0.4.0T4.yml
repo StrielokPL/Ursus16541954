@@ -1,4 +1,4 @@
-name: Apply and publish 1.0.4.0T4
+name: Publish 1.0.4.0T4 prerelease
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  apply-test-build:
+  publish-test-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,66 +17,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Tune ADS load-guard margins
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          p = Path('UrsusTransmissionFix.lua')
-          s = p.read_text(encoding='utf-8')
-          replacements = {
-              '-- 1.0.4.0T3: native 8F/4R + L/H powershift splitter with optional ADS bridge.': '-- 1.0.4.0T4: native 8F/4R + L/H powershift splitter with optional ADS bridge.',
-              'local ADS_LUGGING_RPM_THRESHOLD = 0.60': 'local ADS_LUGGING_RPM_THRESHOLD = 0.65',
-              'local ADS_UPSHIFT_RPM_GUARD = 0.75': 'local ADS_UPSHIFT_RPM_GUARD = 0.83',
-              '-- ADS itself treats >80% dynamic load below 60% max RPM as lugging.\n        -- If that state occurs, force exactly one step down in the virtual': '-- ADS hard lugging starts below 60% max RPM. T4 intervenes at 65%\n        -- under >80% dynamic load to leave a small recovery margin.\n        -- If that protective state occurs, force exactly one step down in the virtual',
-              '-- is already below 75% max RPM. With the 1.25 -> 1.00 L/H splitter\n        -- this prevents a 20% RPM drop from pushing the engine straight into\n        -- ADS\'s <60% RPM lugging zone.': '-- is already below 83% max RPM. With the 1.25 -> 1.00 L/H splitter\n        -- a typical 20% RPM drop now lands around 66% max RPM instead of\n        -- directly on the ADS lugging boundary.',
-              'Logging.info("[UrsusTransmissionFix] 1.0.4.0T3 sequential 8x4 L/H splitter + optional ADS bridge enabled")': 'Logging.info("[UrsusTransmissionFix] 1.0.4.0T4 sequential 8x4 L/H splitter + optional ADS bridge enabled")',
-          }
-          for old, new in replacements.items():
-              if old not in s:
-                  raise SystemExit(f'Missing expected text in UrsusTransmissionFix.lua: {old!r}')
-              s = s.replace(old, new, 1)
-          p.write_text(s, encoding='utf-8')
-
-          Path('VERSION').write_text('1.0.4.0T4\n', encoding='utf-8')
-
-          p = Path('modDesc.xml')
-          s = p.read_text(encoding='utf-8')
-          old = '<version>1.0.4.0T3</version>'
-          new = '<version>1.0.4.0T4</version>'
-          if old not in s:
-              raise SystemExit('Expected T3 modDesc version not found')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
-          PY
-
       - name: Validate source tree
         run: python3 tools/validate_current.py
 
       - name: Build test ZIP
         run: ./build.sh
 
-      - name: Commit 1.0.4.0T4
-        id: commit
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add UrsusTransmissionFix.lua VERSION modDesc.xml
-          git commit -m "Tune ADS load guard margin for 1.0.4.0T4"
-          git push origin HEAD:main
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
       - name: Publish GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
-          TARGET_SHA: ${{ steps.commit.outputs.sha }}
+          TARGET_SHA: 7f5fd471c25ca264a752f5ab245fa5f994004047
         shell: bash
         run: |
-          git tag "v1.0.4.0T4" "$TARGET_SHA"
-          git push origin "v1.0.4.0T4"
           gh release create "v1.0.4.0T4" \
-            "FS25_Ursus_1654_1954_Pack.zip" \
+            "dist/FS25_Ursus_1654_1954_Pack.zip" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$TARGET_SHA" \
             --title "1.0.4.0T4 — ADS load-guard safety margin" \
@@ -86,6 +40,8 @@ jobs:
       - name: Remove one-shot workflow
         shell: bash
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
           git rm .github/workflows/apply-1.0.4.0T4.yml
           git commit -m "Remove one-shot 1.0.4.0T4 workflow"
