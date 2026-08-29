@@ -126,5 +126,15 @@ Zmiany względem 1.0.4.0T2:
 - błąd przerywał metodę `update` przed zakończeniem decyzji skrzyni, przez co ochronna redukcja lub blokada upshiftu nie mogła działać prawidłowo,
 - progi ADS, sekwencja biegów i czasy histerezy pozostają bez zmian względem T2, aby T3 izolował wyłącznie ten błąd.
 
+
+## 1.0.4.0T4
+Testowe zwiększenie marginesu ochronnego ADS load guard.
+
+Zmiany względem 1.0.4.0T3:
+- próg ochronnej redukcji przy obciążeniu >80% podniesiono z 60% do 65% maksymalnych obrotów (~1320 → ~1430 rpm dla 2200 rpm),
+- próg blokady upshiftu pod wysokim obciążeniem podniesiono z 75% do 83% maksymalnych obrotów (~1650 → ~1825 rpm),
+- zmiana zostawia bezpieczny zapas obrotów po przejściu L→H (1.25 → 1.00) zamiast lądowania dokładnie na granicy luggingu ADS,
+- próg obciążenia, czasy cooldown/histerezy, redukcja o jeden wirtualny stopień i bridge awarii ADS pozostają bez zmian.
+
 ## Dalszy rozwój
 Od **1.0.1.0** używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`. Numeracji V26/V27 nie stosujemy do nowych buildów.
