@@ -1,0 +1,116 @@
+name: Publish 1.0.6.0T10
+
+on:
+  push:
+    paths:
+      - '.github/workflows/release-1.0.6.0T10.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply Widmo T10 lateral grip test
+        run: python3 tools/apply_1_0_6_0T10.py
+
+      - name: Ensure wheel files are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- wheels
+
+      - name: Validate source tree
+        run: python3 tools/validate_current.py
+
+      - name: Build test ZIP
+        run: ./build.sh
+
+      - name: Verify Widmo T10 ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+
+          with zipfile.ZipFile('dist/FS25_Ursus_1654_1954_Pack.zip') as z:
+              moddesc = z.read('modDesc.xml').decode('utf-8')
+              xml = z.read('Ursus1934.xml').decode('utf-8')
+              lua = z.read('UrsusTransmissionFix.lua').decode('utf-8')
+
+          assert '<version>1.0.6.0T10</version>' in moddesc
+          assert 'self.forcePointRatio = 0.80' in lua
+          assert 'self.maxLongStiffness = (self.maxLongStiffness or 30.0) * 1.20' in lua
+          assert 'self.maxLatStiffness = (self.maxLatStiffness or 30.0) * 0.85' in lua
+          assert 'maxLatStiffness x0.85' in lua
+          assert 'removeAllDifferentials(spec.motorizedNode)' in lua
+          assert 'InputAction.URSUS_WIDMO_TOGGLE_4WD' in lua
+          assert 'local URSUS_FRONT_BALLAST' in lua
+
+          start = xml.index('<motorConfiguration name="1934 Widmo"')
+          end = xml.index('</motorConfiguration>', start)
+          widmo = xml[start:end]
+          assert 'hp="290"' in widmo
+          assert 'torqueScale="1.100"' in widmo
+          assert 'centerOfMassActive="0 1.10 -1.80"' in widmo
+          assert 'name="8/4"' in widmo
+          assert '<groups ' not in widmo
+
+          for name in ('600kg', '1200kg', '1500kg', '2000kg'):
+              start = xml.index(f'<attacherJointConfiguration name="{name}"')
+              end = xml.index('</attacherJointConfiguration>', start)
+              seg = xml[start:end]
+              assert 'massActive=' not in seg, name
+              assert 'centerOfMassActive=' not in seg, name
+
+          print('ZIP Widmo T10 lateral grip check: OK')
+          PY
+
+      - name: Commit 1.0.6.0T10
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION modDesc.xml UrsusTransmissionFix.lua UrsusColorFix.lua CHANGELOG.md PROJECT_STATE.md
+          git commit -m 'Release 1.0.6.0T10 Widmo rear lateral grip test'
+          git push origin HEAD:main
+
+      - name: Publish GitHub prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TARGET_SHA=$(git rev-parse HEAD)
+          cat > /tmp/release-notes.md <<'EOF'
+          Widmo rear lateral grip test.
+
+          Changes:
+          - only the rear wheels of 1934 Widmo get maxLatStiffness x0.85,
+          - rear maxLongStiffness x1.20 remains unchanged, preserving launch traction,
+          - forcePointRatio 0.80, 290 hp, COM, direct 8F/4R and manual RWD/4x4 remain unchanged,
+          - T9 front ballast physics remains unchanged,
+          - no wheel XML files are modified,
+          - goal: allow earlier controlled lateral rear slip and reduce rollover tendency in corners.
+          EOF
+          gh release create v1.0.6.0T10 dist/FS25_Ursus_1654_1954_Pack.zip \
+            --target "$TARGET_SHA" \
+            --title '1.0.6.0T10 — Widmo rear lateral grip test' \
+            --prerelease \
+            --notes-file /tmp/release-notes.md
+
+      - name: Remove one-shot release helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          git rm .github/workflows/release-1.0.6.0T10.yml tools/apply_1_0_6_0T10.py
+          git commit -m 'Remove one-shot 1.0.6.0T10 release helpers'
+          git push origin HEAD:main
