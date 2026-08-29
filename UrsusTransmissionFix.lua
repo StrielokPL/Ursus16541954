@@ -1,5 +1,5 @@
 -- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.0.6.0T3: native 8F/4R + L/H powershift splitter with optional ADS bridge.
+-- 1.0.6.0T4: native 8F/4R + L/H powershift splitter with optional ADS bridge.
 -- The base game is prevented from choosing L/H as two unrelated groups.
 -- In automatic mode the splitter is treated as one sequential virtual gearbox:
 -- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
@@ -18,6 +18,7 @@ if not UrsusTransmissionFix.installed then
     local originalFindGearChangeTargetGearPrediction = VehicleMotor.findGearChangeTargetGearPrediction
     local originalGetUseAutomaticGroupShifting = VehicleMotor.getUseAutomaticGroupShifting
     local originalLoadDifferentials = Motorized.loadDifferentials
+    local originalWheelPhysicsLoadFromXML = WheelPhysics.loadFromXML
 
     -- ADS uses these thresholds internally to classify engine lugging.
     -- Keep the transmission guard aligned with ADS instead of inventing
@@ -271,7 +272,38 @@ if not UrsusTransmissionFix.installed then
 
         local rearDifferential = differentials[2]
         spec.differentials = {rearDifferential}
-        Logging.info("[UrsusTransmissionFix] 1.0.6.0T3 Widmo drivetrain: rear differential only (RWD test)")
+        Logging.info("[UrsusTransmissionFix] 1.0.6.0T4 Widmo drivetrain: rear differential only (RWD test)")
+    end
+
+    -- T4 final pure-physics experiment: raise the Widmo centre of mass and
+    -- lower the rear tire force application point. WheelPhysics stores the XML
+    -- forcePointRatio before the wheel shape is finalized, so changing it here
+    -- affects only the physical rear wheels of the selected Widmo variant.
+    function WheelPhysics:loadFromXML(xmlObject)
+        local result = originalWheelPhysicsLoadFromXML(self, xmlObject)
+        if not result then
+            return result
+        end
+
+        local wheel = self.wheel
+        local vehicle = wheel ~= nil and wheel.vehicle or nil
+        if not isUrsusVehicle(vehicle) then
+            return result
+        end
+        if getSelectedMotorConfigurationName(vehicle, vehicle.xmlFile) ~= "1934 Widmo" then
+            return result
+        end
+
+        local wheelIndex = wheel.wheelIndex or 0
+        if wheelIndex >= 3 then
+            self.forcePointRatio = 0.80
+            if not vehicle.ursusWidmoRearForcePointLogged then
+                vehicle.ursusWidmoRearForcePointLogged = true
+                Logging.info("[UrsusTransmissionFix] 1.0.6.0T4 Widmo rear forcePointRatio=0.80")
+            end
+        end
+
+        return result
     end
 
     -- In AUTOMATIC mode only, stop the base game from optimizing the two
@@ -464,5 +496,5 @@ if not UrsusTransmissionFix.installed then
         return nextGear
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.0.6.0T3 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    Logging.info("[UrsusTransmissionFix] 1.0.6.0T4 sequential 8x4 L/H splitter + optional ADS bridge enabled")
 end

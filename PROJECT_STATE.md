@@ -148,3 +148,11 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - T3 przełącza wyłącznie Widmo na RWD przed zbudowaniem fizycznych dyferencjałów; pozostaje tylko tylny dyferencjał.
 - Pozostałe silniki zachowują 4x4.
 - Cel: odizolować wpływ centralnego dyferencjału 50/50 na możliwość odciążenia/podniesienia przedniej osi.
+
+
+### Widmo wheelie physics test — 1.0.6.0T4
+- T3 RWD był bardzo blisko uniesienia przodu, ale ciągnik tylko wolniej ruszał.
+- Widmo nadal RWD, 225 KM z 1934 Chip, COM Z pozostaje -1.65.
+- COM Y podniesiono do 1.40.
+- Tylne koła Widma: forcePointRatio 0.80; pozostałe koła/wersje bez zmian.
+- T4 jest ostatnim testem czystej fizyki przed ewentualnym lekkim warunkowym addTorque.

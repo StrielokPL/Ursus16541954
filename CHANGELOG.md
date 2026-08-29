@@ -104,6 +104,17 @@ Testy runtime:
 
 
 
+
+## 1.0.6.0T4
+Ostatni test podnoszenia przodu oparty wyłącznie na fizyce kół i rozkładzie masy.
+
+Zmiany względem 1.0.6.0T3:
+- Widmo pozostaje RWD i zachowuje silnik 1934 Chip 225 KM,
+- środek masy Widma podniesiono z `0 1.05 -1.65` do `0 1.40 -1.65`, bez dalszego cofania,
+- tylko tylne koła Widma otrzymują `forcePointRatio=0.80` zamiast 0.50,
+- przednie koła i wszystkie inne konfiguracje ciągnika zachowują bazowe parametry,
+- nadal brak `addTorque`, `addForce` i sztucznego impulsu; wynik ma pochodzić z fizyki silnika gry.
+
 ## 1.0.6.0T3
 Test napędu RWD dla konfiguracji `1934 Widmo`.
 

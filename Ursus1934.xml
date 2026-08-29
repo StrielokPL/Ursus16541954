@@ -663,7 +663,7 @@
           <torque rpm="2050" torque="0.91" />
           <torque rpm="2200" torque="0.856793892" />
         </motor>
-        <objectChange node="0&gt;" centerOfMassActive="0 1.05 -1.65" />
+        <objectChange node="0&gt;" centerOfMassActive="0 1.40 -1.65" />
         <objectChange node="0&gt;7|0" visibilityActive="true" />
         <objectChange node="0&gt;7|1" visibilityActive="false" />
         <objectChange node="0&gt;7|2" visibilityActive="false" />
