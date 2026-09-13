@@ -19,3 +19,9 @@ Notatki do kolejnych wersji po 1.1.1.0.
 - Typ skrzyni biegów powinien pozostać niezależną opcją konfiguracyjną dostępną także dla Widmo.
 - Konfiguracja przedniego napędu / przedniego dyferencjału powinna pozostać niezależną opcją konfiguracyjną, również dla Widmo.
 - Docelowo wybór silnika, skrzyni oraz układu napędowego nie powinien być ze sobą sztucznie sprzężony.
+
+## Prerelease 1.1.1.1 P1
+
+- Test automatu na drodze, z Titan 18 i na słabszych silnikach; kontrola 8H i spadków prędkości podczas zmian głównych.
+- Porównać log użytkownika ze zużyciem ADS oraz test MP.
+- Stabilizacja belki Widma: pomiar kąta/prędkości zawiasu, osobna próba zakresu i tłumienia/centrowania bez zmiany COM. [Plan](docs/transmission-P1.md).

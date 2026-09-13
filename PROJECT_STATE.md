@@ -1,3 +1,11 @@
+# Stan bieżący: 1.1.1.1 P1
+
+Stabilne wydanie: 1.1.1.0. Bieżący kod: prerelease 1.1.1.1 P1, automat według obciążenia z koordynacją załączenia L/H. Walidacja kontraktów i ZIP w CI; jazda w grze pozostaje do potwierdzenia. Fizyka zawiasu osi i COM bez zmian. [Specyfikacja, dowody z logu i otwarte próby](docs/transmission-P1.md).
+
+Poniżej zachowano historyczne notatki poprzednich etapów; określenia current/stable i dawna sekwencja L/H w nich nie opisują P1.
+
+---
+
 # Project state — 1.0.5.1
 
 Current stable baseline is **1.0.5.1**. The historical conversion numbering V1–V25 is closed; all future releases use the four-part version scheme.

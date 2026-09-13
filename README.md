@@ -7,6 +7,10 @@ Konwersja i dalszy rozwój moda **Ursus 1654–1954** z Farming Simulator 22 do 
 
 Repozytorium zawiera kompletny stan moda: XML, I3D, Lua, lokalne shadery kompatybilności oraz wymagane assety binarne. Po zwykłym `git clone` nie trzeba uzupełniać plików z oryginalnego ZIP-a.
 
+## Wersja testowa 1.1.1.1 P1
+
+[Pełny prerelease z nowym automatem](https://github.com/StrielokPL/Ursus16541954/releases/tag/1.1.1.1P1). Numer moda: 1.1.1.1. [Zmiany i instrukcja testu](docs/releases/1.1.1.1P1.md), [metoda doboru przełożeń i plan stabilizacji osi Widma](docs/transmission-P1.md). Poniższy opis stabilnego wydania jest historycznym punktem odniesienia; sekwencyjna logika L/H została zastąpiona w P1.
+
 ## Aktualny stan
 
 **Aktualna stabilna wersja: 1.1.1.0**

@@ -1,11 +1,6 @@
--- Ursus 1654-1954 FS25 transmission behavior fix
--- 1.1.1.0: native 8F/4R + L/H powershift splitter with optional ADS bridge.
--- The base game is prevented from choosing L/H as two unrelated groups.
--- In automatic mode the splitter is treated as one sequential virtual gearbox:
--- 1L -> 1H -> 2L -> 2H ... and the same logic is used in reverse.
--- Manual modes retain the normal GIANTS gear/group controls.
--- If Advanced Damage System is installed, automatic L/H changes also respect
--- ADS gear-shift failures and powershift engagement lag without requiring ADS.
+-- Ursus 1654-1954 FS25: 1.1.1.1 P1 load-aware automatic L/H transmission.
+-- Uses native main-gear clutch timing and coordinates group engagement.
+-- Manual/no-PS controls, mass, suspension and Widmo drivetrain remain native/existing.
 
 UrsusTransmissionFix = UrsusTransmissionFix or {}
 
@@ -58,16 +53,6 @@ if not UrsusTransmissionFix.installed then
     local originalWheelPhysicsLoadFromXML = WheelPhysics.loadFromXML
     local originalWheelUpdate = Wheel.update
     local originalMotorizedOnRegisterActionEvents = Motorized.onRegisterActionEvents
-
-    -- ADS uses these thresholds internally to classify engine lugging.
-    -- Keep the transmission guard aligned with ADS instead of inventing
-    -- a second, unrelated load model.
-    local ADS_LUGGING_LOAD_THRESHOLD = 0.80
-    local ADS_LUGGING_RPM_THRESHOLD = 0.65
-    local ADS_UPSHIFT_RPM_GUARD = 0.83
-    local ADS_LOAD_DOWNSHIFT_COOLDOWN = 700
-    local ADS_LOAD_UPSHIFT_HOLD = 1800
-    local ADS_LOAD_LOG_COOLDOWN = 1200
 
     local function isUrsusVehicle(vehicle)
         if vehicle == nil or vehicle.configFileName == nil then
@@ -248,61 +233,6 @@ if not UrsusTransmissionFix.installed then
         return vehicle, spec, spec.activeEffects
     end
 
-    local function getAdsLoadState(motor)
-        local vehicle = motor ~= nil and motor.vehicle or nil
-        local spec = vehicle ~= nil and vehicle.spec_AdvancedDamageSystem or nil
-        if spec == nil or spec.dynamicMotorLoad == nil then
-            return nil, nil, nil, nil, nil
-        end
-
-        local load = tonumber(spec.dynamicMotorLoad)
-        local maxRpm = tonumber(motor.maxRpm)
-        local rpm = nil
-
-        if motor.getLastModulatedMotorRpm ~= nil then
-            rpm = tonumber(motor:getLastModulatedMotorRpm())
-        end
-        rpm = rpm or tonumber(motor.lastMotorRpm)
-
-        if load == nil or rpm == nil or maxRpm == nil or maxRpm <= 0 then
-            return nil, nil, nil, nil, nil
-        end
-
-        local speed = 0
-        if vehicle.getLastSpeed ~= nil then
-            speed = tonumber(vehicle:getLastSpeed()) or 0
-        end
-
-        return spec, math.max(load, 0), rpm, rpm / maxRpm, speed
-    end
-
-    local function splitterGroupLabel(group)
-        if group == 1 then
-            return "L"
-        elseif group == 2 then
-            return "H"
-        end
-        return tostring(group or "?")
-    end
-
-    local function logAdsLoadGuard(motor, action, fromGear, fromGroup, toGear, toGroup, load, rpm)
-        if motor.ursusAdsLoadLogUntil ~= nil and g_time < motor.ursusAdsLoadLogUntil then
-            return
-        end
-
-        motor.ursusAdsLoadLogUntil = g_time + ADS_LOAD_LOG_COOLDOWN
-        Logging.info("%s", string.format(
-            "[UrsusTransmissionFix] ADS load guard: %s %d%s -> %d%s | load=%d%% rpm=%d",
-            action,
-            fromGear or 0,
-            splitterGroupLabel(fromGroup),
-            toGear or 0,
-            splitterGroupLabel(toGroup),
-            math.floor((load or 0) * 100 + 0.5),
-            math.floor((rpm or 0) + 0.5)
-        ))
-    end
-
     local function sendAdsEffectSync(vehicle, effectId, status, duration)
         if ADS_EffectSyncEvent ~= nil and ADS_EffectSyncEvent.send ~= nil then
             ADS_EffectSyncEvent.send(vehicle, effectId, status, 0, 0, duration or 0)
@@ -373,20 +303,6 @@ if not UrsusTransmissionFix.installed then
         end
 
         clearAdsPendingSplitter(motor)
-        return true
-    end
-
-    local function trySetAutomaticSplitterGroup(motor, targetGroup)
-        if motor.activeGearGroupIndex == targetGroup then
-            clearAdsPendingSplitter(motor)
-            return true
-        end
-
-        if not canEngageSplitterWithAds(motor, targetGroup) then
-            return false
-        end
-
-        motor:setGearGroup(targetGroup)
         return true
     end
 
@@ -735,195 +651,264 @@ if not UrsusTransmissionFix.installed then
         end
     end
 
-    -- In AUTOMATIC mode only, stop the base game from optimizing the two
-    -- powershift groups independently. We handle L/H below as a splitter.
-    function VehicleMotor:getUseAutomaticGroupShifting()
-        if isUrsusMotor(self)
-            and hasHighLow(self)
-            and self.gearShiftMode == VehicleMotor.SHIFT_MODE_AUTOMATIC then
-            return false
+    -- 1.1.1.1 P1: select real ratios, not a mandatory L/H staircase.
+    -- Planning never changes a group for an unaccepted main-gear request.
+    local originalUpdateGear = VehicleMotor.updateGear
+    local originalApplyTargetGear = VehicleMotor.applyTargetGear
+    local unpackValues = table.unpack or unpack
+    local function pack(...) return {n=select('#', ...), ...} end
+    local function number(v)
+        v=tonumber(v)
+        if v and v==v and math.abs(v)<math.huge then return v end
+    end
+    local function read(o, method, ...)
+        if o and type(o[method])=='function' then
+            local ok,v=pcall(o[method],o,...)
+            if ok then return number(v) end
         end
+    end
+    local function automatic(m)
+        return isUrsusMotor(m) and hasHighLow(m)
+            and m.vehicle.isServer==true
+            and m.gearShiftMode==VehicleMotor.SHIFT_MODE_AUTOMATIC
+    end
+    local function controller(m)
+        if not m.ursusAuto then m.ursusAuto={reason='INITIAL'} end
+        return m.ursusAuto
+    end
+    local function activeWorkLimit(v)
+        local a,b=read(v,'getSpeedLimit',true),read(v,'getSpeedLimit',false)
+        if a and a>0 and a<1000 and (not b or a<b-0.05) then return a end
+    end
+    local function effective(m,gears,g,h)
+        local a=gears and gears[g] and number(gears[g].ratio)
+        local b=m.gearGroups and m.gearGroups[h] and number(m.gearGroups[h].ratio)
+        if a and b and a~=0 and b~=0 then return math.abs(a*b) end
+    end
+    local function sample(m,dt)
+        local s=controller(m);local now=g_time or 0
+        if s.sampleAt==now then return s end
+        local elapsed=s.sampleAt and math.max(0,now-s.sampleAt) or math.max(dt or 16,0)
+        local alpha=1-math.exp(-math.min(elapsed,1000)/400)
+        local ads=m.vehicle.spec_AdvancedDamageSystem
+        local adsLoad=ads and number(ads.dynamicMotorLoad)
+        local native=read(m,'getSmoothLoadPercentage')
+        local load=adsLoad or native
+        s.source=adsLoad and 'ADS' or (native and 'GIANTS' or 'MISSING')
+        s.load=load and math.max(0,load)
+        s.rpm=read(m,'getLastModulatedMotorRpm') or number(m.lastMotorRpm)
+        s.maxRpm=number(m.maxRpm)
+        local speed=read(m.vehicle,'getLastSpeed')
+        s.speedTrend=speed and s.speed and elapsed>0 and ((s.speedTrend or 0)+alpha*((speed-s.speed)*1000/elapsed-(s.speedTrend or 0))) or 0
+        s.speed=speed
+        -- Do not interpret clutch unloading as suddenly available torque reserve.
+        if (m.gear or 0)>0 and (m.gearChangeTimer or -1)<0 and s.load then
+            s.filteredLoad=(s.filteredLoad or s.load)+alpha*(s.load-(s.filteredLoad or s.load))
+        end
+        s.rearSlip=nil
+        local wheels=m.vehicle.spec_wheels and m.vehicle.spec_wheels.wheels or {}
+        for i=3,4 do
+            local p=wheels[i] and wheels[i].physics
+            local slip=p and p.netInfo and number(p.netInfo.slip)
+            if slip then s.rearSlip=math.max(s.rearSlip or 0,math.abs(slip)) end
+        end
+        s.workLimit=activeWorkLimit(m.vehicle)
+        s.sampleAt=now
+        return s
+    end
+    local function observe(m,s)
+        if (m.gear or 0)<=0 or (m.gearChangeTimer or -1)>=0 then return end
+        local key=tostring(m.currentDirection)..':'..m.gear..':'..m.activeGearGroupIndex
+        if s.settled~=key then
+            s.settled=key;s.settledAt=g_time or 0
+            s.readyAt=nil;s.readyKey=nil;s.lugAt=nil
+        end
+    end
+    local function cancelled(m,s,reason)
+        s.pending=nil;s.readyAt=nil;s.readyKey=nil;s.reason=reason
+        clearAdsPendingSplitter(m)
+    end
+    local function request(m,s,g,h,reason,isDown)
+        local now=g_time or 0
+        local fromGear,fromGroup=m.gear,m.activeGearGroupIndex
+        if h~=fromGroup and not canEngageSplitterWithAds(m,h) then
+            s.reason='ADS_WAIT_OR_FAILURE'
+            return fromGear
+        end
+        local p={gear=g,group=h,fromGear=fromGear,fromGroup=fromGroup,
+            direction=m.currentDirection,at=now,reason=reason,down=isDown,
+            load=s.load or 0,speed=s.speed or 0}
+        s.reason=reason;s.requestedGear=g;s.requestedGroup=h;s.requestedAt=now
+        s.readyAt=nil;s.readyKey=nil
+        if isDown then
+            s.holdUntil=now+1800
+            if s.attempt and s.attempt.gear==fromGear and s.attempt.group==fromGroup
+                and now-s.attempt.at<8000 and (s.load or 0)>=0.5 then
+                s.failure={gear=fromGear,group=fromGroup,at=now,load=s.attempt.load}
+            end
+            s.attempt=nil
+            -- Release only the direction veto for a confirmed loaded reduction.
+            -- Mechanical shift, clutch, ADS and direction timers remain intact.
+            m.allowGearChangeTimer=0
+        end
+        if g==fromGear then
+            s.pending=nil
+            m:setGearGroup(h)
+            s.cooldownUntil=now+600
+            if not isDown then s.attempt=p end
+        else
+            s.pending=p
+        end
+        return g
+    end
 
+    function VehicleMotor:getUseAutomaticGroupShifting()
+        if isUrsusMotor(self) and hasHighLow(self)
+            and self.gearShiftMode==VehicleMotor.SHIFT_MODE_AUTOMATIC then return false end
         return originalGetUseAutomaticGroupShifting(self)
     end
 
     function VehicleMotor:getBestStartGear(gears)
-        local gear, group = originalGetBestStartGear(self, gears)
-
-        if isUrsusMotor(self) and hasHighLow(self) then
-            if self.currentDirection >= 0 then
-                gear = math.min(gear, 3)
-            else
-                gear = math.min(gear, 2)
-            end
-
-            -- Always start in LOW, regardless of driving direction.
-            group = 1
-            if self.activeGearGroupIndex ~= 1 then
-                self:setGearGroup(1)
-            end
+        if not automatic(self) then return originalGetBestStartGear(self,gears) end
+        local s=controller(self)
+        -- This hook can also be queried by UI/other mods. Only the actual
+        -- updateGear start-selection path is allowed to schedule a change.
+        if not s.inUpdate or not gears or #gears==0 then return originalGetBestStartGear(self,gears) end
+        local mass=read(self.vehicle,'getTotalMass')
+        local g,h=1,1
+        if (self.currentDirection or 1)>0 and not activeWorkLimit(self.vehicle) and mass then
+            g,h=math.min(mass<=12 and 2 or 1,#gears),2
         end
-
-        return gear, group
+        if (self.gear or 0)==g and self.activeGearGroupIndex==h then return g,h end
+        -- Moving start queries must not turn a loaded recovery into a tall launch.
+        if (read(self.vehicle,'getLastSpeed') or math.huge)>1.1 then
+            return originalGetBestStartGear(self,gears)
+        end
+        local result=request(self,s,g,h,'START',false)
+        if s.reason=='ADS_WAIT_OR_FAILURE' then return math.max(1,self.gear or 1),self.activeGearGroupIndex end
+        return result,h
     end
 
-    function VehicleMotor:findGearChangeTargetGearPrediction(curGear, gears, gearSign, gearChangeTimer, acceleratorPedal, dt)
-        local targetGear = originalFindGearChangeTargetGearPrediction(
-            self, curGear, gears, gearSign, gearChangeTimer, acceleratorPedal, dt
-        )
-
-        if not isUrsusMotor(self)
-            or not hasHighLow(self)
-            or self.gearShiftMode ~= VehicleMotor.SHIFT_MODE_AUTOMATIC
-            or targetGear == nil
-            or curGear == nil
-            or curGear <= 0 then
-            return targetGear
-        end
-
-        local adsSpec, adsLoad, adsRpm, adsRpmRatio, adsSpeed = getAdsLoadState(self)
-        local adsIsLugging = adsLoad ~= nil
-            and adsLoad > ADS_LUGGING_LOAD_THRESHOLD
-            and adsRpmRatio < ADS_LUGGING_RPM_THRESHOLD
-            and adsSpeed > 0.5
-
-        -- ADS hard lugging starts below 60% max RPM. T4 intervenes at 65%
-        -- under >80% dynamic load to leave a small recovery margin.
-        -- If that protective state occurs, force exactly one step down in the virtual
-        -- 1L -> 1H -> 2L -> 2H sequence, then give the engine time to recover.
-        if adsIsLugging
-            and (self.ursusAdsLoadDownshiftCooldownUntil == nil
-                or g_time >= self.ursusAdsLoadDownshiftCooldownUntil) then
-            local loadGroup = self.activeGearGroupIndex or 1
-            local loadTargetGroup = loadGroup
-            local loadTargetGear = curGear
-
-            if loadGroup == 2 then
-                -- e.g. 4H -> 4L
-                loadTargetGroup = 1
-            elseif curGear > 1 then
-                -- e.g. 4L -> 3H
-                loadTargetGroup = 2
-                loadTargetGear = curGear - 1
-            end
-
-            if loadTargetGroup ~= loadGroup or loadTargetGear ~= curGear then
-                if not trySetAutomaticSplitterGroup(self, loadTargetGroup) then
-                    self.ursusHighLowCooldownUntil = g_time + 100
-                    self.ursusAdsLoadDownshiftCooldownUntil = g_time + 100
-                    self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 100)
-                    return curGear
+    function VehicleMotor:applyTargetGear(...)
+        local s=self.ursusAuto
+        -- setGearGroup(POWERSHIFT) recursively invokes applyTargetGear. Suppress
+        -- that one nested call, then let the outer native call engage exactly once.
+        if s and s.committing then return end
+        if s and s.pending then
+            local p=s.pending
+            s.pending=nil
+            if automatic(self) and self.targetGear==p.gear and self.currentDirection==p.direction
+                and self.activeGearGroupIndex==p.fromGroup then
+                if self.activeGearGroupIndex~=p.group then
+                    s.committing=true
+                    self:setGearGroup(p.group)
+                    s.committing=nil
                 end
-
-                self.ursusHighLowCooldownUntil = g_time + ADS_LOAD_DOWNSHIFT_COOLDOWN
-                self.ursusAdsLoadDownshiftCooldownUntil = g_time + ADS_LOAD_DOWNSHIFT_COOLDOWN
-                self.ursusAdsLoadUpshiftHoldUntil = g_time + ADS_LOAD_UPSHIFT_HOLD
-                self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, ADS_LOAD_DOWNSHIFT_COOLDOWN)
-                logAdsLoadGuard(
-                    self, "DOWNSHIFT", curGear, loadGroup,
-                    loadTargetGear, loadTargetGroup, adsLoad, adsRpm
-                )
-                return loadTargetGear
-            end
-        end
-
-        -- Small local cooldown after a splitter change. Powershift groups apply
-        -- instantly in GIANTS, so without this the prediction can be run again
-        -- in the same decision window.
-        if self.ursusHighLowCooldownUntil ~= nil and g_time < self.ursusHighLowCooldownUntil then
-            return curGear
-        end
-
-        local group = self.activeGearGroupIndex or 1
-        local nextGear = curGear
-
-        -- After a load-protection downshift, briefly keep the lower virtual
-        -- ratio so vanilla cannot immediately undo it.
-        if targetGear > curGear
-            and self.ursusAdsLoadUpshiftHoldUntil ~= nil
-            and g_time < self.ursusAdsLoadUpshiftHoldUntil then
-            self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 250)
-            return curGear
-        end
-
-        -- At high ADS dynamic load, do not allow an upshift while the engine
-        -- is already below 83% max RPM. With the 1.25 -> 1.00 L/H splitter
-        -- a typical 20% RPM drop now lands around 66% max RPM instead of
-        -- directly on the ADS lugging boundary.
-        if targetGear > curGear
-            and adsLoad ~= nil
-            and adsLoad > ADS_LUGGING_LOAD_THRESHOLD
-            and adsRpmRatio < ADS_UPSHIFT_RPM_GUARD then
-            local guardTargetGear = curGear
-            local guardTargetGroup = group
-            if group == 1 then
-                guardTargetGroup = 2
+                s.cooldownUntil=(g_time or 0)+600
+                if not p.down and p.reason~='START' then p.at=g_time or 0;s.attempt=p end
+                s.reason='ENGAGED_'..p.reason
             else
-                guardTargetGroup = 1
-                guardTargetGear = math.min(curGear + 1, targetGear)
-            end
-
-            logAdsLoadGuard(
-                self, "BLOCK UPSHIFT", curGear, group,
-                guardTargetGear, guardTargetGroup, adsLoad, adsRpm
-            )
-            self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 250)
-            return curGear
-        end
-
-        if targetGear > curGear then
-            if group == 1 then
-                -- e.g. 3L -> 3H
-                if not trySetAutomaticSplitterGroup(self, 2) then
-                    self.ursusHighLowCooldownUntil = g_time + 100
-                    self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 100)
-                    return curGear
-                end
-                self.ursusHighLowCooldownUntil = g_time + 350
-                self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 350)
-                return curGear
-            else
-                -- e.g. 3H -> 4L
-                if not trySetAutomaticSplitterGroup(self, 1) then
-                    self.ursusHighLowCooldownUntil = g_time + 100
-                    self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 100)
-                    return curGear
-                end
-                self.ursusHighLowCooldownUntil = g_time + 350
-                self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 350)
-                nextGear = math.min(curGear + 1, targetGear)
-            end
-
-        elseif targetGear < curGear then
-            if group == 2 then
-                -- e.g. 4H -> 4L
-                if not trySetAutomaticSplitterGroup(self, 1) then
-                    self.ursusHighLowCooldownUntil = g_time + 100
-                    self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 100)
-                    return curGear
-                end
-                self.ursusHighLowCooldownUntil = g_time + 350
-                self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 350)
-                return curGear
-            else
-                -- e.g. 4L -> 3H
-                if not trySetAutomaticSplitterGroup(self, 2) then
-                    self.ursusHighLowCooldownUntil = g_time + 100
-                    self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 100)
-                    return curGear
-                end
-                self.ursusHighLowCooldownUntil = g_time + 350
-                self.autoGearChangeTimer = math.max(self.autoGearChangeTime or 0, 350)
-                nextGear = math.max(curGear - 1, targetGear)
+                s.reason='CANCELLED_TARGET'
             end
         end
-
-        if gears ~= nil then
-            nextGear = math.max(1, math.min(nextGear, #gears))
-        end
-
-        return nextGear
+        return originalApplyTargetGear(self,...)
     end
 
-    Logging.info("[UrsusTransmissionFix] 1.1.1.0 sequential 8x4 L/H splitter + optional ADS bridge enabled")
+    function VehicleMotor:updateGear(acceleratorPedal,brakePedal,dt,...)
+        if not automatic(self) then
+            if self.ursusAuto then self.ursusAuto=nil;clearAdsPendingSplitter(self) end
+            return originalUpdateGear(self,acceleratorPedal,brakePedal,dt,...)
+        end
+        local s=sample(self,dt)
+        s.accel=number(acceleratorPedal) or 0;s.brake=number(brakePedal) or 0
+        if s.direction and s.direction~=self.currentDirection then cancelled(self,s,'DIRECTION_CHANGED');s.attempt=nil;s.failure=nil end
+        s.direction=self.currentDirection
+        observe(self,s)
+        s.inUpdate=true
+        local result=pack(originalUpdateGear(self,acceleratorPedal,brakePedal,dt,...))
+        s.inUpdate=false
+        local p=s.pending
+        if p and (self.targetGear~=p.gear or self.currentDirection~=p.direction) then
+            cancelled(self,s,'NATIVE_VETO')
+        end
+        observe(self,s)
+        return unpackValues(result,1,result.n)
+    end
+
+    function VehicleMotor:findGearChangeTargetGearPrediction(curGear,gears,gearSign,gearChangeTimer,acceleratorPedal,dt)
+        if not automatic(self) or not curGear or curGear<=0 or not gears or not gears[curGear] then
+            return originalFindGearChangeTargetGearPrediction(self,curGear,gears,gearSign,gearChangeTimer,acceleratorPedal,dt)
+        end
+        local s=sample(self,dt);local now=g_time or 0;local h=self.activeGearGroupIndex
+        if not s.inUpdate then return curGear end
+        if s.pending or (self.gearChangeTimer or -1)>=0 or (self.groupChangeTimer or 0)>0
+            or (self.directionChangeTimer or 0)>0 then s.reason='SHIFT_BUSY';return curGear end
+        if gearSign~=self.currentDirection or (s.brake or 0)>0.05
+            or (acceleratorPedal or 0)*self.currentDirection<=0.1 then
+            cancelled(self,s,'COAST_OR_BRAKE')
+            -- Native deceleration may reduce the main gear within the existing group.
+            local native=originalFindGearChangeTargetGearPrediction(self,curGear,gears,gearSign,gearChangeTimer,acceleratorPedal,dt)
+            return native and math.min(curGear,native) or curGear
+        end
+        local currentRatio=effective(self,gears,curGear,h)
+        if not currentRatio or not s.rpm or not s.maxRpm or s.maxRpm<=0 or not s.speed or not s.load then
+            cancelled(self,s,'MISSING_TELEMETRY');return curGear
+        end
+        local load=math.max(s.load,s.filteredLoad or s.load)
+        local since=now-(s.settledAt or now)
+        local lug=(load>0.78 and s.rpm<1450) or (s.rpm<1100 and s.speed>1.1)
+        if lug then s.lugAt=s.lugAt or now else s.lugAt=nil end
+        if s.lugAt and now-s.lugAt>=250 and since>=250 and now>=(s.cooldownUntil or 0) then
+            local g2,h2=curGear,h==2 and 1 or 2
+            if h==1 then g2=curGear-1 end
+            local ratio=effective(self,gears,g2,h2)
+            if ratio and ratio>currentRatio and s.rpm*ratio/currentRatio<=s.maxRpm+50 then
+                return request(self,s,g2,h2,'LOAD_REDUCTION',true)
+            end
+        end
+        if now<(s.cooldownUntil or 0) or now<(s.holdUntil or 0) or since<450 then
+            s.reason='RECOVERY';s.readyAt=nil;s.readyKey=nil;return curGear
+        end
+        if (s.rearSlip or 0)>0.22 or s.speedTrend< -0.30 then
+            cancelled(self,s,'SLIP_OR_SPEED_FALLING');return curGear
+        end
+        local road=not s.workLimit and load<0.70
+        if s.rpm<(road and 1900 or 2000) then cancelled(self,s,'UPSHIFT_RPM');return curGear end
+        local theoretical=s.rpm*math.pi/(30*currentRatio)*3.6
+        if s.speed<theoretical*0.72 then cancelled(self,s,'GROUND_SPEED');return curGear end
+        local candidates={}
+        if road then
+            -- Keep H during light transport. A failed H candidate waits for
+            -- reserve instead of inserting an unnecessary L intermediate step.
+            if curGear<#gears then candidates[#candidates+1]={curGear+1,2} end
+            if h==1 then candidates[#candidates+1]={curGear,2} end
+        elseif h==1 then candidates={{curGear,2}}
+        elseif curGear<#gears then candidates={{curGear+1,1}} end
+        local chosen
+        for _,c in ipairs(candidates) do
+            local ratio=effective(self,gears,c[1],c[2])
+            if ratio and ratio<currentRatio then
+                local fraction=ratio/currentRatio
+                local rpm=s.rpm*fraction
+                local demand=load/fraction
+                local t1,t2=read(self,'getTorqueCurveValue',s.rpm),read(self,'getTorqueCurveValue',rpm)
+                if t1 and t1>0 and t2 and t2>0 then demand=demand*t1/t2 end
+                local atLimit=s.workLimit and s.workLimit/3.6*ratio*30/math.pi
+                local failure=s.failure
+                local failed=failure and failure.gear==c[1] and failure.group==c[2]
+                    and (now-failure.at<5000 or not (load<=failure.load-0.12 or (road and demand<=0.75 and rpm>=1400)))
+                s.predictedRpm=rpm;s.predictedLoad=demand
+                if rpm>=(road and 1250 or 1500) and demand<=0.92
+                    and (not atLimit or atLimit>=1500) and not failed then chosen=c;break end
+            end
+        end
+        if not chosen then cancelled(self,s,'NO_SAFE_UPSHIFT');return curGear end
+        local key=chosen[1]..':'..chosen[2]
+        if s.readyKey~=key then s.readyKey=key;s.readyAt=now end
+        local dwell=road and 350 or 700
+        if now-(s.readyAt or now)<dwell then s.reason='STABILIZING';return curGear end
+        return request(self,s,chosen[1],chosen[2],road and 'ROAD_HIGH' or 'RESERVE_UPSHIFT',false)
+    end
+
+    Logging.info('[UrsusTransmissionFix] 1.1.1.1 P1 load-aware 8x4 L/H automatic; coordinated engagement; optional ADS')
 end

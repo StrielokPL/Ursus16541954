@@ -1,3 +1,7 @@
+## 1.1.1.1 P1 — prerelease
+
+Nowy automat oparty na rezerwie momentu i obrotów, drogowe H bez obowiązkowych L, niezależne 8L→8H, koordynacja grupy z zaakceptowanym biegiem, redukcja ochronna i pamięć nieudanej zmiany. Zachowane 350 ms zmiany głównej, ADS oraz konfiguracje i fizyka. Dodane testy regresji, kontrola pełnego ZIP i dokumentacja. Szczegóły: [wydanie](docs/releases/1.1.1.1P1.md), [strojenie](docs/transmission-P1.md).
+
 ## 1.1.1.0
 Pełne wydanie po serii testowej 1.0.6.0T1-T14. Wersja nie jest traktowana jako w pełni kompatybilna z linią 1.0.x ze względu na zmianę fizyki masy, układu napędowego i sposobu konfiguracji skrzyni biegów.
 
