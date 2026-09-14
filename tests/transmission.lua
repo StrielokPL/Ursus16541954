@@ -48,7 +48,7 @@ local function motor(g,h)
  function v:getTotalMass() return self.mass end
  function v:getSpeedLimit(tools) return tools and self.limit or math.huge,false end
  v.spec_AdvancedDamageSystem={dynamicMotorLoad=.3,activeEffects={}}
- v.spec_wheels={wheels={ {},{}, {physics={netInfo={slip=0}}},{physics={netInfo={slip=0}}} }}
+ v.spec_wheels={wheels={ {},{}, {physics={hasGroundContact=true,netInfo={slip=0}}},{physics={hasGroundContact=true,netInfo={slip=0}}} }}
  local m=setmetatable({vehicle=v,gear=g or 7,targetGear=g or 7,activeGearGroupIndex=h or 2,
   currentDirection=1,gearShiftMode=1,gearGroups={{ratio=1.25},{ratio=1}},gearChangeTimer=-1,
   groupChangeTimer=0,directionChangeTimer=0,allowGearChangeTimer=0,allowGearChangeDirection=1,
@@ -146,4 +146,44 @@ m.rpm=2200;run(m,45);check(m.activeGearGroupIndex==1,'no immediate retry under u
 -- Reverse uses its actual ratio table and a conservative L start.
 m=motor(1,2);m.currentDirection=-1;m.vehicle.speed=0;m.start=true;tick(m,50,-1,0)
 check(m.gear==1 and m.activeGearGroupIndex==1,'reverse start L')
+
+-- P2 reproductions: measured P1 stuck state and guarded PS power trial.
+local function tractionMotor()
+ local x=motor(1,1);x.vehicle.limit=12.2;x.vehicle.speed=1.87;x.rpm=2195
+ x.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.42
+ for i=3,4 do x.vehicle.spec_wheels.wheels[i].physics.netInfo.slip=.47 end
+ return x
+end
+m=tractionMotor();run(m,15);check(m.activeGearGroupIndex==1,'traction step requires sustained evidence')
+run(m,25);check(m.gear==1 and m.activeGearGroupIndex==2,'P1 measured 1L wheelspin escapes to1H')
+for _,condition in ipairs({'air','missingContact','extremeSlip','overload','stopped'}) do
+ m=tractionMotor()
+ if condition=='air' then m.vehicle.spec_wheels.wheels[3].physics.hasGroundContact=false end
+ if condition=='missingContact' then m.vehicle.spec_wheels.wheels[3].physics.hasGroundContact=nil end
+ if condition=='extremeSlip' then m.vehicle.spec_wheels.wheels[3].physics.netInfo.slip=.9 end
+ if condition=='overload' then m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.9 end
+ if condition=='stopped' then m.vehicle.speed=.2 end
+ run(m,60);check(m.activeGearGroupIndex==1,'traction protection '..condition)
+end
+-- A brief threshold disturbance pauses, but does not reset all readiness.
+m=motor(2,2);m.vehicle.limit=12.2;m.vehicle.speed=3.85
+m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.56
+for i=1,70 do
+ m.vehicle.spec_wheels.wheels[3].physics.netInfo.slip=(i%6==0) and .24 or .10
+ tick(m)
+ if m.gear==0 then break end
+end
+check(m.targetGear==3,'terrain pulses do not indefinitely reset readiness')
+m=motor(5,1);m.vehicle.limit=12.2;m.vehicle.speed=10.33
+m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.82
+run(m,30);check(m.activeGearGroupIndex==1,'power trial requires1500ms readiness after settling')
+for i=1,30 do tick(m);if m.activeGearGroupIndex==2 then break end end
+check(m.activeGearGroupIndex==2 and m.ursusAuto.attempt.reason=='POWER_PROBE','near-full power same-gear PS trial')
+m.rpm=1500;m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=1.02;run(m,22)
+check(m.activeGearGroupIndex==1 and m.ursusAuto.failure~=nil,'failed power trial reduces and is remembered')
+m.rpm=2200;m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.82;run(m,40)
+check(m.activeGearGroupIndex==1,'failed trial cannot immediately repeat')
+m=motor(4,2);m.vehicle.limit=12.2;m.vehicle.speed=10.4;m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.96
+run(m,60);check(m.gear==4 and m.activeGearGroupIndex==2,'mechanical main shift keeps strict reserve')
+
 print('PASS: '..count..' transmission assertions')

@@ -2,7 +2,7 @@ name: Validate, build and publish Ursus prerelease
 
 on:
   push:
-    branches: [main]
+    branches: [main, prerelease/p2]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -28,14 +28,14 @@ jobs:
         run: bash build.sh
       - name: Verify complete archive
         run: python3 tools/verify_release.py
-      - name: Publish P1 test build
+      - name: Publish P2 test build
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          test "$(cat VERSION)" = '1.1.1.1'
-          if gh release view 1.1.1.1P1 >/dev/null 2>&1; then
-            echo 'Existing P1 release is immutable; bump version and tag for the next test.'
+          test "$(cat VERSION)" = '1.1.1.2'
+          if gh release view 1.1.1.2P2 >/dev/null 2>&1; then
+            echo 'Existing P2 release is immutable; bump version and tag for the next test.'
             exit 0
           fi
-          gh release create 1.1.1.1P1 dist/FS25_Ursus_1654_1954_Pack.zip dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title 'Ursus 1654/1954 1.1.1.1 P1 — automat pod obciążenie' --notes-file docs/releases/1.1.1.1P1.md --prerelease --latest=false
+          gh release create 1.1.1.2P2 dist/FS25_Ursus_1654_1954_Pack.zip dist/SHA256SUMS.txt --target "$GITHUB_SHA" --title 'Ursus 1654/1954 1.1.1.2 P2 — automat pod obciążenie' --notes-file docs/releases/1.1.1.2P2.md --prerelease --latest=false

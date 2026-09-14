@@ -1,3 +1,9 @@
+# Stan bieżący: 1.1.1.2 P2
+
+Stabilne: 1.1.1.0. P1 potwierdziło drogowe H i 40 km/h; log ujawnił zbyt silną blokadę poślizgu. P2 wprowadza opisane [wyjątki trakcyjne, gotowość i próbę PS](docs/transmission-P2.md). Fizyka osi i COM bez zmian, D3 zgodna. Podejrzenie konfliktu Ctrl/ciśnienie wymaga sprawdzenia przypisań u testera. Jazda P2 i test aktualizatora pozostają do potwierdzenia.
+
+---
+
 # Stan bieżący: 1.1.1.1 P1
 
 Stabilne wydanie: 1.1.1.0. Bieżący kod: prerelease 1.1.1.1 P1, automat według obciążenia z koordynacją załączenia L/H. Walidacja kontraktów i ZIP w CI; jazda w grze pozostaje do potwierdzenia. Fizyka zawiasu osi i COM bez zmian. [Specyfikacja, dowody z logu i otwarte próby](docs/transmission-P1.md).

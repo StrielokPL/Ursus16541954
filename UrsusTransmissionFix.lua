@@ -1,4 +1,4 @@
--- Ursus 1654-1954 FS25: 1.1.1.1 P1 load-aware automatic L/H transmission.
+-- Ursus 1654-1954 FS25: 1.1.1.2 P2 load-aware automatic L/H transmission.
 -- Uses native main-gear clutch timing and coordinates group engagement.
 -- Manual/no-PS controls, mass, suspension and Widmo drivetrain remain native/existing.
 
@@ -651,7 +651,7 @@ if not UrsusTransmissionFix.installed then
         end
     end
 
-    -- 1.1.1.1 P1: select real ratios, not a mandatory L/H staircase.
+    -- 1.1.1.2 P2: select real ratios, not a mandatory L/H staircase.
     -- Planning never changes a group for an unaccepted main-gear request.
     local originalUpdateGear = VehicleMotor.updateGear
     local originalApplyTargetGear = VehicleMotor.applyTargetGear
@@ -705,10 +705,11 @@ if not UrsusTransmissionFix.installed then
         if (m.gear or 0)>0 and (m.gearChangeTimer or -1)<0 and s.load then
             s.filteredLoad=(s.filteredLoad or s.load)+alpha*(s.load-(s.filteredLoad or s.load))
         end
-        s.rearSlip=nil
+        s.rearSlip=nil;s.rearContact=true
         local wheels=m.vehicle.spec_wheels and m.vehicle.spec_wheels.wheels or {}
         for i=3,4 do
             local p=wheels[i] and wheels[i].physics
+            if not p or p.hasGroundContact~=true then s.rearContact=false end
             local slip=p and p.netInfo and number(p.netInfo.slip)
             if slip then s.rearSlip=math.max(s.rearSlip or 0,math.abs(slip)) end
         end
@@ -726,6 +727,16 @@ if not UrsusTransmissionFix.installed then
     end
     local function cancelled(m,s,reason)
         s.pending=nil;s.readyAt=nil;s.readyKey=nil;s.reason=reason
+        clearAdsPendingSplitter(m)
+    end
+    -- Short terrain disturbances pause readiness; they do not earn dwell time.
+    local function pauseReady(m,s,now,reason)
+        s.reason=reason
+        s.readyPausedAt=s.readyPausedAt or now
+        s.readyLast=now
+        if now-s.readyPausedAt>200 then
+            s.readyAt=nil;s.readyKey=nil;s.readyMs=0
+        end
         clearAdsPendingSplitter(m)
     end
     local function request(m,s,g,h,reason,isDown)
@@ -856,7 +867,11 @@ if not UrsusTransmissionFix.installed then
         end
         local load=math.max(s.load,s.filteredLoad or s.load)
         local since=now-(s.settledAt or now)
+        local probe=s.attempt and s.attempt.reason=='POWER_PROBE'
+            and s.attempt.gear==curGear and s.attempt.group==h
+            and now-s.attempt.at<5000
         local lug=(load>0.78 and s.rpm<1450) or (s.rpm<1100 and s.speed>1.1)
+            or (probe and load>0.90 and s.rpm<1550)
         if lug then s.lugAt=s.lugAt or now else s.lugAt=nil end
         if s.lugAt and now-s.lugAt>=250 and since>=250 and now>=(s.cooldownUntil or 0) then
             local g2,h2=curGear,h==2 and 1 or 2
@@ -869,13 +884,27 @@ if not UrsusTransmissionFix.installed then
         if now<(s.cooldownUntil or 0) or now<(s.holdUntil or 0) or since<450 then
             s.reason='RECOVERY';s.readyAt=nil;s.readyKey=nil;return curGear
         end
-        if (s.rearSlip or 0)>0.22 or s.speedTrend< -0.30 then
-            cancelled(self,s,'SLIP_OR_SPEED_FALLING');return curGear
+        local slip=s.rearSlip or 0
+        local theoretical=s.rpm*math.pi/(30*currentRatio)*3.6
+        -- Escape a low gear with sustained wheelspin only with real progress,
+        -- both rear contacts, high RPM and a substantial engine reserve.
+        local traction=s.workLimit~=nil and s.rearContact and slip>0.22 and slip<=0.65
+            and load<0.65 and s.rpm>=2050 and s.speed>=1.2
+            and s.speed>=theoretical*0.45 and s.speedTrend>=-0.15
+        if slip>0.22 and not traction then
+            pauseReady(self,s,now,'SLIP_BLOCK');return curGear
+        end
+        if s.speedTrend< -0.30 then
+            pauseReady(self,s,now,'SPEED_FALLING');return curGear
         end
         local road=not s.workLimit and load<0.70
-        if s.rpm<(road and 1900 or 2000) then cancelled(self,s,'UPSHIFT_RPM');return curGear end
-        local theoretical=s.rpm*math.pi/(30*currentRatio)*3.6
-        if s.speed<theoretical*0.72 then cancelled(self,s,'GROUND_SPEED');return curGear end
+        if s.rpm<(road and 1900 or 2000) then
+            pauseReady(self,s,now,'UPSHIFT_RPM');return curGear
+        end
+        local groundFloor=traction and 0.45 or (s.workLimit and load<0.75 and 0.60 or 0.72)
+        if s.speed<theoretical*groundFloor then
+            pauseReady(self,s,now,'GROUND_SPEED');return curGear
+        end
         local candidates={}
         if road then
             -- Keep H during light transport. A failed H candidate waits for
@@ -884,7 +913,7 @@ if not UrsusTransmissionFix.installed then
             if h==1 then candidates[#candidates+1]={curGear,2} end
         elseif h==1 then candidates={{curGear,2}}
         elseif curGear<#gears then candidates={{curGear+1,1}} end
-        local chosen
+        local chosen,chosenReason,chosenDwell
         for _,c in ipairs(candidates) do
             local ratio=effective(self,gears,c[1],c[2])
             if ratio and ratio<currentRatio then
@@ -898,17 +927,35 @@ if not UrsusTransmissionFix.installed then
                 local failed=failure and failure.gear==c[1] and failure.group==c[2]
                     and (now-failure.at<5000 or not (load<=failure.load-0.12 or (road and demand<=0.75 and rpm>=1400)))
                 s.predictedRpm=rpm;s.predictedLoad=demand
-                if rpm>=(road and 1250 or 1500) and demand<=0.92
-                    and (not atLimit or atLimit>=1500) and not failed then chosen=c;break end
+                -- A same-main-gear powershift may try near full power without
+                -- extending this allowance to a mechanical main-gear change.
+                local powerProbe=s.workLimit~=nil and c[1]==curGear and h==1 and c[2]==2
+                    and s.rearContact and slip<=0.18 and s.rpm>=2100 and rpm>=1650
+                    and load<=0.97 and demand<=1.05 and s.speedTrend>=-0.10
+                local demandLimit=traction and 0.80 or (powerProbe and 1.05 or 0.92)
+                if rpm>=(road and 1250 or 1500) and demand<=demandLimit
+                    and (not atLimit or atLimit>=1500) and not failed then
+                    chosen=c
+                    chosenReason=traction and 'TRACTION_STEP' or (powerProbe and demand>0.92 and 'POWER_PROBE'
+                        or (road and 'ROAD_HIGH' or 'RESERVE_UPSHIFT'))
+                    chosenDwell=traction and 1200 or (chosenReason=='POWER_PROBE' and 1500 or (road and 350 or 700))
+                    break
+                end
             end
         end
-        if not chosen then cancelled(self,s,'NO_SAFE_UPSHIFT');return curGear end
-        local key=chosen[1]..':'..chosen[2]
-        if s.readyKey~=key then s.readyKey=key;s.readyAt=now end
-        local dwell=road and 350 or 700
-        if now-(s.readyAt or now)<dwell then s.reason='STABILIZING';return curGear end
-        return request(self,s,chosen[1],chosen[2],road and 'ROAD_HIGH' or 'RESERVE_UPSHIFT',false)
+        if not chosen then pauseReady(self,s,now,'NO_SAFE_UPSHIFT');return curGear end
+        local key=chosen[1]..':'..chosen[2]..':'..chosenReason
+        if s.readyKey~=key or (s.readyPausedAt and now-s.readyPausedAt>200) then
+            s.readyKey=key;s.readyAt=now;s.readyMs=0;s.readyLast=now
+        end
+        local elapsed=now-(s.readyLast or now)
+        if not s.readyPausedAt and elapsed>=0 and elapsed<=150 then
+            s.readyMs=(s.readyMs or 0)+elapsed
+        end
+        s.readyPausedAt=nil;s.readyLast=now
+        if (s.readyMs or 0)<chosenDwell then s.reason='STABILIZING';return curGear end
+        return request(self,s,chosen[1],chosen[2],chosenReason,false)
     end
 
-    Logging.info('[UrsusTransmissionFix] 1.1.1.1 P1 load-aware 8x4 L/H automatic; coordinated engagement; optional ADS')
+    Logging.info('[UrsusTransmissionFix] 1.1.1.2 P2 load-aware 8x4 L/H automatic; coordinated engagement; optional ADS')
 end

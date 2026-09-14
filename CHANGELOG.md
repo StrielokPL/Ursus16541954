@@ -1,3 +1,7 @@
+## 1.1.1.2 P2 — prerelease
+
+Kontrolowany krok w górę przy poślizgu z rezerwą silnika, gotowość odporna na krótkie zakłócenia terenu, osobna próba półbiegu pod dużym obciążeniem i redukcja po nieudanej próbie. Wyższy numer modDesc do testu aktualizatora, nazwa ZIP bez zmian. [Szczegóły](docs/releases/1.1.1.2P2.md).
+
 ## 1.1.1.1 P1 — prerelease
 
 Nowy automat oparty na rezerwie momentu i obrotów, drogowe H bez obowiązkowych L, niezależne 8L→8H, koordynacja grupy z zaakceptowanym biegiem, redukcja ochronna i pamięć nieudanej zmiany. Zachowane 350 ms zmiany głównej, ADS oraz konfiguracje i fizyka. Dodane testy regresji, kontrola pełnego ZIP i dokumentacja. Szczegóły: [wydanie](docs/releases/1.1.1.1P1.md), [strojenie](docs/transmission-P1.md).
