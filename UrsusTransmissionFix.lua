@@ -944,16 +944,17 @@ if not UrsusTransmissionFix.installed then
             end
         end
         if not chosen then pauseReady(self,s,now,'NO_SAFE_UPSHIFT');return curGear end
-        local key=chosen[1]..':'..chosen[2]..':'..chosenReason
+        local key=chosen[1]..':'..chosen[2]
         if s.readyKey~=key or (s.readyPausedAt and now-s.readyPausedAt>200) then
-            s.readyKey=key;s.readyAt=now;s.readyMs=0;s.readyLast=now
+            s.readyKey=key;s.readyAt=now;s.readyMs=0;s.readyLast=now;s.readyRequired=chosenDwell
         end
+        s.readyRequired=math.max(s.readyRequired or chosenDwell,chosenDwell)
         local elapsed=now-(s.readyLast or now)
         if not s.readyPausedAt and elapsed>=0 and elapsed<=150 then
             s.readyMs=(s.readyMs or 0)+elapsed
         end
         s.readyPausedAt=nil;s.readyLast=now
-        if (s.readyMs or 0)<chosenDwell then s.reason='STABILIZING';return curGear end
+        if (s.readyMs or 0)<s.readyRequired then s.reason='STABILIZING';return curGear end
         return request(self,s,chosen[1],chosen[2],chosenReason,false)
     end
 
