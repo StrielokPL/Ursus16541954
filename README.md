@@ -1,3 +1,7 @@
+## 1.1.1.3 P3 — test przeciążenia ADS
+
+Pełny prerelease: [informacje i test](docs/releases/1.1.1.3P3.md), [reguły i analiza P2](docs/transmission-P3.md). Sonda D3 nadal zgodna. Walidacja: 74 asercje; wymagany test w FS25. Stabilne wydanie pozostaje 1.1.1.0.
+
 # Ursus 1654–1954 — Farming Simulator 25
 
 Najnowsze pełne wydanie
@@ -241,3 +245,4 @@ Najważniejsze historyczne baseline'y:
 3. Po akceptacji aktualizujemy wersję, changelog i publikujemy GitHub Release.
 4. Nie wracamy do numeracji `V26`, `V27` itd.
 5. Nie zmieniamy bez wyraźnej potrzeby zatwierdzonych obszarów, takich jak geometria lusterek, kolizje, zaczepy, WOM, tankowanie i istniejące ścieżki tożsamości moda.
+

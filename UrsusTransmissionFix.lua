@@ -1,4 +1,4 @@
--- Ursus 1654-1954 FS25: 1.1.1.2 P2 load-aware automatic L/H transmission.
+-- Ursus 1654-1954 FS25: 1.1.1.3 P3 load-aware automatic L/H transmission.
 -- Uses native main-gear clutch timing and coordinates group engagement.
 -- Manual/no-PS controls, mass, suspension and Widmo drivetrain remain native/existing.
 
@@ -722,11 +722,12 @@ if not UrsusTransmissionFix.installed then
         local key=tostring(m.currentDirection)..':'..m.gear..':'..m.activeGearGroupIndex
         if s.settled~=key then
             s.settled=key;s.settledAt=g_time or 0
-            s.readyAt=nil;s.readyKey=nil;s.lugAt=nil
+            s.readyAt=nil;s.readyKey=nil;s.lugAt=nil;s.overloadAt=nil;s.overloadLast=nil
         end
     end
     local function cancelled(m,s,reason)
         s.pending=nil;s.readyAt=nil;s.readyKey=nil;s.reason=reason
+        s.overloadAt=nil;s.overloadLast=nil
         clearAdsPendingSplitter(m)
     end
     -- Short terrain disturbances pause readiness; they do not earn dwell time.
@@ -738,6 +739,48 @@ if not UrsusTransmissionFix.installed then
             s.readyAt=nil;s.readyKey=nil;s.readyMs=0
         end
         clearAdsPendingSplitter(m)
+    end
+    -- P3: bounded trial summaries, enabled only alongside the diagnostic mod.
+    local trialSerial=0
+    local function traceTrial(m,s,status,why)
+        local a=s.trial
+        if not a then return end
+        if g_modIsLoaded and g_modIsLoaded.FS25_ZZ_Ursus1654Diagnostic then
+            Logging.info('[URSUSPSTRIAL] id=%d eventTimeMs=%.0f status=%s reason=%s from=%d:%d to=%d:%d decision=%s elapsedMs=%.0f beforeSpeed=%.3f beforeLoad=%.3f samples=%d meanSpeed=%.3f meanLoad=%.3f minRpm=%.0f',
+                a.id,g_time or 0,status,why,a.fromGear,a.fromGroup,a.gear,a.group,a.reason,
+                (g_time or 0)-a.at,a.speed,a.load,a.n,a.n>0 and a.sumSpeed/a.n or 0,
+                a.n>0 and a.sumLoad/a.n or 0,a.minRpm or 0)
+        end
+    end
+    local function finishTrial(m,s,status,why)
+        traceTrial(m,s,status,why);s.trial=nil
+    end
+    local function startTrial(m,s,p)
+        if p.reason=='START' or p.down then return end
+        finishTrial(m,s,'INTERRUPTED','NEXT_SHIFT')
+        trialSerial=trialSerial+1
+        s.trial={id=trialSerial,gear=p.gear,group=p.group,fromGear=p.fromGear,
+            fromGroup=p.fromGroup,at=g_time or 0,reason=p.reason,load=p.load,
+            speed=p.speed,n=0,sumSpeed=0,sumLoad=0,work=s.workLimit~=nil}
+        traceTrial(m,s,'BEGIN',p.reason)
+    end
+    local function observeTrial(m,s)
+        local a=s.trial
+        if not a then return end
+        if s.brake>0.05 or s.accel*m.currentDirection<=0.1
+            or (s.workLimit~=nil)~=a.work then
+            finishTrial(m,s,'INTERRUPTED','DRIVER_OR_WORK_CHANGED');return
+        end
+        if m.gear~=a.gear or m.activeGearGroupIndex~=a.group then
+            finishTrial(m,s,'INTERRUPTED','EXTERNAL_SHIFT');return
+        end
+        if (g_time or 0)-a.at>=600 and s.load and s.speed and s.rpm then
+            a.n=a.n+1;a.sumSpeed=a.sumSpeed+s.speed;a.sumLoad=a.sumLoad+s.load
+            a.minRpm=math.min(a.minRpm or s.rpm,s.rpm)
+        end
+        if (g_time or 0)-a.at>=5000 then
+            finishTrial(m,s,'OBSERVED','HELD_5S') -- observation, not proof of optimality
+        end
     end
     local function request(m,s,g,h,reason,isDown)
         local now=g_time or 0
@@ -752,10 +795,16 @@ if not UrsusTransmissionFix.installed then
         s.reason=reason;s.requestedGear=g;s.requestedGroup=h;s.requestedAt=now
         s.readyAt=nil;s.readyKey=nil
         if isDown then
+            finishTrial(m,s,'REDUCED',reason)
             s.holdUntil=now+1800
             if s.attempt and s.attempt.gear==fromGear and s.attempt.group==fromGroup
-                and now-s.attempt.at<8000 and (s.load or 0)>=0.5 then
+                and (now-s.attempt.at<8000 or reason=='SUSTAINED_OVERLOAD') and (s.load or 0)>=0.5 then
                 s.failure={gear=fromGear,group=fromGroup,at=now,load=s.attempt.load}
+            end
+            if reason=='SUSTAINED_OVERLOAD' and not (s.attempt and s.attempt.gear==fromGear and s.attempt.group==fromGroup) then
+                local before=effective(m,m.currentGears,fromGear,fromGroup)
+                local after=effective(m,m.currentGears,g,h)
+                s.failure={gear=fromGear,group=fromGroup,at=now,load=(s.load or 1)*(before and after and before/after or 0.8)}
             end
             s.attempt=nil
             -- Release only the direction veto for a confirmed loaded reduction.
@@ -766,7 +815,7 @@ if not UrsusTransmissionFix.installed then
             s.pending=nil
             m:setGearGroup(h)
             s.cooldownUntil=now+600
-            if not isDown then s.attempt=p end
+            if not isDown then s.attempt=p;startTrial(m,s,p) end
         else
             s.pending=p
         end
@@ -816,7 +865,7 @@ if not UrsusTransmissionFix.installed then
                     s.committing=nil
                 end
                 s.cooldownUntil=(g_time or 0)+600
-                if not p.down and p.reason~='START' then p.at=g_time or 0;s.attempt=p end
+                if not p.down and p.reason~='START' then p.at=g_time or 0;s.attempt=p;startTrial(self,s,p) end
                 s.reason='ENGAGED_'..p.reason
             else
                 s.reason='CANCELLED_TARGET'
@@ -827,13 +876,14 @@ if not UrsusTransmissionFix.installed then
 
     function VehicleMotor:updateGear(acceleratorPedal,brakePedal,dt,...)
         if not automatic(self) then
-            if self.ursusAuto then self.ursusAuto=nil;clearAdsPendingSplitter(self) end
+            if self.ursusAuto then finishTrial(self,self.ursusAuto,'INTERRUPTED','AUTOMATIC_DISABLED');self.ursusAuto=nil;clearAdsPendingSplitter(self) end
             return originalUpdateGear(self,acceleratorPedal,brakePedal,dt,...)
         end
         local s=sample(self,dt)
         s.accel=number(acceleratorPedal) or 0;s.brake=number(brakePedal) or 0
-        if s.direction and s.direction~=self.currentDirection then cancelled(self,s,'DIRECTION_CHANGED');s.attempt=nil;s.failure=nil end
+        if s.direction and s.direction~=self.currentDirection then finishTrial(self,s,'INTERRUPTED','DIRECTION_CHANGED');cancelled(self,s,'DIRECTION_CHANGED');s.attempt=nil;s.failure=nil end
         s.direction=self.currentDirection
+        observeTrial(self,s)
         observe(self,s)
         s.inUpdate=true
         local result=pack(originalUpdateGear(self,acceleratorPedal,brakePedal,dt,...))
@@ -853,7 +903,7 @@ if not UrsusTransmissionFix.installed then
         local s=sample(self,dt);local now=g_time or 0;local h=self.activeGearGroupIndex
         if not s.inUpdate then return curGear end
         if s.pending or (self.gearChangeTimer or -1)>=0 or (self.groupChangeTimer or 0)>0
-            or (self.directionChangeTimer or 0)>0 then s.reason='SHIFT_BUSY';return curGear end
+            or (self.directionChangeTimer or 0)>0 then s.overloadAt=nil;s.overloadLast=nil;s.reason='SHIFT_BUSY';return curGear end
         if gearSign~=self.currentDirection or (s.brake or 0)>0.05
             or (acceleratorPedal or 0)*self.currentDirection<=0.1 then
             cancelled(self,s,'COAST_OR_BRAKE')
@@ -873,13 +923,27 @@ if not UrsusTransmissionFix.installed then
         local lug=(load>0.78 and s.rpm<1450) or (s.rpm<1100 and s.speed>1.1)
             or (probe and load>0.90 and s.rpm<1550)
         if lug then s.lugAt=s.lugAt or now else s.lugAt=nil end
-        if s.lugAt and now-s.lugAt>=250 and since>=250 and now>=(s.cooldownUntil or 0) then
+        -- Sustained ADS overload is independent of the 5 s power-probe window.
+        -- Contact/slip gates exclude airborne wheels and traction-limited work.
+        local overloaded=s.source=='ADS' and s.workLimit~=nil and self.currentDirection==1
+            and s.rearContact and s.rearSlip~=nil and s.rearSlip<=0.22
+            and s.load>0.98 and (s.filteredLoad or 0)>1.02 and s.speed>1.2
+            and since>=1000
+        if overloaded then
+            if not s.overloadLast or now-s.overloadLast>150 then s.overloadAt=now end
+            s.overloadLast=now
+        else s.overloadAt=nil;s.overloadLast=nil end
+        local sustained=s.overloadAt and now-s.overloadAt>=2500
+        if ((s.lugAt and now-s.lugAt>=250) or sustained) and since>=250 and now>=(s.cooldownUntil or 0) then
             local g2,h2=curGear,h==2 and 1 or 2
             if h==1 then g2=curGear-1 end
             local ratio=effective(self,gears,g2,h2)
             if ratio and ratio>currentRatio and s.rpm*ratio/currentRatio<=s.maxRpm+50 then
-                return request(self,s,g2,h2,'LOAD_REDUCTION',true)
+                return request(self,s,g2,h2,sustained and 'SUSTAINED_OVERLOAD' or 'LOAD_REDUCTION',true)
             end
+        end
+        if sustained then
+            s.reason='OVERLOAD_RPM_GUARD';s.readyAt=nil;s.readyKey=nil;return curGear
         end
         if now<(s.cooldownUntil or 0) or now<(s.holdUntil or 0) or since<450 then
             s.reason='RECOVERY';s.readyAt=nil;s.readyKey=nil;return curGear
@@ -931,8 +995,8 @@ if not UrsusTransmissionFix.installed then
                 -- extending this allowance to a mechanical main-gear change.
                 local powerProbe=s.workLimit~=nil and c[1]==curGear and h==1 and c[2]==2
                     and s.rearContact and slip<=0.18 and s.rpm>=2100 and rpm>=1650
-                    and load<=0.97 and demand<=1.05 and s.speedTrend>=-0.10
-                local demandLimit=traction and 0.80 or (powerProbe and 1.05 or 0.92)
+                    and load<=0.90 and demand<=0.98 and s.speedTrend>=-0.10
+                local demandLimit=traction and 0.80 or (powerProbe and 0.98 or 0.92)
                 if rpm>=(road and 1250 or 1500) and demand<=demandLimit
                     and (not atLimit or atLimit>=1500) and not failed then
                     chosen=c
@@ -958,5 +1022,6 @@ if not UrsusTransmissionFix.installed then
         return request(self,s,chosen[1],chosen[2],chosenReason,false)
     end
 
-    Logging.info('[UrsusTransmissionFix] 1.1.1.2 P2 load-aware 8x4 L/H automatic; coordinated engagement; optional ADS')
+    Logging.info('[UrsusTransmissionFix] 1.1.1.3 P3 load-aware 8x4 L/H automatic; coordinated engagement; optional ADS')
 end
+
