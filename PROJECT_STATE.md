@@ -1,3 +1,7 @@
+## 1.1.1.3 P3 — test przeciążenia ADS
+
+Pełny prerelease: [informacje i test](docs/releases/1.1.1.3P3.md), [reguły i analiza P2](docs/transmission-P3.md). Sonda D3 nadal zgodna. Walidacja: 74 asercje; wymagany test w FS25. Stabilne wydanie pozostaje 1.1.1.0.
+
 # Stan bieżący: 1.1.1.2 P2
 
 Stabilne: 1.1.1.0. P1 potwierdziło drogowe H i 40 km/h; log ujawnił zbyt silną blokadę poślizgu. P2 wprowadza opisane [wyjątki trakcyjne, gotowość i próbę PS](docs/transmission-P2.md). Fizyka osi i COM bez zmian, D3 zgodna. Podejrzenie konfliktu Ctrl/ciśnienie wymaga sprawdzenia przypisań u testera. Jazda P2 i test aktualizatora pozostają do potwierdzenia.
@@ -263,3 +267,4 @@ Known accepted issue: `Ursus1934.i3d` still reports `i3d contains non-binary ind
 - Widmo motor configuration price: 40000.
 - T13/T14 mass diagnostics and temporary test logs removed.
 - Known accepted I3D non-binary indexed triangle-set warning remains.
+

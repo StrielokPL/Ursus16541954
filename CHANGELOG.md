@@ -1,3 +1,7 @@
+## 1.1.1.3 P3 — test przeciążenia ADS
+
+Pełny prerelease: [informacje i test](docs/releases/1.1.1.3P3.md), [reguły i analiza P2](docs/transmission-P3.md). Sonda D3 nadal zgodna. Walidacja: 74 asercje; wymagany test w FS25. Stabilne wydanie pozostaje 1.1.1.0.
+
 ## 1.1.1.2 P2 — prerelease
 
 Kontrolowany krok w górę przy poślizgu z rezerwą silnika, gotowość odporna na krótkie zakłócenia terenu, osobna próba półbiegu pod dużym obciążeniem i redukcja po nieudanej próbie. Wyższy numer modDesc do testu aktualizatora, nazwa ZIP bez zmian. [Szczegóły](docs/releases/1.1.1.2P2.md).
@@ -423,3 +427,4 @@ Uwaga testowa:
 
 ## Dalszy rozwój
 Od **1.0.1.0** używamy wyłącznie czteroczłonowej numeracji opisanej w `VERSIONING.md`. Numeracji V26/V27 nie stosujemy do nowych buildów.
+
