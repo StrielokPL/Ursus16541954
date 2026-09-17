@@ -175,15 +175,56 @@ for i=1,70 do
 end
 check(m.targetGear==3,'terrain pulses do not indefinitely reset readiness')
 m=motor(5,1);m.vehicle.limit=12.2;m.vehicle.speed=10.33
-m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.82
+m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.78
 run(m,30);check(m.activeGearGroupIndex==1,'power trial requires1500ms readiness after settling')
 for i=1,30 do tick(m);if m.activeGearGroupIndex==2 then break end end
 check(m.activeGearGroupIndex==2 and m.ursusAuto.attempt.reason=='POWER_PROBE','near-full power same-gear PS trial')
 m.rpm=1500;m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=1.02;run(m,22)
 check(m.activeGearGroupIndex==1 and m.ursusAuto.failure~=nil,'failed power trial reduces and is remembered')
-m.rpm=2200;m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.82;run(m,40)
+m.rpm=2200;m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.78;run(m,40)
 check(m.activeGearGroupIndex==1,'failed trial cannot immediately repeat')
 m=motor(4,2);m.vehicle.limit=12.2;m.vehicle.speed=10.4;m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.96
 run(m,60);check(m.gear==4 and m.activeGearGroupIndex==2,'mechanical main shift keeps strict reserve')
 
+-- P3: measured 5H overload and safe RPM boundary.
+local function overloaded(rpm)
+ local x=motor(5,2);x.vehicle.limit=12.2;x.vehicle.speed=8.6;x.rpm=rpm
+ x.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=1.06
+ return x
+end
+m=overloaded(1780);run(m,60)
+check(m.activeGearGroupIndex==2,'overload needs 1s settle plus2.5s evidence')
+run(m,20);check(m.activeGearGroupIndex==1,'sustained overload reduces before deep lugging')
+check(m.ursusAuto.failure and m.ursusAuto.failure.gear==5,'overload creates retry memory without recent probe')
+m.rpm=2200;m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.78;run(m,160)
+check(m.activeGearGroupIndex==1,'overload retry requires improved reserve beyond cooldown')
+m=overloaded(1900);run(m,100)
+check(m.activeGearGroupIndex==2 and m.ursusAuto.reason=='OVERLOAD_RPM_GUARD','1900rpm does not force2375rpm reduction')
+m.rpm=1780;run(m,2);check(m.activeGearGroupIndex==1,'reduce once safe RPM is reached')
+m=overloaded(1780);run(m,50);m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.90;run(m,50)
+check(m.activeGearGroupIndex==2,'short load spike does not reduce')
+for _,kind in ipairs({'road','slip','air','native','brake'}) do
+ m=overloaded(1780)
+ if kind=='road' then m.vehicle.limit=math.huge end
+ if kind=='slip' then m.vehicle.spec_wheels.wheels[3].physics.netInfo.slip=.4 end
+ if kind=='air' then m.vehicle.spec_wheels.wheels[3].physics.hasGroundContact=false end
+ if kind=='native' then m.vehicle.spec_AdvancedDamageSystem=nil;m.nativeLoad=1.06 end
+ for i=1,100 do tick(m,50,1,kind=='brake' and 1 or 0) end
+ check(m.activeGearGroupIndex==2,'sustained overload excludes '..kind)
+end
+m=motor(5,1);m.vehicle.limit=12.2;m.vehicle.speed=10.33
+m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.82;run(m,100)
+check(m.activeGearGroupIndex==1,'predicted1.025 no longer permits speculative5H')
+-- Bounded diagnostic event stream; no dependency on companion internals.
+local messages={};Logging.info=function(fmt,...) messages[#messages+1]=string.format(fmt,...) end
+g_modIsLoaded={FS25_ZZ_Ursus1654Diagnostic=true}
+m=motor(5,1);m.vehicle.limit=12.2;m.vehicle.speed=10.33;m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.78
+for i=1,100 do tick(m);if m.activeGearGroupIndex==2 then break end end
+m.rpm=1800;run(m,110)
+check(#messages==2 and messages[1]:find('status=BEGIN') and messages[2]:find('status=OBSERVED'),'trial emits only begin and5s summary')
+g_modIsLoaded=nil;messages={}
+m=motor(5,1);m.vehicle.limit=12.2;m.vehicle.speed=10.33;m.vehicle.spec_AdvancedDamageSystem.dynamicMotorLoad=.78
+run(m,200);check(#messages==0,'no trial log without diagnostic mod')
+
 print('PASS: '..count..' transmission assertions')
+
